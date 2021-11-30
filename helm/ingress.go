@@ -1,8 +1,8 @@
 package helm
 
 type Ingress struct {
-	*K8sBase
-	Spec IngressSpec
+	*K8sBase `yaml:",inline"`
+	Spec     IngressSpec
 }
 
 func NewIngress(name string) *Ingress {

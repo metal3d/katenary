@@ -17,7 +17,7 @@ var serviceWaiters = make(map[string][]chan int)
 var locker = &sync.Mutex{}
 var serviceTick = make(chan int, 0)
 
-var Ingresses = make([]*helm.Ingress, 0)
+var Ingresses = make(map[string]*helm.Ingress, 0)
 var Values = make(map[string]map[string]interface{})
 
 var DependScript = `
@@ -168,7 +168,7 @@ func createIngress(name string, port int, s compose.Service) {
 	}
 
 	locker.Lock()
-	Ingresses = append(Ingresses, ingress)
+	Ingresses[name] = ingress
 	locker.Unlock()
 }
 

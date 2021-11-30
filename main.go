@@ -2,12 +2,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"helm-compose/compose"
 	"helm-compose/generator"
 	"helm-compose/helm"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"gopkg.in/yaml.v3"
@@ -45,6 +45,7 @@ func main() {
 	for n, f := range files {
 		for _, c := range f {
 			kind := c.(helm.Kinded).Get()
+			kind = strings.ToLower(kind)
 			fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 			fp, _ := os.Create(fname)
 			enc := yaml.NewEncoder(fp)
@@ -54,12 +55,14 @@ func main() {
 		}
 	}
 
-	for _, ing := range generator.Ingresses {
+	for name, ing := range generator.Ingresses {
 
-		fmt.Println("---")
-		enc := yaml.NewEncoder(os.Stdout)
+		fname := filepath.Join(templatesDir, name+".ingress.yaml")
+		fp, _ := os.Create(fname)
+		enc := yaml.NewEncoder(fp)
 		enc.SetIndent(2)
 		enc.Encode(ing)
+		fp.Close()
 	}
 
 	enc := yaml.NewEncoder(os.Stdout)
