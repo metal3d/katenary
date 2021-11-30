@@ -61,12 +61,28 @@ func main() {
 		fp, _ := os.Create(fname)
 		enc := yaml.NewEncoder(fp)
 		enc.SetIndent(2)
+		fp.WriteString("{{- if .Values." + name + ".ingress.enabled -}}\n")
 		enc.Encode(ing)
+		fp.WriteString("\n{{- end -}}")
 		fp.Close()
 	}
 
-	enc := yaml.NewEncoder(os.Stdout)
+	fp, _ := os.Create(filepath.Join(dirname, "values.yaml"))
+	enc := yaml.NewEncoder(fp)
 	enc.SetIndent(2)
 	enc.Encode(generator.Values)
+	fp.Close()
 
+	fp, _ = os.Create(filepath.Join(dirname, "Chart.yaml"))
+	enc = yaml.NewEncoder(fp)
+	enc.SetIndent(2)
+	enc.Encode(map[string]interface{}{
+		"apiVersion":  "v2",
+		"name":        AppName,
+		"description": "A helm chart for " + AppName,
+		"type":        "application",
+		"version":     "0.1.0",
+		"appVersion":  "x",
+	})
+	fp.Close()
 }
