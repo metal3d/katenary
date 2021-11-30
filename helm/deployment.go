@@ -2,6 +2,7 @@ package helm
 
 import "strings"
 
+// Deployment is a k8s deployment.
 type Deployment struct {
 	*K8sBase `yaml:",inline"`
 	Spec     *DepSpec `yaml:"spec"`

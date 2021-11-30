@@ -32,6 +32,8 @@ func main() {
 
 	for name, s := range p.Data.Services {
 		wait.Add(1)
+		// it's mandatory to make the build in goroutines because some dependencies can
+		// wait for a port number. So the entire services are built in parallel.
 		go func(name string, s compose.Service) {
 			o := generator.CreateReplicaObject(name, s)
 			files[name] = o

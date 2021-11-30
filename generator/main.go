@@ -17,10 +17,13 @@ var serviceWaiters = make(map[string][]chan int)
 var locker = &sync.Mutex{}
 var serviceTick = make(chan int, 0)
 
+// Ingresses is kept in memory to create ingresses.
 var Ingresses = make(map[string]*helm.Ingress, 0)
+
+// Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
 
-var DependScript = `
+var dependScript = `
 OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
@@ -32,6 +35,7 @@ echo
 echo "Done"
 `
 
+// Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
 func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	Magenta("Generating deployment for ", name)
@@ -86,7 +90,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 			os.Exit(1)
 		}
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
-		command := strings.ReplaceAll(strings.TrimSpace(DependScript), "__service__", dp)
+		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
 
 		wait.Add(1)
 		go func(dp string) {
@@ -120,6 +124,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 	return
 }
 
+// Create a service (k8s).
 func createService(name string, s compose.Service) *helm.Service {
 
 	Magenta("Generating service for ", name)
@@ -163,6 +168,7 @@ func createService(name string, s compose.Service) *helm.Service {
 	return ks
 }
 
+// Create an ingress.
 func createIngress(name string, port int, s compose.Service) {
 	ingress := helm.NewIngress(name)
 	Values[name]["ingress"] = map[string]interface{}{
@@ -196,6 +202,7 @@ func createIngress(name string, port int, s compose.Service) {
 	locker.Unlock()
 }
 
+// This function is called when a possible service is detected, it append the port in a map to make others to be able to get the service name. It also try to send the data to any "waiter" for this service.
 func detected(name string, port int) {
 	locker.Lock()
 	servicesMap[name] = port
@@ -217,6 +224,7 @@ func getPort(name string) (int, error) {
 	return -1, errors.New("Not found")
 }
 
+// Waits for a service to be discovered. Sometimes, a deployment depends on another one. See the detected() function.
 func waitPort(name string) chan int {
 	locker.Lock()
 	c := make(chan int, 0)
@@ -231,7 +239,6 @@ func waitPort(name string) chan int {
 }
 
 func buildSelector(name string, s compose.Service) map[string]string {
-
 	return map[string]string{
 		"katenary.io/component": name,
 		"katenary.io/release":   "{{ .Release.Name }}",
