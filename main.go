@@ -63,8 +63,7 @@ func main() {
 				enc.Encode(c)
 				fp.WriteString("{{- end -}}")
 			case *helm.Deployment:
-				var buff []byte
-				buffer := bytes.NewBuffer(buff)
+				buffer := bytes.NewBuffer(nil)
 				enc := yaml.NewEncoder(buffer)
 				enc.SetIndent(2)
 				enc.Encode(c)
