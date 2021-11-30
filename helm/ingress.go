@@ -15,8 +15,15 @@ func NewIngress(name string) *Ingress {
 	return i
 }
 
+func (i *Ingress) SetIngressClass(name string) {
+	class := "{{ .Values." + name + ".ingress.class }}"
+	i.Metadata.Annotations["kuberntes.io/ingress.class"] = class
+	i.Spec.IngressClassName = class
+}
+
 type IngressSpec struct {
-	Rules []IngressRule
+	IngressClassName string `yaml:"ingressClassName,omitempty"`
+	Rules            []IngressRule
 }
 
 type IngressRule struct {
@@ -30,7 +37,7 @@ type IngressHttp struct {
 
 type IngressPath struct {
 	Path     string
-	PathType string
+	PathType string `yaml:"pathType"`
 	Backend  IngressBackend
 }
 

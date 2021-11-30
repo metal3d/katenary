@@ -15,11 +15,13 @@ import (
 
 var ComposeFile = "docker-compose.yaml"
 var AppName = "MyApp"
+var AppVersion = "0.0.1"
 
 func main() {
 
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", AppName, "Give the helm chart app name")
+	flag.StringVar(&AppVersion, "appversion", AppVersion, "Set the chart appVersion")
 	flag.Parse()
 
 	p := compose.NewParser(ComposeFile)
@@ -39,6 +41,7 @@ func main() {
 	wait.Wait()
 
 	dirname := filepath.Join("chart", AppName)
+	os.RemoveAll(dirname)
 	templatesDir := filepath.Join(dirname, "templates")
 	os.MkdirAll(templatesDir, 0755)
 
@@ -56,7 +59,6 @@ func main() {
 	}
 
 	for name, ing := range generator.Ingresses {
-
 		fname := filepath.Join(templatesDir, name+".ingress.yaml")
 		fp, _ := os.Create(fname)
 		enc := yaml.NewEncoder(fp)
@@ -82,7 +84,12 @@ func main() {
 		"description": "A helm chart for " + AppName,
 		"type":        "application",
 		"version":     "0.1.0",
-		"appVersion":  "x",
+		"appVersion":  AppVersion,
 	})
 	fp.Close()
+
+	fp, _ = os.Create(filepath.Join(templatesDir, "NOTES.txt"))
+	fp.WriteString(helm.GenNotes(generator.Ingresses))
+	fp.Close()
+
 }

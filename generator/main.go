@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"helm-compose/compose"
 	"helm-compose/helm"
-	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -34,6 +34,7 @@ echo "Done"
 
 func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
+	Magenta("Generating deployment for ", name)
 	o := helm.NewDeployment()
 	ret = append(ret, o)
 	o.Metadata.Name = "{{ .Release.Name }}-" + name
@@ -45,14 +46,25 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		"image": s.Image,
 	}
 
+	exists := make(map[int]string)
 	for _, port := range s.Ports {
 		portNumber, _ := strconv.Atoi(port)
+		portName := name
+		for _, n := range exists {
+			if name == n {
+				portName = fmt.Sprintf("%s-%d", name, portNumber)
+			}
+		}
 		container.Ports = append(container.Ports, &helm.ContainerPort{
-			Name:          name,
+			Name:          portName,
 			ContainerPort: portNumber,
 		})
+		exists[portNumber] = name
 	}
 	for _, port := range s.Expose {
+		if _, exist := exists[port]; exist {
+			continue
+		}
 		container.Ports = append(container.Ports, &helm.ContainerPort{
 			Name:          name,
 			ContainerPort: port,
@@ -70,9 +82,10 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 	initContainers := make([]*helm.Container, 0)
 	for _, dp := range s.DependsOn {
 		if len(s.Ports) == 0 && len(s.Expose) == 0 {
-			log.Fatalf("Sorry, you need to expose or declare at least one port for the %s service to check \"depends_on\"", name)
+			Redf("No port exposed for %s that is in dependency", name)
+			os.Exit(1)
 		}
-		c := helm.NewContainer("check-"+name, "busybox", nil, s.Labels)
+		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
 		command := strings.ReplaceAll(strings.TrimSpace(DependScript), "__service__", dp)
 
 		wait.Add(1)
@@ -102,14 +115,19 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		ret = append(ret, ks)
 	}
 
+	Green("Done deployment ", name)
+
 	return
 }
 
 func createService(name string, s compose.Service) *helm.Service {
 
+	Magenta("Generating service for ", name)
 	ks := helm.NewService()
 	ks.Metadata.Name = "{{ .Release.Name }}-" + name
 	defaultPort := 0
+	names := make(map[int]int)
+
 	for i, p := range s.Ports {
 		port := strings.Split(p, ":")
 		src, _ := strconv.Atoi(port[0])
@@ -118,12 +136,16 @@ func createService(name string, s compose.Service) *helm.Service {
 			target, _ = strconv.Atoi(port[1])
 		}
 		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(src, target))
+		names[target] = 1
 		if i == 0 {
 			defaultPort = target
 			detected(name, target)
 		}
 	}
 	for i, p := range s.Expose {
+		if _, ok := names[p]; ok {
+			continue
+		}
 		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(p, p))
 		if i == 0 {
 			defaultPort = p
@@ -134,16 +156,17 @@ func createService(name string, s compose.Service) *helm.Service {
 	ks.Spec.Selector = buildSelector(name, s)
 
 	if v, ok := s.Labels[helm.K+"/expose-ingress"]; ok && v == "true" {
-		log.Println("Expose ingress for ", name)
 		createIngress(name, defaultPort, s)
 	}
 
+	Green("Done service ", name)
 	return ks
 }
 
 func createIngress(name string, port int, s compose.Service) {
 	ingress := helm.NewIngress(name)
 	Values[name]["ingress"] = map[string]interface{}{
+		"class":   "nginx",
 		"host":    "chart.example.tld",
 		"enabled": false,
 	}
@@ -166,6 +189,7 @@ func createIngress(name string, port int, s compose.Service) {
 			},
 		},
 	}
+	ingress.SetIngressClass(name)
 
 	locker.Lock()
 	Ingresses[name] = ingress
