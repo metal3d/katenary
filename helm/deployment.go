@@ -38,11 +38,12 @@ type ContainerPort struct {
 }
 
 type Container struct {
-	Name    string           `yaml:"name,omitempty"`
-	Image   string           `yaml:"image"`
-	Ports   []*ContainerPort `yaml:"ports,omitempty"`
-	Env     []Value          `yaml:"env,omitempty"`
-	Command []string         `yaml:"command,omitempty"`
+	Name         string           `yaml:"name,omitempty"`
+	Image        string           `yaml:"image"`
+	Ports        []*ContainerPort `yaml:"ports,omitempty"`
+	Env          []Value          `yaml:"env,omitempty"`
+	Command      []string         `yaml:"command,omitempty"`
+	VolumeMounts []interface{}    `yaml:"volumeMounts,omitempty"`
 }
 
 func NewContainer(name, image string, environment, labels map[string]string) *Container {
@@ -71,8 +72,9 @@ func NewContainer(name, image string, environment, labels map[string]string) *Co
 }
 
 type PodSpec struct {
-	InitContainers []*Container `yaml:"initContainers,omitempty"`
-	Containers     []*Container `yaml:"containers"`
+	InitContainers []*Container             `yaml:"initContainers,omitempty"`
+	Containers     []*Container             `yaml:"containers"`
+	Volumes        []map[string]interface{} `yaml:"volumes,omitempty"`
 }
 
 type PodTemplate struct {

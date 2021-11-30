@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"helm-compose/compose"
 	"helm-compose/generator"
@@ -53,9 +54,42 @@ func main() {
 			kind = strings.ToLower(kind)
 			fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 			fp, _ := os.Create(fname)
-			enc := yaml.NewEncoder(fp)
-			enc.SetIndent(2)
-			enc.Encode(c)
+			switch c := c.(type) {
+			case *helm.Storage:
+				volname := c.K8sBase.Metadata.Labels[helm.K+"/pvc-name"]
+				fp.WriteString("{{ if .Values." + n + ".persistence." + volname + ".enabled }}\n")
+				enc := yaml.NewEncoder(fp)
+				enc.SetIndent(2)
+				enc.Encode(c)
+				fp.WriteString("{{- end -}}")
+			case *helm.Deployment:
+				var buff []byte
+				buffer := bytes.NewBuffer(buff)
+				enc := yaml.NewEncoder(buffer)
+				enc.SetIndent(2)
+				enc.Encode(c)
+				_content := string(buffer.Bytes())
+				content := strings.Split(string(_content), "\n")
+				dataname := ""
+				component := c.Spec.Selector["matchLabels"].(map[string]string)[helm.K+"/component"]
+				for _, line := range content {
+					if strings.Contains(line, "name:") {
+						dataname = strings.Split(line, ":")[1]
+						dataname = strings.TrimSpace(dataname)
+					} else if strings.Contains(line, "persistentVolumeClaim") {
+						line = "          {{- if  .Values." + component + ".persistence." + dataname + ".enabled }}\n" + line
+					} else if strings.Contains(line, "claimName") {
+						line += "\n          {{ else }}"
+						line += "\n          emptyDir: {}"
+						line += "\n          {{- end }}"
+					}
+					fp.WriteString(line + "\n")
+				}
+			default:
+				enc := yaml.NewEncoder(fp)
+				enc.SetIndent(2)
+				enc.Encode(c)
+			}
 			fp.Close()
 		}
 	}
@@ -67,7 +101,7 @@ func main() {
 		enc.SetIndent(2)
 		fp.WriteString("{{- if .Values." + name + ".ingress.enabled -}}\n")
 		enc.Encode(ing)
-		fp.WriteString("\n{{- end -}}")
+		fp.WriteString("{{- end -}}")
 		fp.Close()
 	}
 

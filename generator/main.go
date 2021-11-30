@@ -22,6 +22,7 @@ var Ingresses = make(map[string]*helm.Ingress, 0)
 
 // Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
+var VolumeValues = make(map[string]map[string]map[string]interface{})
 
 var dependScript = `
 OK=0
@@ -74,6 +75,45 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 			ContainerPort: port,
 		})
 	}
+
+	volumes := make([]map[string]interface{}, 0)
+	mountPoints := make([]interface{}, 0)
+	for _, volume := range s.Volumes {
+		parts := strings.Split(volume, ":")
+		volname := parts[0]
+		volepath := parts[1]
+		if strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/") {
+			Redf("You cannot, at this time, have local volume in %s service", name)
+			os.Exit(1)
+		}
+
+		pvc := helm.NewPVC(name, volname)
+		ret = append(ret, pvc)
+		volumes = append(volumes, map[string]interface{}{
+			"name": volname,
+			"persistentVolumeClaim": map[string]string{
+				"claimName": "{{ .Release.Name }}-" + volname,
+			},
+		})
+		mountPoints = append(mountPoints, map[string]interface{}{
+			"name":      volname,
+			"mountPath": volepath,
+		})
+
+		Yellow("Generate volume values for ", volname)
+		locker.Lock()
+		if _, ok := VolumeValues[name]; !ok {
+			VolumeValues[name] = make(map[string]map[string]interface{})
+		}
+		VolumeValues[name][volname] = map[string]interface{}{
+			"enabled":  false,
+			"capacity": "1Gi",
+		}
+		locker.Unlock()
+	}
+	container.VolumeMounts = mountPoints
+
+	o.Spec.Template.Spec.Volumes = volumes
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
 
 	o.Spec.Selector = map[string]interface{}{
@@ -117,6 +157,10 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
 		ks := createService(name, s)
 		ret = append(ret, ks)
+	}
+
+	if len(VolumeValues[name]) > 0 {
+		Values[name]["persistence"] = VolumeValues[name]
 	}
 
 	Green("Done deployment ", name)
