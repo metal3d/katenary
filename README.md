@@ -41,6 +41,8 @@ Katenary will try to find a `docker-compose.yaml` file inside the current direct
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
+> To respect the ability to install the same application in the same namespace, Katenary will create "variable" names like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help katenary to build a correct helm chart.
+
 What can be interpreted by Katenary:
 
 - Services with "image" section (cannot work with "build" section)
@@ -48,8 +50,8 @@ What can be interpreted by Katenary:
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending service (using the first port)
 - some labels can help to bind values:
-    - `katernay.io/expose-ingress: true` will expose the first port or expose to an ingress
-    - `katernay.io/to-service: VARNAME` will convert the value to a variable `{{ .Release.Name }}-VARNAME` - it's usefull when you want to pass the name of a service as a variable (think about the service name for mysql to pass to a container that wants to connect to this)
+    - `katenary.io/expose-ingress: true` will expose the first port or expose to an ingress
+    - `katenary.io/to-service: VARNAME` will convert the value to a variable `{{ .Release.Name }}-VARNAME` - it's usefull when you want to pass the name of a service as a variable (think about the service name for mysql to pass to a container that wants to connect to this)
 
 Exemple of a possible `docker-compose.yaml` file:
 
@@ -69,7 +71,7 @@ services:
             - database
         labels:
             # explain to katenary that "DB_HOST" value is variable (using release name)
-            katernay.io/to-servie: DB_HOST
+            katenary.io/to-servie: DB_HOST
     database:
         image: mariabd:10
         environment:
@@ -79,3 +81,7 @@ services:
             - 3306
 ```
 
+# Labels
+
+- `katenary.io/to-service` binds the given variable name to {{ .Release.Name }}-value
+- `katenary.io/expose-ingress`: create an ingress and bind it to the service
