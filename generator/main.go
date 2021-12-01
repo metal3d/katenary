@@ -42,23 +42,42 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
+	secretsFiles := make([]string, 0)
+
+	if v, ok := s.Labels[helm.K+"/as-secret"]; ok {
+		secretsFiles = strings.Split(v, ",")
+	}
+
 	for _, envfile := range s.EnvFiles {
 		f := strings.ReplaceAll(envfile, "_", "-")
 		f = strings.ReplaceAll(f, ".env", "")
+		f = strings.ReplaceAll(f, ".", "-")
 		cf := f + "-" + name
-		Bluef("Generating configMap %s\n", cf)
-		configMap := helm.NewConfigMap(cf)
-		if err := configMap.AddEnvFile(envfile); err != nil {
+		isSecret := false
+		for _, s := range secretsFiles {
+			if s == envfile {
+				isSecret = true
+			}
+		}
+		var store helm.InlineConfig
+		if !isSecret {
+			Bluef("Generating configMap %s\n", cf)
+			store = helm.NewConfigMap(cf)
+		} else {
+			Bluef("Generating secret %s\n", cf)
+			store = helm.NewSecret(cf)
+		}
+		if err := store.AddEnvFile(envfile); err != nil {
 			Red(err.Error())
 			os.Exit(2)
 		}
 		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
 			"configMapRef": {
-				"name": configMap.Metadata.Name,
+				"name": store.Metadata().Name,
 			},
 		})
 
-		ret = append(ret, configMap)
+		ret = append(ret, store)
 		Greenf("Done configMap %s\n", cf)
 	}
 

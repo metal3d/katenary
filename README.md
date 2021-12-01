@@ -93,3 +93,4 @@ services:
 
 - `katenary.io/to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
 - `katenary.io/expose-ingress`: create an ingress and bind it to the service
+- `katenary.io/as-secret`: force the creation of a secret for the given coma separated list of "env_file"
