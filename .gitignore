@@ -2,4 +2,4 @@
 chart/*
 docker-compose.yaml
 katenary
-example.env
+*.env
