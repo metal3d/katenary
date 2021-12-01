@@ -18,7 +18,7 @@ func NewIngress(name string) *Ingress {
 
 func (i *Ingress) SetIngressClass(name string) {
 	class := "{{ .Values." + name + ".ingress.class }}"
-	i.Metadata.Annotations["kuberntes.io/ingress.class"] = class
+	i.Metadata.Annotations["kubernetes.io/ingress.class"] = class
 	i.Spec.IngressClassName = class
 }
 
