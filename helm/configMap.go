@@ -3,7 +3,6 @@ package helm
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"strings"
 )
 
@@ -35,7 +34,6 @@ func (c *ConfigMap) AddEnvFile(file string) error {
 			continue
 		}
 		parts := strings.SplitN(l, "=", 2)
-		log.Printf("%d %v\n", len(parts), parts)
 		if len(parts) < 2 {
 			return errors.New("The environment file " + file + " is not valid")
 		}
