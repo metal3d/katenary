@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"katenary/compose"
 	"katenary/helm"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -91,6 +92,11 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	exists := make(map[int]string)
 	for _, port := range s.Ports {
+		_p := strings.Split(port, ":")
+		port = _p[0]
+		if len(_p) > 1 {
+			port = _p[1]
+		}
 		portNumber, _ := strconv.Atoi(port)
 		portName := name
 		for _, n := range exists {
@@ -163,10 +169,10 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 	wait := &sync.WaitGroup{}
 	initContainers := make([]*helm.Container, 0)
 	for _, dp := range s.DependsOn {
-		if len(s.Ports) == 0 && len(s.Expose) == 0 {
-			Redf("No port exposed for %s that is in dependency", name)
-			os.Exit(1)
-		}
+		//if len(s.Ports) == 0 && len(s.Expose) == 0 {
+		//	Redf("No port exposed for %s that is in dependency", name)
+		//	os.Exit(1)
+		//}
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
 		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
 
@@ -209,10 +215,10 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 // Create a service (k8s).
 func createService(name string, s compose.Service) []interface{} {
 
+	ret := make([]interface{}, 0)
 	Magenta("Generating service for ", name)
 	ks := helm.NewService(name)
 	defaultPort := 0
-	names := make(map[int]int)
 
 	for i, p := range s.Ports {
 		port := strings.Split(p, ":")
@@ -220,35 +226,36 @@ func createService(name string, s compose.Service) []interface{} {
 		target := src
 		if len(port) > 1 {
 			target, _ = strconv.Atoi(port[1])
+			log.Println(target)
 		}
-		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(src, target))
-		names[target] = 1
+		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(target, target))
 		if i == 0 {
 			defaultPort = target
 			detected(name, target)
 		}
 	}
-	for i, p := range s.Expose {
-		if _, ok := names[p]; ok {
-			continue
-		}
-		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(p, p))
-		if i == 0 {
-			defaultPort = p
-			detected(name, p)
-		}
-	}
-
 	ks.Spec.Selector = buildSelector(name, s)
 
-	ret := make([]interface{}, 0)
 	ret = append(ret, ks)
 	if v, ok := s.Labels[helm.K+"/expose-ingress"]; ok && v == "true" {
+		Cyanf("Create an ingress for %d port on %s service\n", defaultPort, name)
 		ing := createIngress(name, defaultPort, s)
 		ret = append(ret, ing)
+		Green("Done ingress ", name)
+	}
+	Green("Done service ", name)
+
+	if len(s.Expose) > 0 {
+		Magenta("Generating service for ", name+"-external")
+		ks := helm.NewService(name + "-external")
+		ks.Spec.Type = "NodePort"
+		for _, p := range s.Expose {
+			ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(p, p))
+		}
+		ks.Spec.Selector = buildSelector(name, s)
+		ret = append(ret, ks)
 	}
 
-	Green("Done service ", name)
 	return ret
 }
 

@@ -85,11 +85,11 @@ func main() {
 		for _, c := range f {
 			kind := c.(helm.Kinded).Get()
 			kind = strings.ToLower(kind)
-			fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
-			fp, _ := os.Create(fname)
 			c.(helm.Signable).BuildSHA(ComposeFile)
 			switch c := c.(type) {
 			case *helm.Storage:
+				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
 				volname := c.K8sBase.Metadata.Labels[helm.K+"/pvc-name"]
 				fp.WriteString("{{ if .Values." + n + ".persistence." + volname + ".enabled }}\n")
 				enc := yaml.NewEncoder(fp)
@@ -97,6 +97,8 @@ func main() {
 				enc.Encode(c)
 				fp.WriteString("{{- end -}}")
 			case *helm.Deployment:
+				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
 				buffer := bytes.NewBuffer(nil)
 				enc := yaml.NewEncoder(buffer)
 				enc.SetIndent(2)
@@ -118,20 +120,37 @@ func main() {
 					}
 					fp.WriteString(line + "\n")
 				}
+				fp.Close()
+			case *helm.Service:
+				suffix := ""
+				if c.Spec.Type == "NodePort" {
+					suffix = "-external"
+				}
+				fname := filepath.Join(templatesDir, n+suffix+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
+				enc := yaml.NewEncoder(fp)
+				enc.Encode(c)
+				fp.Close()
+
 			case *helm.Ingress:
+				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
 				ingresses[n] = c // keep it to generate notes
 				enc := yaml.NewEncoder(fp)
 				enc.SetIndent(2)
 				fp.WriteString("{{- if .Values." + n + ".ingress.enabled -}}\n")
 				enc.Encode(c)
 				fp.WriteString("{{- end -}}")
+				fp.Close()
 
 			default:
+				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
 				enc := yaml.NewEncoder(fp)
 				enc.SetIndent(2)
 				enc.Encode(c)
+				fp.Close()
 			}
-			fp.Close()
 		}
 	}
 

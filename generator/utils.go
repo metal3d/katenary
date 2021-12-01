@@ -74,3 +74,6 @@ func Bluef(format string, args ...interface{}) {
 func Magentaf(format string, args ...interface{}) {
 	colorf(MAGENTA, format, args...)
 }
+func Cyanf(format string, args ...interface{}) {
+	colorf(CYAN, format, args...)
+}

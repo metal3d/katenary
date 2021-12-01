@@ -16,7 +16,7 @@ func NewPVC(name, storageName string) *Storage {
 	pvc.Spec = &PVCSpec{
 		Resouces: map[string]interface{}{
 			"requests": map[string]string{
-				"capacity": "{{ .Values." + name + ".persistence." + storageName + ".capacity }}",
+				"storage": "{{ .Values." + name + ".persistence." + storageName + ".capacity }}",
 			},
 		},
 		AccessModes: []string{"ReadWriteOnce"},

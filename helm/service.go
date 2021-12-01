@@ -34,6 +34,7 @@ func NewServicePort(port, target int) *ServicePort {
 type ServiceSpec struct {
 	Selector map[string]string
 	Ports    []*ServicePort
+	Type     string `yaml:"type,omitempty"`
 }
 
 func NewServiceSpec() *ServiceSpec {
