@@ -13,6 +13,7 @@ type ConfigMap struct {
 
 func NewConfigMap(name string) *ConfigMap {
 	base := NewBase()
+	base.ApiVersion = "v1"
 	base.Kind = "ConfigMap"
 	base.Metadata.Name = "{{ .Release.Name }}-" + name
 	return &ConfigMap{
