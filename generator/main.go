@@ -78,8 +78,11 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		})
 
 		ret = append(ret, store)
-		Greenf("Done configMap %s\n", cf)
-	}
+        if !isSecret{
+            Greenf("Done configMap %s\n", cf)
+        } else {
+            Greenf("Done secret %s\n", cf)
+        }
 
 	container.Image = "{{ .Values." + name + ".image }}"
 	Values[name] = map[string]interface{}{
