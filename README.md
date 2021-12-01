@@ -1,5 +1,7 @@
 Katenary is a tool to help transforming `docker-compose` files to a working Helm Chart for Kubernetes.
 
+> **Important Note** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
+
 
 # Install
 
