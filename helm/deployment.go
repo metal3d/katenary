@@ -38,19 +38,21 @@ type ContainerPort struct {
 }
 
 type Container struct {
-	Name         string           `yaml:"name,omitempty"`
-	Image        string           `yaml:"image"`
-	Ports        []*ContainerPort `yaml:"ports,omitempty"`
-	Env          []Value          `yaml:"env,omitempty"`
-	Command      []string         `yaml:"command,omitempty"`
-	VolumeMounts []interface{}    `yaml:"volumeMounts,omitempty"`
+	Name         string                         `yaml:"name,omitempty"`
+	Image        string                         `yaml:"image"`
+	Ports        []*ContainerPort               `yaml:"ports,omitempty"`
+	Env          []Value                        `yaml:"env,omitempty"`
+	EnvFrom      []map[string]map[string]string `yaml:"envFrom,omitempty"`
+	Command      []string                       `yaml:"command,omitempty"`
+	VolumeMounts []interface{}                  `yaml:"volumeMounts,omitempty"`
 }
 
 func NewContainer(name, image string, environment, labels map[string]string) *Container {
 	container := &Container{
-		Image: image,
-		Name:  name,
-		Env:   make([]Value, len(environment)),
+		Image:   image,
+		Name:    name,
+		Env:     make([]Value, len(environment)),
+		EnvFrom: make([]map[string]map[string]string, 0),
 	}
 
 	toServices := make([]string, 0)

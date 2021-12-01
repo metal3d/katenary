@@ -42,6 +42,21 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
+	for _, envfile := range s.EnvFiles {
+		configMap := helm.NewConfigMap(name)
+		if err := configMap.AddEnvFile(envfile); err != nil {
+			Red(err.Error())
+			os.Exit(2)
+		}
+		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
+			"configMapRef": {
+				"name": configMap.Metadata.Name,
+			},
+		})
+
+		ret = append(ret, configMap)
+	}
+
 	container.Image = "{{ .Values." + name + ".image }}"
 	Values[name] = map[string]interface{}{
 		"image": s.Image,

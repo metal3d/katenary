@@ -7,7 +7,7 @@ import (
 
 const K = "katenary.io"
 
-var Version = "1.0"
+var Version = "1.0" // should be set from main.Version
 
 type Kinded interface {
 	Get() string

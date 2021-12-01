@@ -24,4 +24,5 @@ type Service struct {
 	DependsOn   []string          `yaml:"depends_on"`
 	Volumes     []string          `yaml:"volumes"`
 	Expose      []int             `yaml:"expose"`
+	EnvFiles    []string          `yaml:"env_file"`
 }
