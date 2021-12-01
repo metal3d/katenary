@@ -1,4 +1,4 @@
-VERSION=0.1.1
+VERSION=0.1.1-alpha
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local/
 
@@ -25,9 +25,9 @@ build: katenary
 katenary: *.go generator/*.go compose/*.go helm/*.go
 	@echo Build using $(CTN)
 ifeq ($(CTN),podman)
-	@podman run --rm -v $(PWD):/go/src/katenary -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.AppVersion=$(VERSION)'" . 
+	@podman run --rm -v $(PWD):/go/src/katenary -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
 else
-	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang go build -o katenary  -ldflags="-X 'main.AppVersion=$(VERSION)'" . 
+	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
 endif
 
 

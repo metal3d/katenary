@@ -17,7 +17,8 @@ import (
 
 var ComposeFile = "docker-compose.yaml"
 var AppName = "MyApp"
-var AppVersion = "master"
+var AppVersion = "0.0.1"
+var Version = "master"
 
 func main() {
 
@@ -28,10 +29,11 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Println(AppVersion)
+		fmt.Println(Version)
 		os.Exit(0)
 	}
 
+	helm.Version = Version
 	p := compose.NewParser(ComposeFile)
 	p.Parse(AppName)
 	wait := sync.WaitGroup{}
