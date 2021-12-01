@@ -3,9 +3,10 @@ package main
 import (
 	"bytes"
 	"flag"
-	"helm-compose/compose"
-	"helm-compose/generator"
-	"helm-compose/helm"
+	"fmt"
+	"katenary/compose"
+	"katenary/generator"
+	"katenary/helm"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,14 +17,20 @@ import (
 
 var ComposeFile = "docker-compose.yaml"
 var AppName = "MyApp"
-var AppVersion = "0.0.1"
+var AppVersion = "master"
 
 func main() {
 
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", AppName, "Give the helm chart app name")
 	flag.StringVar(&AppVersion, "appversion", AppVersion, "Set the chart appVersion")
+	version := flag.Bool("version", false, "Show version and exist")
 	flag.Parse()
+
+	if *version {
+		fmt.Println(AppVersion)
+		os.Exit(0)
+	}
 
 	p := compose.NewParser(ComposeFile)
 	p.Parse(AppName)
@@ -33,8 +40,9 @@ func main() {
 
 	for name, s := range p.Data.Services {
 		wait.Add(1)
-		// it's mandatory to make the build in goroutines because some dependencies can
-		// wait for a port number. So the entire services are built in parallel.
+		// it's mandatory to build in goroutines because some dependencies can
+		// wait for a port number discovery.
+		// So the entire services are built in parallel.
 		go func(name string, s compose.Service) {
 			o := generator.CreateReplicaObject(name, s)
 			files[name] = o
@@ -47,6 +55,9 @@ func main() {
 	os.RemoveAll(dirname)
 	templatesDir := filepath.Join(dirname, "templates")
 	os.MkdirAll(templatesDir, 0755)
+
+	// to generate notes, we need to keep an Ingresses list
+	ingresses := make(map[string]*helm.Ingress)
 
 	for n, f := range files {
 		for _, c := range f {
@@ -84,6 +95,14 @@ func main() {
 					}
 					fp.WriteString(line + "\n")
 				}
+			case *helm.Ingress:
+				ingresses[n] = c // keep it to generate notes
+				enc := yaml.NewEncoder(fp)
+				enc.SetIndent(2)
+				fp.WriteString("{{- if .Values." + n + ".ingress.enabled -}}\n")
+				enc.Encode(c)
+				fp.WriteString("{{- end -}}")
+
 			default:
 				enc := yaml.NewEncoder(fp)
 				enc.SetIndent(2)
@@ -91,17 +110,6 @@ func main() {
 			}
 			fp.Close()
 		}
-	}
-
-	for name, ing := range generator.Ingresses {
-		fname := filepath.Join(templatesDir, name+".ingress.yaml")
-		fp, _ := os.Create(fname)
-		enc := yaml.NewEncoder(fp)
-		enc.SetIndent(2)
-		fp.WriteString("{{- if .Values." + name + ".ingress.enabled -}}\n")
-		enc.Encode(ing)
-		fp.WriteString("{{- end -}}")
-		fp.Close()
 	}
 
 	fp, _ := os.Create(filepath.Join(dirname, "values.yaml"))
@@ -124,7 +132,6 @@ func main() {
 	fp.Close()
 
 	fp, _ = os.Create(filepath.Join(templatesDir, "NOTES.txt"))
-	fp.WriteString(helm.GenNotes(generator.Ingresses))
+	fp.WriteString(helm.GenNotes(ingresses))
 	fp.Close()
-
 }

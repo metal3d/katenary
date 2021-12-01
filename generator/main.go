@@ -2,8 +2,8 @@ package generator
 
 import (
 	"fmt"
-	"helm-compose/compose"
-	"helm-compose/helm"
+	"katenary/compose"
+	"katenary/helm"
 	"os"
 	"strconv"
 	"strings"
@@ -15,10 +15,6 @@ import (
 var servicesMap = make(map[string]int)
 var serviceWaiters = make(map[string][]chan int)
 var locker = &sync.Mutex{}
-var serviceTick = make(chan int, 0)
-
-// Ingresses is kept in memory to create ingresses.
-var Ingresses = make(map[string]*helm.Ingress, 0)
 
 // Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
@@ -156,7 +152,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
 		ks := createService(name, s)
-		ret = append(ret, ks)
+		ret = append(ret, ks...)
 	}
 
 	if len(VolumeValues[name]) > 0 {
@@ -169,7 +165,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 }
 
 // Create a service (k8s).
-func createService(name string, s compose.Service) *helm.Service {
+func createService(name string, s compose.Service) []interface{} {
 
 	Magenta("Generating service for ", name)
 	ks := helm.NewService()
@@ -204,16 +200,19 @@ func createService(name string, s compose.Service) *helm.Service {
 
 	ks.Spec.Selector = buildSelector(name, s)
 
+	ret := make([]interface{}, 0)
+	ret = append(ret, ks)
 	if v, ok := s.Labels[helm.K+"/expose-ingress"]; ok && v == "true" {
-		createIngress(name, defaultPort, s)
+		ing := createIngress(name, defaultPort, s)
+		ret = append(ret, ing)
 	}
 
 	Green("Done service ", name)
-	return ks
+	return ret
 }
 
 // Create an ingress.
-func createIngress(name string, port int, s compose.Service) {
+func createIngress(name string, port int, s compose.Service) *helm.Ingress {
 	ingress := helm.NewIngress(name)
 	Values[name]["ingress"] = map[string]interface{}{
 		"class":   "nginx",
@@ -241,9 +240,7 @@ func createIngress(name string, port int, s compose.Service) {
 	}
 	ingress.SetIngressClass(name)
 
-	locker.Lock()
-	Ingresses[name] = ingress
-	locker.Unlock()
+	return ingress
 }
 
 // This function is called when a possible service is detected, it append the port in a map to make others to be able to get the service name. It also try to send the data to any "waiter" for this service.

@@ -1,4 +1,4 @@
-module helm-compose
+module katenary
 
 go 1.16
 
