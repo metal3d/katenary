@@ -83,5 +83,5 @@ services:
 
 # Labels
 
-- `katenary.io/to-service` binds the given variable name to {{ .Release.Name }}-value
+- `katenary.io/to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
 - `katenary.io/expose-ingress`: create an ingress and bind it to the service
