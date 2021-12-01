@@ -42,12 +42,12 @@ func main() {
 		response := ""
 		for response != "y" && response != "n" {
 			response = "n"
-			fmt.Printf("The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m, do you really want to continue ? [y/N]: ", dirname)
+			fmt.Printf("The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m!\nDo you really want to continue ? [y/N]: ", dirname)
 			fmt.Scanf("%s", &response)
 			response = strings.ToLower(response)
 		}
 		if response == "n" {
-			fmt.Println("Cancelled...")
+			fmt.Println("Cancelled")
 			os.Exit(0)
 		}
 	}
