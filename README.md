@@ -51,6 +51,7 @@ What can be interpreted by Katenary:
 - **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation to Helm Chart because there is (for now) no way to make it working (see below for resolution)
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending service (using the first port)
+- `env_file` list will create a configMap object per environemnt file (⚠ todo: the "to-service" label doesn't work with configMap for now)
 - some labels can help to bind values:
     - `katenary.io/expose-ingress: true` will expose the first port or expose to an ingress
     - `katenary.io/to-service: VARNAME` will convert the value to a variable `{{ .Release.Name }}-VARNAME` - it's usefull when you want to pass the name of a service as a variable (think about the service name for mysql to pass to a container that wants to connect to this)
@@ -76,6 +77,9 @@ services:
             katenary.io/to-servie: DB_HOST
     database:
         image: mariabd:10
+        env_file:
+            # this will create a configMap
+            - my_env.env
         environment:
             MARIADB_ROOT_PASSWORD: foobar
         expose:
