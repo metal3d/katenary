@@ -1,3 +1,4 @@
-.cache/*
+./.cache/*
+./chart/*
 ./docker-compose.yaml
 ./katenary
