@@ -16,7 +16,7 @@ func GenNotes(ingressess map[string]*Ingress) string {
 
 	for name, ing := range ingressess {
 		for _, r := range ing.Spec.Rules {
-			list = append(list, "{{ if .Values."+name+".ingress.enabled }}- "+name+" is accessible on : http://"+r.Host+"{{- end }}")
+			list = append(list, "{{ if .Values."+name+".ingress.enabled -}}\n- "+name+" is accessible on : http://"+r.Host+"\n{{- end }}")
 		}
 	}
 
