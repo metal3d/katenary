@@ -19,19 +19,42 @@ var ComposeFile = "docker-compose.yaml"
 var AppName = "MyApp"
 var AppVersion = "0.0.1"
 var Version = "master"
+var ChartsDir = "chart"
 
 func main() {
 
+	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
-	flag.StringVar(&AppName, "appname", AppName, "Give the helm chart app name")
-	flag.StringVar(&AppVersion, "appversion", AppVersion, "Set the chart appVersion")
-	version := flag.Bool("version", false, "Show version and exist")
+	flag.StringVar(&AppName, "appname", AppName, "sive the helm chart app name")
+	flag.StringVar(&AppVersion, "appversion", AppVersion, "set the chart appVersion")
+	version := flag.Bool("version", false, "Show version and exit")
+	force := flag.Bool("force", false, "force the removal of the chart-dir")
 	flag.Parse()
 
 	if *version {
 		fmt.Println(Version)
 		os.Exit(0)
 	}
+
+	dirname := filepath.Join(ChartsDir, AppName)
+
+	if _, err := os.Stat(dirname); err == nil && !*force {
+		response := ""
+		for response != "y" && response != "n" {
+			response = "n"
+			fmt.Printf("The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m, do you really want to continue ? [y/N]: ", dirname)
+			fmt.Scanf("%s", &response)
+			response = strings.ToLower(response)
+		}
+		if response == "n" {
+			fmt.Println("Cancelled...")
+			os.Exit(0)
+		}
+	}
+
+	os.RemoveAll(dirname)
+	templatesDir := filepath.Join(dirname, "templates")
+	os.MkdirAll(templatesDir, 0755)
 
 	helm.Version = Version
 	p := compose.NewParser(ComposeFile)
@@ -52,11 +75,6 @@ func main() {
 		}(name, s)
 	}
 	wait.Wait()
-
-	dirname := filepath.Join("chart", AppName)
-	os.RemoveAll(dirname)
-	templatesDir := filepath.Join(dirname, "templates")
-	os.MkdirAll(templatesDir, 0755)
 
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)

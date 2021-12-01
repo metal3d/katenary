@@ -26,18 +26,20 @@ sudo make install PREFIX=/usr/local
 ```bash
 Usage of katenary:
   -appname string
-    	Give the helm chart app name (default "MyApp")
+    	sive the helm chart app name (default "MyApp")
   -appversion string
-    	Set the chart appVersion (default "0.1.1")
+    	set the chart appVersion (default "0.0.1")
+  -chart-dir string
+    	set the chart directory (default "chart")
   -compose string
     	set the compose file to parse (default "docker-compose.yaml")
+  -force
+    	force the removal of the chart-dir
   -version
-    	Show version and exist
+    	Show version and exit
 ```
 
-Katenary will try to find a `docker-compose.yaml` file inside the current directory. It will then **delete** the `chart` directory to create a new Helm Chart.
-
-> It's important that you keep in mind that katenary will not alert you (for now) that it will remove the `chart` directory !
+Katenary will try to find a `docker-compose.yaml` file inside the current directory. It will check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask you if you want to delete it before recreating.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
