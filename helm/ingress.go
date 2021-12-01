@@ -11,6 +11,7 @@ func NewIngress(name string) *Ingress {
 	i.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + name
 	i.K8sBase.Kind = "Ingress"
 	i.ApiVersion = "networking.k8s.io/v1"
+	i.K8sBase.Metadata.Labels[K+"/component"] = name
 
 	return i
 }

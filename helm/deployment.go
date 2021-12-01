@@ -8,10 +8,12 @@ type Deployment struct {
 	Spec     *DepSpec `yaml:"spec"`
 }
 
-func NewDeployment() *Deployment {
+func NewDeployment(name string) *Deployment {
 	d := &Deployment{K8sBase: NewBase(), Spec: NewDepSpec()}
+	d.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + name
 	d.K8sBase.ApiVersion = "apps/v1"
 	d.K8sBase.Kind = "Deployment"
+	d.K8sBase.Metadata.Labels[K+"/component"] = name
 	return d
 }
 

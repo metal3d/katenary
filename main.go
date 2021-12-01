@@ -36,6 +36,8 @@ func main() {
 		os.Exit(0)
 	}
 
+	// make the appname global (yes...)
+	helm.Appname = AppName
 	dirname := filepath.Join(ChartsDir, AppName)
 
 	if _, err := os.Stat(dirname); err == nil && !*force {
@@ -85,6 +87,7 @@ func main() {
 			kind = strings.ToLower(kind)
 			fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 			fp, _ := os.Create(fname)
+			c.(helm.Signable).BuildSHA(ComposeFile)
 			switch c := c.(type) {
 			case *helm.Storage:
 				volname := c.K8sBase.Metadata.Labels[helm.K+"/pvc-name"]

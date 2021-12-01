@@ -5,13 +5,15 @@ type Service struct {
 	Spec     *ServiceSpec `yaml:"spec"`
 }
 
-func NewService() *Service {
+func NewService(name string) *Service {
 	s := &Service{
 		K8sBase: NewBase(),
 		Spec:    NewServiceSpec(),
 	}
+	s.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + name
 	s.K8sBase.Kind = "Service"
 	s.K8sBase.ApiVersion = "v1"
+	s.K8sBase.Metadata.Labels[K+"/component"] = name
 	return s
 }
 

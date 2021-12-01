@@ -1,16 +1,25 @@
 package helm
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
 
 const K = "katenary.io"
 
+var Appname = ""
+
 var Version = "1.0" // should be set from main.Version
 
 type Kinded interface {
 	Get() string
+}
+
+type Signable interface {
+	BuildSHA(filename string)
 }
 
 type Metadata struct {
@@ -44,11 +53,20 @@ func NewBase() *K8sBase {
 	return b
 }
 
+func (k *K8sBase) BuildSHA(filename string) {
+	c, _ := ioutil.ReadFile(filename)
+	sum := sha256.Sum256(c)
+	k.Metadata.Annotations[K+"/docker-compose-sha256"] = fmt.Sprintf("%x", string(sum[:]))
+}
+
 func (k K8sBase) Get() string {
 	return k.Kind
 }
 
 func getProjectName() string {
+	if len(Appname) > 0 {
+		return Appname
+	}
 	p, _ := os.Getwd()
 	path := strings.Split(p, string(os.PathSeparator))
 	return path[len(path)-1]

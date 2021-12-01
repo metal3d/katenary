@@ -36,9 +36,8 @@ echo "Done"
 func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 
 	Magenta("Generating deployment for ", name)
-	o := helm.NewDeployment()
+	o := helm.NewDeployment(name)
 	ret = append(ret, o)
-	o.Metadata.Name = "{{ .Release.Name }}-" + name
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
@@ -211,8 +210,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 func createService(name string, s compose.Service) []interface{} {
 
 	Magenta("Generating service for ", name)
-	ks := helm.NewService()
-	ks.Metadata.Name = "{{ .Release.Name }}-" + name
+	ks := helm.NewService(name)
 	defaultPort := 0
 	names := make(map[int]int)
 
