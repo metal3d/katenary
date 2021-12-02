@@ -404,7 +404,7 @@ func detected(name string, port int) {
 		for _, c := range cx {
 			if v, ok := servicesMap[name]; ok {
 				c <- v
-				close(c)
+				//close(c)
 			}
 		}
 	}()
@@ -426,7 +426,7 @@ func waitPort(name string) chan int {
 	go func() {
 		if v, ok := servicesMap[name]; ok {
 			c <- v
-			close(c)
+			//close(c)
 		}
 	}()
 	locker.Unlock()
