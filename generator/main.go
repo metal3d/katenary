@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"errors"
 )
@@ -16,6 +17,15 @@ import (
 var servicesMap = make(map[string]int)
 var serviceWaiters = make(map[string][]chan int)
 var locker = &sync.Mutex{}
+
+const (
+	ICON_PACKAGE = "📦"
+	ICON_SERVICE = "🔌"
+	ICON_SECRET  = "🔏"
+	ICON_CONF    = "📝"
+	ICON_STORE   = "⚡"
+	ICON_INGRESS = "🌐"
+)
 
 // Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
@@ -34,20 +44,43 @@ echo "Done"
 `
 
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
-func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
+func CreateReplicaObject(name string, s compose.Service) chan interface{} {
 
-	Magenta("Generating deployment for ", name)
+	// fetch label to specific exposed port, and add them in "ports" section
+	if portlabel, ok := s.Labels[helm.K+"/service-ports"]; ok {
+		services := strings.Split(portlabel, ",")
+		for _, serviceport := range services {
+			portexists := false
+			for _, found := range s.Ports {
+				if found == serviceport {
+					portexists = true
+				}
+			}
+			if !portexists {
+				s.Ports = append(s.Ports, serviceport)
+			}
+		}
+	}
+
+	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+1)
+	go parseService(name, s, ret)
+	return ret
+}
+
+// This function will try to yied deployment and services based on a service from the compose file structure.
+func parseService(name string, s compose.Service, ret chan interface{}) {
+	Magenta(ICON_PACKAGE+" Generating deployment for ", name)
+
 	o := helm.NewDeployment(name)
-	ret = append(ret, o)
-
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
+	// prepare secrets
 	secretsFiles := make([]string, 0)
-
 	if v, ok := s.Labels[helm.K+"/as-secret"]; ok {
 		secretsFiles = strings.Split(v, ",")
 	}
 
+	// manage environment files (env_file in compose)
 	for _, envfile := range s.EnvFiles {
 		f := strings.ReplaceAll(envfile, "_", "-")
 		f = strings.ReplaceAll(f, ".env", "")
@@ -61,10 +94,10 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		}
 		var store helm.InlineConfig
 		if !isSecret {
-			Bluef("Generating configMap %s\n", cf)
+			Bluef(ICON_CONF+" Generating configMap %s\n", cf)
 			store = helm.NewConfigMap(cf)
 		} else {
-			Bluef("Generating secret %s\n", cf)
+			Bluef(ICON_SECRET+" Generating secret %s\n", cf)
 			store = helm.NewSecret(cf)
 		}
 		if err := store.AddEnvFile(envfile); err != nil {
@@ -77,19 +110,16 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 			},
 		})
 
-		ret = append(ret, store)
-		if isSecret {
-			Greenf("Done secret %s\n", cf)
-		} else {
-			Greenf("Done configMap %s\n", cf)
-		}
+		ret <- store
 	}
 
+	// check the image, and make it "variable" in values.yaml
 	container.Image = "{{ .Values." + name + ".image }}"
 	Values[name] = map[string]interface{}{
 		"image": s.Image,
 	}
 
+	// manage ports
 	exists := make(map[int]string)
 	for _, port := range s.Ports {
 		_p := strings.Split(port, ":")
@@ -110,6 +140,8 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		})
 		exists[portNumber] = name
 	}
+
+	// manage the "expose" section to be a NodePort in Kubernetes
 	for _, port := range s.Expose {
 		if _, exist := exists[port]; exist {
 			continue
@@ -120,6 +152,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		})
 	}
 
+	// Prepare volumes
 	volumes := make([]map[string]interface{}, 0)
 	mountPoints := make([]interface{}, 0)
 	for _, volume := range s.Volumes {
@@ -127,12 +160,14 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 		volname := parts[0]
 		volepath := parts[1]
 		if strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/") {
+			// local volume cannt be mounted
+			// TODO: propose a way to make configMap for some files or directory
 			Redf("You cannot, at this time, have local volume in %s service", name)
-			os.Exit(1)
+			continue
+			//os.Exit(1)
 		}
 
 		pvc := helm.NewPVC(name, volname)
-		ret = append(ret, pvc)
 		volumes = append(volumes, map[string]interface{}{
 			"name": volname,
 			"persistentVolumeClaim": map[string]string{
@@ -144,7 +179,7 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 			"mountPath": volepath,
 		})
 
-		Yellow("Generate volume values for ", volname)
+		Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
 		locker.Lock()
 		if _, ok := VolumeValues[name]; !ok {
 			VolumeValues[name] = make(map[string]map[string]interface{})
@@ -154,71 +189,101 @@ func CreateReplicaObject(name string, s compose.Service) (ret []interface{}) {
 			"capacity": "1Gi",
 		}
 		locker.Unlock()
+		ret <- pvc
 	}
 	container.VolumeMounts = mountPoints
 
 	o.Spec.Template.Spec.Volumes = volumes
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
 
+	// Add some labels
 	o.Spec.Selector = map[string]interface{}{
 		"matchLabels": buildSelector(name, s),
 	}
-
 	o.Spec.Template.Metadata.Labels = buildSelector(name, s)
 
-	wait := &sync.WaitGroup{}
+	// Now, for "depends_on" section, it's a bit tricky...
+	// We need to detect "others" services, but we probably not have parsed them yet, so
+	// we will wait for them for a while.
 	initContainers := make([]*helm.Container, 0)
 	for _, dp := range s.DependsOn {
-		//if len(s.Ports) == 0 && len(s.Expose) == 0 {
-		//	Redf("No port exposed for %s that is in dependency", name)
-		//	os.Exit(1)
-		//}
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
 		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
 
-		wait.Add(1)
-		go func(dp string) {
-			defer wait.Done()
-			p := -1
-			if defaultPort, err := getPort(dp); err != nil {
-				p = <-waitPort(dp)
-			} else {
-				p = defaultPort
+		foundPort := -1
+		if defaultPort, err := getPort(dp); err != nil {
+			// BUG: Sometimes the chan remains opened
+			foundPort := <-waitPort(dp)
+			if foundPort == -1 {
+				log.Fatalf(
+					"ERROR, the %s service is waiting for %s port number, "+
+						"but it is never discovered. You must declare at least one port in "+
+						"the \"ports\" section of the service in the docker-compose file",
+					name,
+					dp,
+				)
 			}
-			command = strings.ReplaceAll(command, "__port__", strconv.Itoa(p))
+		} else {
+			foundPort = defaultPort
+		}
+		command = strings.ReplaceAll(command, "__port__", strconv.Itoa(foundPort))
 
-			c.Command = []string{
-				"sh",
-				"-c",
-				command,
-			}
-			initContainers = append(initContainers, c)
-		}(dp)
+		c.Command = []string{
+			"sh",
+			"-c",
+			command,
+		}
+		initContainers = append(initContainers, c)
 	}
-	wait.Wait()
 	o.Spec.Template.Spec.InitContainers = initContainers
 
+	// Then, create services for "ports" and "expose" section
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
-		ks := createService(name, s)
-		ret = append(ret, ks...)
+		for _, s := range createService(name, s) {
+			ret <- s
+		}
 	}
 
+	// Special case, it there is no "ports", so there is no associated services...
+	// But... some other deployment can wait for it, so we alert that this deployment hasn't got any
+	// associated service.
+	if len(s.Ports) == 0 {
+		locker.Lock()
+		// alert any current or **futur** waiters that this service is not exposed
+		go func() {
+			for {
+				select {
+				case <-time.Tick(1 * time.Millisecond):
+					for _, c := range serviceWaiters[name] {
+						c <- -1
+						close(c)
+					}
+				}
+			}
+		}()
+		locker.Unlock()
+	}
+
+	// add the volumes in Values
 	if len(VolumeValues[name]) > 0 {
+		locker.Lock()
 		Values[name]["persistence"] = VolumeValues[name]
+		locker.Unlock()
 	}
 
-	Green("Done deployment ", name)
+	// the deployment is ready, give it
+	ret <- o
 
-	return
+	// and then, we can say that it's the end
+	ret <- nil
 }
 
 // Create a service (k8s).
 func createService(name string, s compose.Service) []interface{} {
 
 	ret := make([]interface{}, 0)
-	Magenta("Generating service for ", name)
+	Magenta(ICON_SERVICE+" Generating service for ", name)
 	ks := helm.NewService(name)
-	defaultPort := 0
 
 	for i, p := range s.Ports {
 		port := strings.Split(p, ":")
@@ -226,27 +291,27 @@ func createService(name string, s compose.Service) []interface{} {
 		target := src
 		if len(port) > 1 {
 			target, _ = strconv.Atoi(port[1])
-			log.Println(target)
 		}
 		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(target, target))
 		if i == 0 {
-			defaultPort = target
 			detected(name, target)
 		}
 	}
 	ks.Spec.Selector = buildSelector(name, s)
 
 	ret = append(ret, ks)
-	if v, ok := s.Labels[helm.K+"/expose-ingress"]; ok && v == "true" {
-		Cyanf("Create an ingress for %d port on %s service\n", defaultPort, name)
-		ing := createIngress(name, defaultPort, s)
+	if v, ok := s.Labels[helm.K+"/ingress"]; ok {
+		port, err := strconv.Atoi(v)
+		if err != nil {
+			log.Fatalf("The given port \"%v\" as ingress port in %s service is not an integer\n", v, name)
+		}
+		Cyanf(ICON_INGRESS+" Create an ingress for port %d on %s service\n", port, name)
+		ing := createIngress(name, port, s)
 		ret = append(ret, ing)
-		Green("Done ingress ", name)
 	}
-	Green("Done service ", name)
 
 	if len(s.Expose) > 0 {
-		Magenta("Generating service for ", name+"-external")
+		Magenta(ICON_SERVICE+" Generating service for ", name+"-external")
 		ks := helm.NewService(name + "-external")
 		ks.Spec.Type = "NodePort"
 		for _, p := range s.Expose {
@@ -264,7 +329,7 @@ func createIngress(name string, port int, s compose.Service) *helm.Ingress {
 	ingress := helm.NewIngress(name)
 	Values[name]["ingress"] = map[string]interface{}{
 		"class":   "nginx",
-		"host":    "chart.example.tld",
+		"host":    name + "." + helm.Appname + ".tld",
 		"enabled": false,
 	}
 	ingress.Spec.Rules = []helm.IngressRule{
@@ -291,7 +356,8 @@ func createIngress(name string, port int, s compose.Service) *helm.Ingress {
 	return ingress
 }
 
-// This function is called when a possible service is detected, it append the port in a map to make others to be able to get the service name. It also try to send the data to any "waiter" for this service.
+// This function is called when a possible service is detected, it append the port in a map to make others
+// to be able to get the service name. It also try to send the data to any "waiter" for this service.
 func detected(name string, port int) {
 	locker.Lock()
 	servicesMap[name] = port
@@ -300,6 +366,7 @@ func detected(name string, port int) {
 		for _, c := range cx {
 			if v, ok := servicesMap[name]; ok {
 				c <- v
+				close(c)
 			}
 		}
 	}()
@@ -321,6 +388,7 @@ func waitPort(name string) chan int {
 	go func() {
 		if v, ok := servicesMap[name]; ok {
 			c <- v
+			close(c)
 		}
 	}()
 	locker.Unlock()

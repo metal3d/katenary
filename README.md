@@ -54,8 +54,8 @@ What can be interpreted by Katenary:
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending service (using the first port)
 - `env_file` list will create a configMap object per environemnt file (⚠ todo: the "to-service" label doesn't work with configMap for now)
-- some labels can help to bind values:
-    - `katenary.io/expose-ingress: true` will expose the first port or expose to an ingress
+- some labels can help to bind values, for example:
+    - `katenary.io/ingress: 80` will expose the port 80 in a ingress
     - `katenary.io/to-service: VARNAME` will convert the value to a variable `{{ .Release.Name }}-VARNAME` - it's usefull when you want to pass the name of a service as a variable (think about the service name for mysql to pass to a container that wants to connect to this)
 
 Exemple of a possible `docker-compose.yaml` file:
@@ -77,6 +77,8 @@ services:
         labels:
             # explain to katenary that "DB_HOST" value is variable (using release name)
             katenary.io/to-servie: DB_HOST
+            # expose the port 80 as an ingress
+            katenary.io/ingress: 80
     database:
         image: mariabd:10
         env_file:
@@ -92,5 +94,6 @@ services:
 # Labels
 
 - `katenary.io/to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
-- `katenary.io/expose-ingress`: create an ingress and bind it to the service
+- `katenary.io/ingress`: create an ingress and bind it to the given port
 - `katenary.io/as-secret`: force the creation of a secret for the given coma separated list of "env_file"
+- `katenary.io/service-ports` is a coma separated list of ports if you want to avoid the "ports" section in your docker-compose for any reason

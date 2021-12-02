@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +21,6 @@ var Version = "master"
 var ChartsDir = "chart"
 
 func main() {
-
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", AppName, "sive the helm chart app name")
@@ -61,28 +59,31 @@ func main() {
 	helm.Version = Version
 	p := compose.NewParser(ComposeFile)
 	p.Parse(AppName)
-	wait := sync.WaitGroup{}
 
-	files := make(map[string][]interface{})
+	files := make(map[string]chan interface{})
 
+	//wait := sync.WaitGroup{}
 	for name, s := range p.Data.Services {
-		wait.Add(1)
+		//wait.Add(1)
 		// it's mandatory to build in goroutines because some dependencies can
 		// wait for a port number discovery.
 		// So the entire services are built in parallel.
-		go func(name string, s compose.Service) {
-			o := generator.CreateReplicaObject(name, s)
-			files[name] = o
-			wait.Done()
-		}(name, s)
+		//go func(name string, s compose.Service) {
+		//	defer wait.Done()
+		o := generator.CreateReplicaObject(name, s)
+		files[name] = o
+		//}(name, s)
 	}
-	wait.Wait()
+	//wait.Wait()
 
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)
 
 	for n, f := range files {
-		for _, c := range f {
+		for c := range f {
+			if c == nil {
+				break
+			}
 			kind := c.(helm.Kinded).Get()
 			kind = strings.ToLower(kind)
 			c.(helm.Signable).BuildSHA(ComposeFile)
@@ -121,6 +122,7 @@ func main() {
 					fp.WriteString(line + "\n")
 				}
 				fp.Close()
+
 			case *helm.Service:
 				suffix := ""
 				if c.Spec.Type == "NodePort" {
@@ -129,18 +131,36 @@ func main() {
 				fname := filepath.Join(templatesDir, n+suffix+"."+kind+".yaml")
 				fp, _ := os.Create(fname)
 				enc := yaml.NewEncoder(fp)
+				enc.SetIndent(2)
 				enc.Encode(c)
 				fp.Close()
 
 			case *helm.Ingress:
+				buffer := bytes.NewBuffer(nil)
 				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
-				fp, _ := os.Create(fname)
 				ingresses[n] = c // keep it to generate notes
-				enc := yaml.NewEncoder(fp)
+				enc := yaml.NewEncoder(buffer)
 				enc.SetIndent(2)
-				fp.WriteString("{{- if .Values." + n + ".ingress.enabled -}}\n")
+				buffer.WriteString("{{- if .Values." + n + ".ingress.enabled -}}\n")
 				enc.Encode(c)
-				fp.WriteString("{{- end -}}")
+				buffer.WriteString("{{- end -}}")
+
+				fp, _ := os.Create(fname)
+				content := string(buffer.Bytes())
+				lines := strings.Split(content, "\n")
+				for _, l := range lines {
+					if strings.Contains(l, "ingressClassName") {
+						p := strings.Split(l, ":")
+						condition := p[1]
+						condition = strings.ReplaceAll(condition, "'", "")
+						condition = strings.ReplaceAll(condition, "{{", "")
+						condition = strings.ReplaceAll(condition, "}}", "")
+						condition = strings.TrimSpace(condition)
+						condition = "{{- if " + condition + " }}"
+						l = "  " + condition + "\n" + l + "\n  {{- end }}"
+					}
+					fp.WriteString(l + "\n")
+				}
 				fp.Close()
 
 			default:
