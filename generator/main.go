@@ -2,10 +2,12 @@ package generator
 
 import (
 	"fmt"
+	"io/ioutil"
 	"katenary/compose"
 	"katenary/helm"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -155,41 +157,72 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 	// Prepare volumes
 	volumes := make([]map[string]interface{}, 0)
 	mountPoints := make([]interface{}, 0)
+	configMapsVolumes := make([]string, 0)
+	if v, ok := s.Labels[helm.LABEL_VOL_CM]; ok {
+		configMapsVolumes = strings.Split(v, ",")
+	}
 	for _, volume := range s.Volumes {
 		parts := strings.Split(volume, ":")
 		volname := parts[0]
 		volepath := parts[1]
-		if strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/") {
+
+		isCM := false
+		for _, cmVol := range configMapsVolumes {
+			cmVol = strings.TrimSpace(cmVol)
+			if volname == cmVol {
+				isCM = true
+				break
+			}
+		}
+
+		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
 			// local volume cannt be mounted
-			// TODO: propose a way to make configMap for some files or directory
 			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
 			continue
-			//os.Exit(1)
 		}
+		if isCM {
+			cm := buildCMFromPath(volname)
+			volname = strings.Replace(volname, "./", "", 1)
+			volname = strings.ReplaceAll(volname, ".", "-")
+			cm.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + volname
+			// build a configmap from the volume path
+			volumes = append(volumes, map[string]interface{}{
+				"name": volname,
+				"configMap": map[string]string{
+					"name": cm.K8sBase.Metadata.Name,
+				},
+			})
+			mountPoints = append(mountPoints, map[string]interface{}{
+				"name":      volname,
+				"mountPath": volepath,
+			})
+			ret <- cm
+		} else {
 
-		pvc := helm.NewPVC(name, volname)
-		volumes = append(volumes, map[string]interface{}{
-			"name": volname,
-			"persistentVolumeClaim": map[string]string{
-				"claimName": "{{ .Release.Name }}-" + volname,
-			},
-		})
-		mountPoints = append(mountPoints, map[string]interface{}{
-			"name":      volname,
-			"mountPath": volepath,
-		})
+			pvc := helm.NewPVC(name, volname)
+			volumes = append(volumes, map[string]interface{}{
+				"name": volname,
+				"persistentVolumeClaim": map[string]string{
+					"claimName": "{{ .Release.Name }}-" + volname,
+				},
+			})
+			mountPoints = append(mountPoints, map[string]interface{}{
+				"name":      volname,
+				"mountPath": volepath,
+			})
 
-		Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
-		locker.Lock()
-		if _, ok := VolumeValues[name]; !ok {
-			VolumeValues[name] = make(map[string]map[string]interface{})
+			Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
+			locker.Lock()
+			if _, ok := VolumeValues[name]; !ok {
+				VolumeValues[name] = make(map[string]map[string]interface{})
+			}
+			VolumeValues[name][volname] = map[string]interface{}{
+				"enabled":  false,
+				"capacity": "1Gi",
+			}
+			locker.Unlock()
+			ret <- pvc
 		}
-		VolumeValues[name][volname] = map[string]interface{}{
-			"enabled":  false,
-			"capacity": "1Gi",
-		}
-		locker.Unlock()
-		ret <- pvc
 	}
 	container.VolumeMounts = mountPoints
 
@@ -400,4 +433,34 @@ func buildSelector(name string, s compose.Service) map[string]string {
 		"katenary.io/component": name,
 		"katenary.io/release":   "{{ .Release.Name }}",
 	}
+}
+
+func buildCMFromPath(path string) *helm.ConfigMap {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil
+	}
+
+	files := make(map[string]string, 0)
+	if stat.IsDir() {
+		found, _ := filepath.Glob(path + "/*")
+		for _, f := range found {
+			if s, err := os.Stat(f); err != nil || s.IsDir() {
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "An error occured reading volume path %s\n", err.Error())
+				} else {
+					fmt.Printf("Warning, %s is a directory, at this time we only "+
+						"can create configmap for first level file list\n", f)
+				}
+				continue
+			}
+			_, filename := filepath.Split(f)
+			c, _ := ioutil.ReadFile(f)
+			files[filename] = string(c)
+		}
+	}
+
+	cm := helm.NewConfigMap("")
+	cm.Data = files
+	return cm
 }
