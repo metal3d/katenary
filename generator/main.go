@@ -103,7 +103,9 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 			store = helm.NewSecret(cf)
 		}
 		if err := store.AddEnvFile(envfile); err != nil {
+			ActivateColors = true
 			Red(err.Error())
+			ActivateColors = false
 			os.Exit(2)
 		}
 		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
@@ -177,14 +179,17 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 
 		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
 			// local volume cannt be mounted
+			ActivateColors = true
 			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
+			ActivateColors = false
 			continue
 		}
 		if isCM {
+			// the volume is a path and it's explicitally asked to be a configmap in labels
 			cm := buildCMFromPath(volname)
 			volname = strings.Replace(volname, "./", "", 1)
 			volname = strings.ReplaceAll(volname, ".", "-")
-			cm.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + volname
+			cm.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + volname + "-" + name
 			// build a configmap from the volume path
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
@@ -449,8 +454,10 @@ func buildCMFromPath(path string) *helm.ConfigMap {
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "An error occured reading volume path %s\n", err.Error())
 				} else {
-					fmt.Printf("Warning, %s is a directory, at this time we only "+
+					ActivateColors = true
+					Yellowf("Warning, %s is a directory, at this time we only "+
 						"can create configmap for first level file list\n", f)
+					ActivateColors = false
 				}
 				continue
 			}

@@ -9,6 +9,7 @@ import (
 	"katenary/helm"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -19,6 +20,8 @@ var AppName = "MyApp"
 var AppVersion = "0.0.1"
 var Version = "master"
 var ChartsDir = "chart"
+
+var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
 
 func main() {
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
@@ -161,6 +164,17 @@ func main() {
 					}
 					fp.WriteString(l + "\n")
 				}
+				fp.Close()
+
+			case *helm.ConfigMap, *helm.Secret:
+				// there could be several files, so let's force the filename
+				name := c.(helm.Named).Name()
+				name = PrefixRE.ReplaceAllString(name, "")
+				fname := filepath.Join(templatesDir, n+"."+name+"."+kind+".yaml")
+				fp, _ := os.Create(fname)
+				enc := yaml.NewEncoder(fp)
+				enc.SetIndent(2)
+				enc.Encode(c)
 				fp.Close()
 
 			default:

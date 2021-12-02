@@ -8,6 +8,8 @@ import (
 
 type Color int
 
+var ActivateColors = false
+
 const (
 	GREY Color = 30 + iota
 	RED
@@ -21,6 +23,10 @@ const (
 var waiter = sync.Mutex{}
 
 func color(c Color, args ...interface{}) {
+	if !ActivateColors {
+		fmt.Println(args...)
+		return
+	}
 	waiter.Lock()
 	fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
 	fmt.Fprint(os.Stdout, args...)
@@ -29,6 +35,10 @@ func color(c Color, args ...interface{}) {
 }
 
 func colorf(c Color, format string, args ...interface{}) {
+	if !ActivateColors {
+		fmt.Printf(format, args...)
+		return
+	}
 	waiter.Lock()
 	fmt.Fprintf(os.Stdout, "\x1b[%dm", c)
 	fmt.Fprintf(os.Stdout, format, args...)

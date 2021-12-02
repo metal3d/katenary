@@ -29,6 +29,10 @@ type Signable interface {
 	BuildSHA(filename string)
 }
 
+type Named interface {
+	Name() string
+}
+
 type Metadata struct {
 	Name        string            `yaml:"name,omitempty"`
 	Labels      map[string]string `yaml:"labels"`
@@ -66,8 +70,12 @@ func (k *K8sBase) BuildSHA(filename string) {
 	k.Metadata.Annotations[K+"/docker-compose-sha256"] = fmt.Sprintf("%x", string(sum[:]))
 }
 
-func (k K8sBase) Get() string {
+func (k *K8sBase) Get() string {
 	return k.Kind
+}
+
+func (k *K8sBase) Name() string {
+	return k.Metadata.Name
 }
 
 func GetProjectName() string {
