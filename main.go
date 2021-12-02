@@ -23,7 +23,7 @@ var ChartsDir = "chart"
 func main() {
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
-	flag.StringVar(&AppName, "appname", AppName, "sive the helm chart app name")
+	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
 	flag.StringVar(&AppVersion, "appversion", AppVersion, "set the chart appVersion")
 	version := flag.Bool("version", false, "Show version and exit")
 	force := flag.Bool("force", false, "force the removal of the chart-dir")

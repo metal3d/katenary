@@ -54,7 +54,7 @@ func NewBase() *K8sBase {
 	b := &K8sBase{
 		Metadata: NewMetadata(),
 	}
-	b.Metadata.Labels[K+"/project"] = getProjectName()
+	b.Metadata.Labels[K+"/project"] = GetProjectName()
 	b.Metadata.Labels[K+"/release"] = "{{ .Release.Name }}"
 	b.Metadata.Annotations[K+"/version"] = Version
 	return b
@@ -70,7 +70,7 @@ func (k K8sBase) Get() string {
 	return k.Kind
 }
 
-func getProjectName() string {
+func GetProjectName() string {
 	if len(Appname) > 0 {
 		return Appname
 	}
