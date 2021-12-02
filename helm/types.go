@@ -9,6 +9,13 @@ import (
 )
 
 const K = "katenary.io"
+const (
+	LABEL_ENV_SECRET  = K + "/secret-envfiles"
+	LABEL_PORT        = K + "/ports"
+	LABEL_INGRESS     = K + "/ingress"
+	LABEL_ENV_SERVICE = K + "/env-to-service"
+	LABEL_VOL_CM      = K + "/configmap-volumes"
+)
 
 var Appname = ""
 

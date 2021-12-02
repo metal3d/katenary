@@ -76,24 +76,25 @@ services:
             - database
         labels:
             # explain to katenary that "DB_HOST" value is variable (using release name)
-            katenary.io/to-servie: DB_HOST
+            katenary.io/env-is-service: DB_HOST
             # expose the port 80 as an ingress
             katenary.io/ingress: 80
     database:
-        image: mariabd:10
+        image: mariadb:10
         env_file:
             # this will create a configMap
             - my_env.env
         environment:
             MARIADB_ROOT_PASSWORD: foobar
-        expose:
-            # required to make katenary able to create the init container
-            - 3306
+        labels:
+            # no need to declare this port in docker-compose
+            # but katenary will need it
+            katenary.io/ports: 3306
 ```
 
 # Labels
 
-- `katenary.io/to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
+- `katenary.io/env-to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
 - `katenary.io/ingress`: create an ingress and bind it to the given port
-- `katenary.io/as-secret`: force the creation of a secret for the given coma separated list of "env_file"
-- `katenary.io/service-ports` is a coma separated list of ports if you want to avoid the "ports" section in your docker-compose for any reason
+- `katenary.io/secret-envfiles`: force the creation of a secret for the given coma separated list of "env_file"
+- `katenary.io/ports` is a coma separated list of ports if you want to avoid the "ports" section in your docker-compose for any reason

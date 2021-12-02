@@ -47,7 +47,7 @@ echo "Done"
 func CreateReplicaObject(name string, s compose.Service) chan interface{} {
 
 	// fetch label to specific exposed port, and add them in "ports" section
-	if portlabel, ok := s.Labels[helm.K+"/service-ports"]; ok {
+	if portlabel, ok := s.Labels[helm.LABEL_PORT]; ok {
 		services := strings.Split(portlabel, ",")
 		for _, serviceport := range services {
 			portexists := false
@@ -76,7 +76,7 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 
 	// prepare secrets
 	secretsFiles := make([]string, 0)
-	if v, ok := s.Labels[helm.K+"/as-secret"]; ok {
+	if v, ok := s.Labels[helm.LABEL_ENV_SECRET]; ok {
 		secretsFiles = strings.Split(v, ",")
 	}
 
@@ -300,7 +300,7 @@ func createService(name string, s compose.Service) []interface{} {
 	ks.Spec.Selector = buildSelector(name, s)
 
 	ret = append(ret, ks)
-	if v, ok := s.Labels[helm.K+"/ingress"]; ok {
+	if v, ok := s.Labels[helm.LABEL_INGRESS]; ok {
 		port, err := strconv.Atoi(v)
 		if err != nil {
 			log.Fatalf("The given port \"%v\" as ingress port in %s service is not an integer\n", v, name)

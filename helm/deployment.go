@@ -57,8 +57,9 @@ func NewContainer(name, image string, environment, labels map[string]string) *Co
 		EnvFrom: make([]map[string]map[string]string, 0),
 	}
 
+	// find bound environment variable to a service
 	toServices := make([]string, 0)
-	if bound, ok := labels[K+"/to-services"]; ok {
+	if bound, ok := labels[LABEL_ENV_SERVICE]; ok {
 		toServices = strings.Split(bound, ",")
 	}
 
