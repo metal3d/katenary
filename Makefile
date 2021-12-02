@@ -1,6 +1,6 @@
 VERSION=0.1.1-alpha
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
-PREFIX=~/.local/
+PREFIX=~/.local
 
 .ONESHELL:
 help:
