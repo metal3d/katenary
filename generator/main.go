@@ -162,7 +162,7 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 		if strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/") {
 			// local volume cannt be mounted
 			// TODO: propose a way to make configMap for some files or directory
-			Redf("You cannot, at this time, have local volume in %s service", name)
+			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
 			continue
 			//os.Exit(1)
 		}
@@ -213,18 +213,18 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 		foundPort := -1
 		if defaultPort, err := getPort(dp); err != nil {
 			// BUG: Sometimes the chan remains opened
-			foundPort := <-waitPort(dp)
-			if foundPort == -1 {
-				log.Fatalf(
-					"ERROR, the %s service is waiting for %s port number, "+
-						"but it is never discovered. You must declare at least one port in "+
-						"the \"ports\" section of the service in the docker-compose file",
-					name,
-					dp,
-				)
-			}
+			foundPort = <-waitPort(dp)
 		} else {
 			foundPort = defaultPort
+		}
+		if foundPort == -1 {
+			log.Fatalf(
+				"ERROR, the %s service is waiting for %s port number, "+
+					"but it is never discovered. You must declare at least one port in "+
+					"the \"ports\" section of the service in the docker-compose file",
+				name,
+				dp,
+			)
 		}
 		command = strings.ReplaceAll(command, "__port__", strconv.Itoa(foundPort))
 
