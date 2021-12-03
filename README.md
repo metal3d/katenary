@@ -76,7 +76,7 @@ services:
             - database
         labels:
             # explain to katenary that "DB_HOST" value is variable (using release name)
-            katenary.io/env-is-service: DB_HOST
+            katenary.io/env-to-service: DB_HOST
             # expose the port 80 as an ingress
             katenary.io/ingress: 80
     database:
@@ -98,3 +98,4 @@ services:
 - `katenary.io/ingress`: create an ingress and bind it to the given port
 - `katenary.io/secret-envfiles`: force the creation of a secret for the given coma separated list of "env_file"
 - `katenary.io/ports` is a coma separated list of ports if you want to avoid the "ports" section in your docker-compose for any reason
+- `katenary.io/configma-volumes` is a coma separated list of directory (should be declared as volumes also) to transform to a configMap object 
