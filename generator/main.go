@@ -46,31 +46,14 @@ echo "Done"
 `
 
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
-func CreateReplicaObject(name string, s compose.Service) chan interface{} {
-
-	// fetch label to specific exposed port, and add them in "ports" section
-	if portlabel, ok := s.Labels[helm.LABEL_PORT]; ok {
-		services := strings.Split(portlabel, ",")
-		for _, serviceport := range services {
-			portexists := false
-			for _, found := range s.Ports {
-				if found == serviceport {
-					portexists = true
-				}
-			}
-			if !portexists {
-				s.Ports = append(s.Ports, serviceport)
-			}
-		}
-	}
-
+func CreateReplicaObject(name string, s *compose.Service) chan interface{} {
 	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+1)
 	go parseService(name, s, ret)
 	return ret
 }
 
 // This function will try to yied deployment and services based on a service from the compose file structure.
-func parseService(name string, s compose.Service, ret chan interface{}) {
+func parseService(name string, s *compose.Service, ret chan interface{}) {
 	Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 
 	o := helm.NewDeployment(name)
@@ -317,7 +300,7 @@ func parseService(name string, s compose.Service, ret chan interface{}) {
 }
 
 // Create a service (k8s).
-func createService(name string, s compose.Service) []interface{} {
+func createService(name string, s *compose.Service) []interface{} {
 
 	ret := make([]interface{}, 0)
 	Magenta(ICON_SERVICE+" Generating service for ", name)
@@ -363,7 +346,7 @@ func createService(name string, s compose.Service) []interface{} {
 }
 
 // Create an ingress.
-func createIngress(name string, port int, s compose.Service) *helm.Ingress {
+func createIngress(name string, port int, s *compose.Service) *helm.Ingress {
 	ingress := helm.NewIngress(name)
 	Values[name]["ingress"] = map[string]interface{}{
 		"class":   "nginx",
@@ -433,7 +416,7 @@ func waitPort(name string) chan int {
 	return c
 }
 
-func buildSelector(name string, s compose.Service) map[string]string {
+func buildSelector(name string, s *compose.Service) map[string]string {
 	return map[string]string{
 		"katenary.io/component": name,
 		"katenary.io/release":   "{{ .Release.Name }}",

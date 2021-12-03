@@ -3,14 +3,14 @@ package compose
 // Compose is a complete docker-compse representation.
 type Compose struct {
 	Version  string                 `yaml:"version"`
-	Services map[string]Service     `yaml:"services"`
+	Services map[string]*Service    `yaml:"services"`
 	Volumes  map[string]interface{} `yaml:"volumes"`
 }
 
 // NewCompose resturs a Compose object.
 func NewCompose() *Compose {
 	c := &Compose{}
-	c.Services = make(map[string]Service)
+	c.Services = make(map[string]*Service)
 	c.Volumes = make(map[string]interface{})
 	return c
 }
