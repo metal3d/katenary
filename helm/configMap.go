@@ -22,7 +22,7 @@ func NewConfigMap(name string) *ConfigMap {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "ConfigMap"
-	base.Metadata.Name = "{{ .Release.Name }}-" + name
+	base.Metadata.Name = RELEASE_NAME + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
 	return &ConfigMap{
 		K8sBase: base,
@@ -66,7 +66,7 @@ func NewSecret(name string) *Secret {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "Secret"
-	base.Metadata.Name = "{{ .Release.Name }}-" + name
+	base.Metadata.Name = RELEASE_NAME + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
 	return &Secret{
 		K8sBase: base,

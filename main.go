@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -32,20 +33,24 @@ func main() {
 	force := flag.Bool("force", false, "force the removal of the chart-dir")
 	flag.Parse()
 
+	// Only display the version
 	if *version {
 		fmt.Println(Version)
 		os.Exit(0)
 	}
 
-	// make the appname global (yes...)
+	// make the appname global (yes... ugly but easy)
 	helm.Appname = AppName
-	dirname := filepath.Join(ChartsDir, AppName)
+	helm.Version = Version
 
+	dirname := filepath.Join(ChartsDir, AppName)
 	if _, err := os.Stat(dirname); err == nil && !*force {
 		response := ""
 		for response != "y" && response != "n" {
 			response = "n"
-			fmt.Printf("The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m!\nDo you really want to continue ? [y/N]: ", dirname)
+			fmt.Printf(""+
+				"The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m!\n"+
+				"Do you really want to continue ? [y/N]: ", dirname)
 			fmt.Scanf("%s", &response)
 			response = strings.ToLower(response)
 		}
@@ -55,29 +60,22 @@ func main() {
 		}
 	}
 
+	// cleanup and create the chart directory (until "templates")
 	os.RemoveAll(dirname)
 	templatesDir := filepath.Join(dirname, "templates")
 	os.MkdirAll(templatesDir, 0755)
 
-	helm.Version = Version
+	// Parse the compose file now
 	p := compose.NewParser(ComposeFile)
 	p.Parse(AppName)
 
 	files := make(map[string]chan interface{})
 
-	//wait := sync.WaitGroup{}
 	for name, s := range p.Data.Services {
-		//wait.Add(1)
-		// it's mandatory to build in goroutines because some dependencies can
-		// wait for a port number discovery.
-		// So the entire services are built in parallel.
-		//go func(name string, s compose.Service) {
-		//	defer wait.Done()
 		o := generator.CreateReplicaObject(name, s)
 		files[name] = o
 		//}(name, s)
 	}
-	//wait.Wait()
 
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)
@@ -89,9 +87,16 @@ func main() {
 			}
 			kind := c.(helm.Kinded).Get()
 			kind = strings.ToLower(kind)
+
+			// Add a SHA inside the generated file, it's only
+			// to make it easy to check it the compose file corresponds to the
+			// generated helm chart
 			c.(helm.Signable).BuildSHA(ComposeFile)
+
+			// Some types need special fixes in yaml generation
 			switch c := c.(type) {
 			case *helm.Storage:
+				// For storage, we need to add a "condition" to activate it
 				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 				fp, _ := os.Create(fname)
 				volname := c.K8sBase.Metadata.Labels[helm.K+"/pvc-name"]
@@ -101,6 +106,8 @@ func main() {
 				enc.Encode(c)
 				fp.WriteString("{{- end -}}")
 			case *helm.Deployment:
+				// for the deployment, we need to fix persitence volumes to be activated
+				// only when the storage is "enabled", either we use an "emptyDir"
 				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 				fp, _ := os.Create(fname)
 				buffer := bytes.NewBuffer(nil)
@@ -127,6 +134,7 @@ func main() {
 				fp.Close()
 
 			case *helm.Service:
+				// Change the type for service if it's an "exposed" port
 				suffix := ""
 				if c.Spec.Type == "NodePort" {
 					suffix = "-external"
@@ -139,6 +147,7 @@ func main() {
 				fp.Close()
 
 			case *helm.Ingress:
+				// we need to make ingresses "activable" from values
 				buffer := bytes.NewBuffer(nil)
 				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
 				ingresses[n] = c // keep it to generate notes
@@ -188,13 +197,17 @@ func main() {
 		}
 	}
 
+	// Create the values.yaml file
 	fp, _ := os.Create(filepath.Join(dirname, "values.yaml"))
 	enc := yaml.NewEncoder(fp)
 	enc.SetIndent(2)
 	enc.Encode(generator.Values)
 	fp.Close()
 
+	// Create tht Chart.yaml file
 	fp, _ = os.Create(filepath.Join(dirname, "Chart.yaml"))
+	fp.WriteString(`# Create on ` + time.Now().Format(time.RFC3339) + "\n")
+	fp.WriteString(`# Katenary command line: ` + strings.Join(os.Args, " ") + "\n")
 	enc = yaml.NewEncoder(fp)
 	enc.SetIndent(2)
 	enc.Encode(map[string]interface{}{
@@ -207,7 +220,8 @@ func main() {
 	})
 	fp.Close()
 
+	// And finally, create a NOTE.txt file
 	fp, _ = os.Create(filepath.Join(templatesDir, "NOTES.txt"))
-	fp.WriteString(helm.GenNotes(ingresses))
+	fp.WriteString(helm.GenerateNotesFile(ingresses))
 	fp.Close()
 }

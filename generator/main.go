@@ -29,6 +29,10 @@ const (
 	ICON_INGRESS = "🌐"
 )
 
+const (
+	RELEASE_NAME = helm.RELEASE_NAME
+)
+
 // Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
 var VolumeValues = make(map[string]map[string]map[string]interface{})
@@ -38,7 +42,7 @@ OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
     echo -n "."
-    nc -z {{ .Release.Name }}-__service__ __port__ && OK=1
+    nc -z ` + RELEASE_NAME + `-__service__ __port__ && OK=1
     sleep 1
 done
 echo
@@ -172,7 +176,7 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 			cm := buildCMFromPath(volname)
 			volname = strings.Replace(volname, "./", "", 1)
 			volname = strings.ReplaceAll(volname, ".", "-")
-			cm.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + volname + "-" + name
+			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
 			// build a configmap from the volume path
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
@@ -191,7 +195,7 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"persistentVolumeClaim": map[string]string{
-					"claimName": "{{ .Release.Name }}-" + volname,
+					"claimName": RELEASE_NAME + "-" + volname,
 				},
 			})
 			mountPoints = append(mountPoints, map[string]interface{}{
@@ -324,7 +328,7 @@ func createService(name string, s *compose.Service) []interface{} {
 	if v, ok := s.Labels[helm.LABEL_INGRESS]; ok {
 		port, err := strconv.Atoi(v)
 		if err != nil {
-			log.Fatalf("The given port \"%v\" as ingress port in %s service is not an integer\n", v, name)
+			log.Fatalf("The given port \"%v\" as ingress port in \"%s\" service is not an integer\n", v, name)
 		}
 		Cyanf(ICON_INGRESS+" Create an ingress for port %d on %s service\n", port, name)
 		ing := createIngress(name, port, s)
@@ -362,7 +366,7 @@ func createIngress(name string, port int, s *compose.Service) *helm.Ingress {
 					PathType: "Prefix",
 					Backend: helm.IngressBackend{
 						Service: helm.IngressService{
-							Name: "{{ .Release.Name }}-" + name,
+							Name: RELEASE_NAME + "-" + name,
 							Port: map[string]interface{}{
 								"number": port,
 							},
@@ -419,7 +423,7 @@ func waitPort(name string) chan int {
 func buildSelector(name string, s *compose.Service) map[string]string {
 	return map[string]string{
 		"katenary.io/component": name,
-		"katenary.io/release":   "{{ .Release.Name }}",
+		"katenary.io/release":   RELEASE_NAME,
 	}
 }
 

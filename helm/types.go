@@ -1,7 +1,7 @@
 package helm
 
 import (
-	"crypto/sha256"
+	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +9,7 @@ import (
 )
 
 const K = "katenary.io"
+const RELEASE_NAME = "{{ .Release.Name }}"
 const (
 	LABEL_ENV_SECRET  = K + "/secret-envfiles"
 	LABEL_PORT        = K + "/ports"
@@ -17,9 +18,10 @@ const (
 	LABEL_VOL_CM      = K + "/configmap-volumes"
 )
 
-var Appname = ""
-
-var Version = "1.0" // should be set from main.Version
+var (
+	Appname = ""
+	Version = "1.0" // should be set from main.Version
+)
 
 type Kinded interface {
 	Get() string
@@ -58,16 +60,18 @@ func NewBase() *K8sBase {
 	b := &K8sBase{
 		Metadata: NewMetadata(),
 	}
+	// add some information of the build
 	b.Metadata.Labels[K+"/project"] = GetProjectName()
-	b.Metadata.Labels[K+"/release"] = "{{ .Release.Name }}"
+	b.Metadata.Labels[K+"/release"] = RELEASE_NAME
 	b.Metadata.Annotations[K+"/version"] = Version
 	return b
 }
 
 func (k *K8sBase) BuildSHA(filename string) {
 	c, _ := ioutil.ReadFile(filename)
-	sum := sha256.Sum256(c)
-	k.Metadata.Annotations[K+"/docker-compose-sha256"] = fmt.Sprintf("%x", string(sum[:]))
+	//sum := sha256.Sum256(c)
+	sum := sha1.Sum(c)
+	k.Metadata.Annotations[K+"/docker-compose-sha1"] = fmt.Sprintf("%x", string(sum[:]))
 }
 
 func (k *K8sBase) Get() string {

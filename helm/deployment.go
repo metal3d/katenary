@@ -10,7 +10,7 @@ type Deployment struct {
 
 func NewDeployment(name string) *Deployment {
 	d := &Deployment{K8sBase: NewBase(), Spec: NewDepSpec()}
-	d.K8sBase.Metadata.Name = "{{ .Release.Name }}-" + name
+	d.K8sBase.Metadata.Name = RELEASE_NAME + "-" + name
 	d.K8sBase.ApiVersion = "apps/v1"
 	d.K8sBase.Kind = "Deployment"
 	d.K8sBase.Metadata.Labels[K+"/component"] = name
@@ -67,7 +67,7 @@ func NewContainer(name, image string, environment, labels map[string]string) *Co
 	for n, v := range environment {
 		for _, name := range toServices {
 			if name == n {
-				v = "{{ .Release.Name }}-" + v
+				v = RELEASE_NAME + "-" + v
 			}
 		}
 		container.Env[idx] = Value{Name: n, Value: v}

@@ -25,4 +25,5 @@ type Service struct {
 	Volumes     []string          `yaml:"volumes"`
 	Expose      []int             `yaml:"expose"`
 	EnvFiles    []string          `yaml:"env_file"`
+	RawBuild    interface{}       `yaml:"build"`
 }

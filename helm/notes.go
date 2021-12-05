@@ -10,7 +10,7 @@ Your application is now deployed. This may take a while to be up and responding.
 __list__
 `
 
-func GenNotes(ingressess map[string]*Ingress) string {
+func GenerateNotesFile(ingressess map[string]*Ingress) string {
 
 	list := make([]string, 0)
 

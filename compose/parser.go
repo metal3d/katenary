@@ -10,6 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	ICON_EXCLAMATION = "❕"
+)
+
 // Parser is a docker-compose parser.
 type Parser struct {
 	Data *Compose
@@ -70,6 +74,18 @@ func NewParser(filename string) *Parser {
 
 	if len(missing) > 0 {
 		log.Fatal(strings.Join(missing, "\n"))
+	}
+
+	// check the build element
+	for name, s := range c.Services {
+		if s.RawBuild == nil {
+			continue
+		}
+
+		fmt.Println(ICON_EXCLAMATION +
+			" \x1b[33myou will need to build and push your image named \"" + s.Image + "\"" +
+			" for the \"" + name + "\" service \x1b[0m")
+
 	}
 
 	return p
