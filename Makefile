@@ -27,7 +27,7 @@ build: katenary
 katenary: *.go generator/*.go compose/*.go helm/*.go
 	@echo Build using $(CTN)
 ifeq ($(CTN),podman)
-	@podman run --rm -v $(PWD):/go/src/katenary -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
+	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
 else
 	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
 endif
