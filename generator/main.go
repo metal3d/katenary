@@ -391,17 +391,18 @@ func createIngress(name string, port int, s *compose.Service) *helm.Ingress {
 // to be able to get the service name. It also try to send the data to any "waiter" for this service.
 func detected(name string, port int) {
 	locker.Lock()
+	defer locker.Unlock()
+	if _, ok := servicesMap[name]; ok {
+		return
+	}
 	servicesMap[name] = port
 	go func() {
-		cx := serviceWaiters[name]
-		for _, c := range cx {
-			if v, ok := servicesMap[name]; ok {
-				c <- v
-				//close(c)
+		if cx, ok := serviceWaiters[name]; ok {
+			for _, c := range cx {
+				c <- port
 			}
 		}
 	}()
-	locker.Unlock()
 }
 
 func getPort(name string) (int, error) {
@@ -414,15 +415,14 @@ func getPort(name string) (int, error) {
 // Waits for a service to be discovered. Sometimes, a deployment depends on another one. See the detected() function.
 func waitPort(name string) chan int {
 	locker.Lock()
+	defer locker.Unlock()
 	c := make(chan int, 0)
 	serviceWaiters[name] = append(serviceWaiters[name], c)
 	go func() {
 		if v, ok := servicesMap[name]; ok {
 			c <- v
-			//close(c)
 		}
 	}()
-	locker.Unlock()
 	return c
 }
 
