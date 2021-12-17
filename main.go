@@ -34,10 +34,10 @@ func detectGitVersion() (string, error) {
 		return defaulVersion, errors.New("git executable not found")
 	}
 
-	// exec git log -n1 --pretty=format:"%h"
+	// get the latest commit hash
 	if out, err := exec.Command("git", "log", "-n1", "--pretty=format:%h").Output(); err == nil {
 		latestCommit := strings.TrimSpace(string(out))
-		// then exec git branch --show-current
+		// then get the current branch/tag
 		out, err := exec.Command("git", "branch", "--show-current").Output()
 		if err != nil {
 			return defaulVersion, errors.New("git branch --show-current failed")
@@ -49,7 +49,6 @@ func detectGitVersion() (string, error) {
 			if err == nil {
 				return strings.TrimSpace(string(out)), nil
 			} else {
-
 				return currentBranch + "-" + latestCommit, nil
 			}
 		}
