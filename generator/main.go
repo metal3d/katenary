@@ -279,20 +279,20 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	// But... some other deployment can wait for it, so we alert that this deployment hasn't got any
 	// associated service.
 	if len(s.Ports) == 0 {
-		locker.Lock()
 		// alert any current or **futur** waiters that this service is not exposed
 		go func() {
 			for {
 				select {
 				case <-time.Tick(1 * time.Millisecond):
+					locker.Lock()
 					for _, c := range serviceWaiters[name] {
 						c <- -1
 						close(c)
 					}
+					locker.Unlock()
 				}
 			}
 		}()
-		locker.Unlock()
 	}
 
 	// add the volumes in Values
@@ -397,6 +397,8 @@ func detected(name string, port int) {
 	}
 	servicesMap[name] = port
 	go func() {
+		locker.Lock()
+		defer locker.Unlock()
 		if cx, ok := serviceWaiters[name]; ok {
 			for _, c := range cx {
 				c <- port
@@ -419,6 +421,8 @@ func waitPort(name string) chan int {
 	c := make(chan int, 0)
 	serviceWaiters[name] = append(serviceWaiters[name], c)
 	go func() {
+		locker.Lock()
+		defer locker.Unlock()
 		if v, ok := servicesMap[name]; ok {
 			c <- v
 		}
