@@ -62,15 +62,14 @@ func main() {
 	if v, err := detectGitVersion(); err == nil {
 		appVersion = v
 		helpMessageForAppversion = "The version of the application. " +
-			"If not set, the version will be detected from git. " +
-			"Detected version is: " + appVersion
+			"If not set, the version will be detected from git."
 	}
 
 	// flags
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
-	flag.StringVar(&appVersion, "appversion", "", helpMessageForAppversion)
+	flag.StringVar(&appVersion, "appversion", appVersion, helpMessageForAppversion)
 	version := flag.Bool("version", false, "show version and exit")
 	force := flag.Bool("force", false, "force the removal of the chart-dir")
 	flag.Parse()
