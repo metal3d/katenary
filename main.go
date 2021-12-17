@@ -19,18 +19,19 @@ var Version = "master" // set at build time to the git version/tag
 var ChartsDir = "chart"
 
 func detectGitVersion() (string, error) {
+	defaulVersion := "0.0.1"
 	// Check if .git directory exists
 	if s, err := os.Stat(".git"); err != nil {
 		// .git should be a directory
-		if !s.IsDir() {
-			return "", errors.New(".git is not a directory")
-		}
-		return "0.0.1", errors.New("no git repository found")
+		return defaulVersion, errors.New("no git repository found")
+	} else if !s.IsDir() {
+		// .git should be a directory
+		return defaulVersion, errors.New(".git is not a directory")
 	}
 
 	// check if "git" executable is callable
 	if _, err := exec.LookPath("git"); err != nil {
-		return "0.0.1", errors.New("git executable not found")
+		return defaulVersion, errors.New("git executable not found")
 	}
 
 	// exec git log -n1 --pretty=format:"%h"
@@ -39,7 +40,7 @@ func detectGitVersion() (string, error) {
 		// then exec git branch --show-current
 		out, err := exec.Command("git", "branch", "--show-current").Output()
 		if err != nil {
-			return "0.0.1", errors.New("git branch --show-current failed")
+			return defaulVersion, errors.New("git branch --show-current failed")
 		} else {
 			currentBranch := strings.TrimSpace(string(out))
 			// finally, check if the current tag (if exists) correspond to the current commit
@@ -53,8 +54,7 @@ func detectGitVersion() (string, error) {
 			}
 		}
 	}
-	return "0.0.1", errors.New("git log failed")
-
+	return defaulVersion, errors.New("git log failed")
 }
 
 func main() {
