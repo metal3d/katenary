@@ -1,27 +1,76 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"katenary/compose"
 	"katenary/generator"
 	"katenary/helm"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 var ComposeFile = "docker-compose.yaml"
 var AppName = "MyApp"
-var AppVersion = "0.0.1"
 var Version = "master" // set at build time to the git version/tag
 var ChartsDir = "chart"
 
+func detectGitVersion() (string, error) {
+	// Check if .git directory exists
+	if _, err := os.Stat(".git"); err != nil {
+		return "0.0.1", errors.New("No git repository found")
+	}
+
+	// check if "git" executable is callable
+	if _, err := exec.LookPath("git"); err != nil {
+		return "0.0.1", errors.New("git executable not found")
+	}
+
+	// exec git log -n1 --pretty=format:"%h"
+	if out, err := exec.Command("git", "log", "-n1", "--pretty=format:%h").Output(); err == nil {
+		latestCommit := strings.TrimSpace(string(out))
+		// then exec git branch --show-current
+		out, err := exec.Command("git", "branch", "--show-current").Output()
+		if err != nil {
+			return "0.0.1", errors.New("git branch --show-current failed")
+		} else {
+			currentBranch := strings.TrimSpace(string(out))
+			// finally, check if the current tag (if exists) correspond to the current commit
+			// git describe --exact-match --tags <latestCommit>
+			out, err := exec.Command("git", "describe", "--exact-match", "--tags", latestCommit).Output()
+			if err == nil {
+				return strings.TrimSpace(string(out)), nil
+			} else {
+
+				return currentBranch + "-" + latestCommit, nil
+			}
+		}
+	}
+	return "0.0.1", errors.New("git log failed")
+
+}
+
 func main() {
+
+	appVersion := "0.0.1"
+	helpMessageForAppversion := "The version of the application. " +
+		"Default is 0.0.1. If you are using git, it will be the git version. " +
+		"Otherwise, it will be the branch name and the commit hash."
+	if v, err := detectGitVersion(); err == nil {
+		appVersion = v
+		helpMessageForAppversion = "The version of the application. " +
+			"If not set, the version will be detected from git. " +
+			"Detected version is: " + appVersion
+	}
+
+	// flags
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
-	flag.StringVar(&AppVersion, "appversion", AppVersion, "set the chart appVersion")
+	flag.StringVar(&appVersion, "appversion", "", helpMessageForAppversion)
 	version := flag.Bool("version", false, "show version and exit")
 	force := flag.Bool("force", false, "force the removal of the chart-dir")
 	flag.Parse()
@@ -50,13 +99,23 @@ func main() {
 	}
 
 	// cleanup and create the chart directory (until "templates")
-	os.RemoveAll(dirname)
+	if err := os.RemoveAll(dirname); err != nil {
+		fmt.Printf("Error removing %s: %s\n", dirname, err)
+		os.Exit(1)
+	}
+
+	// create the templates directory
 	templatesDir := filepath.Join(dirname, "templates")
-	os.MkdirAll(templatesDir, 0755)
+	if err := os.MkdirAll(templatesDir, 0755); err != nil {
+		fmt.Printf("Error creating %s: %s\n", templatesDir, err)
+		os.Exit(1)
+	}
 
 	// Parse the compose file now
 	p := compose.NewParser(ComposeFile)
 	p.Parse(AppName)
-	generator.Generate(p, Version, AppName, AppVersion, ComposeFile, dirname)
+
+	// start generator
+	generator.Generate(p, Version, AppName, appVersion, ComposeFile, dirname)
 
 }
