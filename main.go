@@ -20,8 +20,12 @@ var ChartsDir = "chart"
 
 func detectGitVersion() (string, error) {
 	// Check if .git directory exists
-	if _, err := os.Stat(".git"); err != nil {
-		return "0.0.1", errors.New("No git repository found")
+	if s, err := os.Stat(".git"); err != nil {
+		// .git should be a directory
+		if !s.IsDir() {
+			return "", errors.New(".git is not a directory")
+		}
+		return "0.0.1", errors.New("no git repository found")
 	}
 
 	// check if "git" executable is callable
