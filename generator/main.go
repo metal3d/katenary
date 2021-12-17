@@ -95,8 +95,14 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 			ActivateColors = false
 			os.Exit(2)
 		}
+
+		section := "configMapRef"
+		if isSecret {
+			section = "secretRef"
+		}
+
 		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
-			"configMapRef": {
+			section: {
 				"name": store.Metadata().Name,
 			},
 		})
