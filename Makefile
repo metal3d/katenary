@@ -25,6 +25,8 @@ help:
 build: katenary
 
 katenary: *.go generator/*.go compose/*.go helm/*.go
+	@echo "Building Katenary version" $(VERSION)
+	@echo
 	@echo Build using $(CTN)
 ifeq ($(CTN),podman)
 	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
