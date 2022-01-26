@@ -4,6 +4,10 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
+BLD_CMD=go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" .
+
+.PHONY: help clean build
+
 .ONESHELL:
 help:
 	@cat <<EOF
@@ -25,14 +29,25 @@ help:
 build: katenary
 
 katenary: $(wildcard */*.go Makefile go.mod go.sum)
-	@echo "Building Katenary version" $(VERSION)
+	@echo "=> Building Katenary version" $(VERSION)
+ifeq ($(GO),local)
+	@echo "=> Build in host using go"
 	@echo
-	@echo Build using $(CTN)
-ifeq ($(CTN),podman)
-	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
 else
-	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" . 
+	@echo "=> Build in container using" $(CTN)
+	@echo
 endif
+ifeq ($(GO),local)
+	echo $(BLD_CMD)
+	$(BLD_CMD)
+else ifeq ($(CTN),podman)
+	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang $(BLD_CMD)
+else
+	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang $(BLD_CMD)
+endif
+	echo
+	echo "Check the version"
+	echo "'./katenary -version' => $(shell ./katenary -version)"
 
 
 install: build
