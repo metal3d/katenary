@@ -24,7 +24,7 @@ help:
 
 build: katenary
 
-katenary: *.go generator/*.go compose/*.go helm/*.go
+katenary: $(wildcard */*.go Makefile go.mod go.sum)
 	@echo "Building Katenary version" $(VERSION)
 	@echo
 	@echo Build using $(CTN)
