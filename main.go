@@ -19,15 +19,14 @@ var AppName = "MyApp"
 var Version = "master" // set at build time to the git version/tag
 var ChartsDir = "chart"
 
-func findComposeFile() {
+func findComposeFile() bool {
 	for _, file := range composeFiles {
 		if _, err := os.Stat(file); err == nil {
 			ComposeFile = file
-			return
+			return true
 		}
 	}
-	fmt.Printf("No compose file found in %s\n", composeFiles)
-	os.Exit(1)
+	return false
 }
 
 func detectGitVersion() (string, error) {
@@ -81,7 +80,8 @@ func main() {
 	}
 
 	// flags
-	findComposeFile()
+	composeFound := findComposeFile()
+
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
@@ -94,6 +94,12 @@ func main() {
 	if *version {
 		fmt.Println(Version)
 		os.Exit(0)
+	}
+
+	_, err := os.Stat(ComposeFile)
+	if !composeFound && err != nil {
+		fmt.Println("No compose file found")
+		os.Exit(1)
 	}
 
 	dirname := filepath.Join(ChartsDir, AppName)
