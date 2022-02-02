@@ -13,10 +13,22 @@ import (
 	"strings"
 )
 
-var ComposeFile = "docker-compose.yaml"
+var composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
+var ComposeFile = ""
 var AppName = "MyApp"
 var Version = "master" // set at build time to the git version/tag
 var ChartsDir = "chart"
+
+func findComposeFile() {
+	for _, file := range composeFiles {
+		if _, err := os.Stat(file); err == nil {
+			ComposeFile = file
+			return
+		}
+	}
+	fmt.Printf("No compose file found in %s\n", composeFiles)
+	os.Exit(1)
+}
 
 func detectGitVersion() (string, error) {
 	defaulVersion := "0.0.1"
@@ -69,6 +81,7 @@ func main() {
 	}
 
 	// flags
+	findComposeFile()
 	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
 	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
 	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
