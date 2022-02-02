@@ -197,6 +197,9 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 			ret <- cm
 		} else {
 
+			// rmove minus sign from volume name
+			volname = strings.ReplaceAll(volname, "-", "")
+
 			pvc := helm.NewPVC(name, volname)
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
