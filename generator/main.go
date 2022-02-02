@@ -73,7 +73,8 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	for _, envfile := range s.EnvFiles {
 		f := strings.ReplaceAll(envfile, "_", "-")
 		f = strings.ReplaceAll(f, ".env", "")
-		f = strings.ReplaceAll(f, ".", "-")
+		f = strings.ReplaceAll(f, ".", "")
+		f = strings.ReplaceAll(f, "/", "")
 		cf := f + "-" + name
 		isSecret := false
 		for _, s := range secretsFiles {
