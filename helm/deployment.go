@@ -40,13 +40,46 @@ type ContainerPort struct {
 }
 
 type Container struct {
-	Name         string                         `yaml:"name,omitempty"`
-	Image        string                         `yaml:"image"`
-	Ports        []*ContainerPort               `yaml:"ports,omitempty"`
-	Env          []Value                        `yaml:"env,omitempty"`
-	EnvFrom      []map[string]map[string]string `yaml:"envFrom,omitempty"`
-	Command      []string                       `yaml:"command,omitempty"`
-	VolumeMounts []interface{}                  `yaml:"volumeMounts,omitempty"`
+	Name          string                         `yaml:"name,omitempty"`
+	Image         string                         `yaml:"image"`
+	Ports         []*ContainerPort               `yaml:"ports,omitempty"`
+	Env           []Value                        `yaml:"env,omitempty"`
+	EnvFrom       []map[string]map[string]string `yaml:"envFrom,omitempty"`
+	Command       []string                       `yaml:"command,omitempty"`
+	VolumeMounts  []interface{}                  `yaml:"volumeMounts,omitempty"`
+	LivenessProbe *Probe                         `yaml:"livenessProbe,omitempty"`
+}
+
+type HttpGet struct {
+	Path string `yaml:"path"`
+	Port int    `yaml:"port"`
+}
+
+type Exec struct {
+	Command []string `yaml:"command"`
+}
+
+type TCP struct {
+	Port int `yaml:"port"`
+}
+
+type Probe struct {
+	HttpGet      *HttpGet `yaml:"httpGet,omitempty"`
+	Exec         *Exec    `yaml:"exec,omitempty"`
+	TCP          *TCP     `yaml:"tcp,omitempty"`
+	Period       int      `yaml:"periodSeconds"`
+	Success      int      `yaml:"successThreshold"`
+	Failure      int      `yaml:"failureThreshold"`
+	InitialDelay int      `yaml:"initialDelaySeconds"`
+}
+
+func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
+	return &Probe{
+		Period:       period,
+		Success:      success,
+		Failure:      failure,
+		InitialDelay: initialDelaySeconds,
+	}
 }
 
 func NewContainer(name, image string, environment, labels map[string]string) *Container {

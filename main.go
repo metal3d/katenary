@@ -88,7 +88,15 @@ func main() {
 	flag.StringVar(&appVersion, "appversion", appVersion, helpMessageForAppversion)
 	version := flag.Bool("version", false, "show version and exit")
 	force := flag.Bool("force", false, "force the removal of the chart-dir")
+	showLabels := flag.Bool("labels", false, "show possible labels and exit")
+
 	flag.Parse()
+
+	if *showLabels {
+		// display labels from helm/types.go
+		fmt.Println(helm.GetLabelsDocumentation())
+		os.Exit(0)
+	}
 
 	// Only display the version
 	if *version {

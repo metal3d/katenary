@@ -6,6 +6,7 @@ import (
 	"katenary/compose"
 	"katenary/helm"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	"errors"
+
+	"github.com/google/shlex"
 )
 
 var servicesMap = make(map[string]int)
@@ -42,8 +45,7 @@ OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
     echo -n "."
-    nc -z ` + RELEASE_NAME + `-__service__ __port__ && OK=1
-    sleep 1
+    nc -z ` + RELEASE_NAME + `-__service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
 done
 echo
 echo "Done"
@@ -63,53 +65,8 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	o := helm.NewDeployment(name)
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
-	// prepare secrets
-	secretsFiles := make([]string, 0)
-	if v, ok := s.Labels[helm.LABEL_ENV_SECRET]; ok {
-		secretsFiles = strings.Split(v, ",")
-	}
-
-	// manage environment files (env_file in compose)
-	for _, envfile := range s.EnvFiles {
-		f := strings.ReplaceAll(envfile, "_", "-")
-		f = strings.ReplaceAll(f, ".env", "")
-		f = strings.ReplaceAll(f, ".", "")
-		f = strings.ReplaceAll(f, "/", "")
-		cf := f + "-" + name
-		isSecret := false
-		for _, s := range secretsFiles {
-			if s == envfile {
-				isSecret = true
-			}
-		}
-		var store helm.InlineConfig
-		if !isSecret {
-			Bluef(ICON_CONF+" Generating configMap %s\n", cf)
-			store = helm.NewConfigMap(cf)
-		} else {
-			Bluef(ICON_SECRET+" Generating secret %s\n", cf)
-			store = helm.NewSecret(cf)
-		}
-		if err := store.AddEnvFile(envfile); err != nil {
-			ActivateColors = true
-			Red(err.Error())
-			ActivateColors = false
-			os.Exit(2)
-		}
-
-		section := "configMapRef"
-		if isSecret {
-			section = "secretRef"
-		}
-
-		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
-			section: {
-				"name": store.Metadata().Name,
-			},
-		})
-
-		ret <- store
-	}
+	// prepare cm and secrets
+	prepareEnvFromFiles(name, s, container, ret)
 
 	// check the image, and make it "variable" in values.yaml
 	container.Image = "{{ .Values." + name + ".image }}"
@@ -117,164 +74,30 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 		"image": s.Image,
 	}
 
+	// manage the healthcheck property, if any
+	prepareProbes(name, s, container)
 	// manage ports
-	exists := make(map[int]string)
-	for _, port := range s.Ports {
-		_p := strings.Split(port, ":")
-		port = _p[0]
-		if len(_p) > 1 {
-			port = _p[1]
-		}
-		portNumber, _ := strconv.Atoi(port)
-		portName := name
-		for _, n := range exists {
-			if name == n {
-				portName = fmt.Sprintf("%s-%d", name, portNumber)
-			}
-		}
-		container.Ports = append(container.Ports, &helm.ContainerPort{
-			Name:          portName,
-			ContainerPort: portNumber,
-		})
-		exists[portNumber] = name
-	}
+	generateContainerPorts(s, name, container)
 
-	// manage the "expose" section to be a NodePort in Kubernetes
-	for _, port := range s.Expose {
-		if _, exist := exists[port]; exist {
-			continue
-		}
-		container.Ports = append(container.Ports, &helm.ContainerPort{
-			Name:          name,
-			ContainerPort: port,
-		})
-	}
-
-	// Prepare volumes
-	volumes := make([]map[string]interface{}, 0)
-	mountPoints := make([]interface{}, 0)
-	configMapsVolumes := make([]string, 0)
-	if v, ok := s.Labels[helm.LABEL_VOL_CM]; ok {
-		configMapsVolumes = strings.Split(v, ",")
-	}
-	for _, volume := range s.Volumes {
-		parts := strings.Split(volume, ":")
-		volname := parts[0]
-		volepath := parts[1]
-
-		isCM := false
-		for _, cmVol := range configMapsVolumes {
-			cmVol = strings.TrimSpace(cmVol)
-			if volname == cmVol {
-				isCM = true
-				break
-			}
-		}
-
-		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
-			// local volume cannt be mounted
-			ActivateColors = true
-			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
-			ActivateColors = false
-			continue
-		}
-		if isCM {
-			// the volume is a path and it's explicitally asked to be a configmap in labels
-			cm := buildCMFromPath(volname)
-			volname = strings.Replace(volname, "./", "", 1)
-			volname = strings.ReplaceAll(volname, ".", "-")
-			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
-			// build a configmap from the volume path
-			volumes = append(volumes, map[string]interface{}{
-				"name": volname,
-				"configMap": map[string]string{
-					"name": cm.K8sBase.Metadata.Name,
-				},
-			})
-			mountPoints = append(mountPoints, map[string]interface{}{
-				"name":      volname,
-				"mountPath": volepath,
-			})
-			ret <- cm
-		} else {
-
-			// rmove minus sign from volume name
-			volname = strings.ReplaceAll(volname, "-", "")
-
-			pvc := helm.NewPVC(name, volname)
-			volumes = append(volumes, map[string]interface{}{
-				"name": volname,
-				"persistentVolumeClaim": map[string]string{
-					"claimName": RELEASE_NAME + "-" + volname,
-				},
-			})
-			mountPoints = append(mountPoints, map[string]interface{}{
-				"name":      volname,
-				"mountPath": volepath,
-			})
-
-			Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
-			locker.Lock()
-			if _, ok := VolumeValues[name]; !ok {
-				VolumeValues[name] = make(map[string]map[string]interface{})
-			}
-			VolumeValues[name][volname] = map[string]interface{}{
-				"enabled":  false,
-				"capacity": "1Gi",
-			}
-			locker.Unlock()
-			ret <- pvc
-		}
-	}
-	container.VolumeMounts = mountPoints
-
-	o.Spec.Template.Spec.Volumes = volumes
+	// Set the container to the deployment
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
 
-	// Add some labels
+	// Prepare volumes
+	o.Spec.Template.Spec.Volumes = prepareVolumes(name, s, container, ret)
+
+	// Add selectors
+	selectors := buildSelector(name, s)
 	o.Spec.Selector = map[string]interface{}{
-		"matchLabels": buildSelector(name, s),
+		"matchLabels": selectors,
 	}
-	o.Spec.Template.Metadata.Labels = buildSelector(name, s)
+	o.Spec.Template.Metadata.Labels = selectors
 
-	// Now, for "depends_on" section, it's a bit tricky...
-	// We need to detect "others" services, but we probably not have parsed them yet, so
-	// we will wait for them for a while.
-	initContainers := make([]*helm.Container, 0)
-	for _, dp := range s.DependsOn {
-		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
-		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
+	// Now, for "depends_on" section, it's a bit tricky to get dependencies, see the function below.
+	o.Spec.Template.Spec.InitContainers = prepareInitContainers(name, s, container)
 
-		foundPort := -1
-		if defaultPort, err := getPort(dp); err != nil {
-			// BUG: Sometimes the chan remains opened
-			foundPort = <-waitPort(dp)
-		} else {
-			foundPort = defaultPort
-		}
-		if foundPort == -1 {
-			log.Fatalf(
-				"ERROR, the %s service is waiting for %s port number, "+
-					"but it is never discovered. You must declare at least one port in "+
-					"the \"ports\" section of the service in the docker-compose file",
-				name,
-				dp,
-			)
-		}
-		command = strings.ReplaceAll(command, "__port__", strconv.Itoa(foundPort))
-
-		c.Command = []string{
-			"sh",
-			"-c",
-			command,
-		}
-		initContainers = append(initContainers, c)
-	}
-	o.Spec.Template.Spec.InitContainers = initContainers
-
-	// Then, create services for "ports" and "expose" section
+	// Then, create Services and possible Ingresses for ingress labels, "ports" and "expose" section
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
-		for _, s := range createService(name, s) {
+		for _, s := range generateServicesAndIngresses(name, s) {
 			ret <- s
 		}
 	}
@@ -283,7 +106,7 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	// But... some other deployment can wait for it, so we alert that this deployment hasn't got any
 	// associated service.
 	if len(s.Ports) == 0 {
-		// alert any current or **futur** waiters that this service is not exposed
+		// alert any current or **future** waiters that this service is not exposed
 		go func() {
 			for {
 				select {
@@ -314,9 +137,9 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 }
 
 // Create a service (k8s).
-func createService(name string, s *compose.Service) []interface{} {
+func generateServicesAndIngresses(name string, s *compose.Service) []interface{} {
 
-	ret := make([]interface{}, 0)
+	ret := make([]interface{}, 0) // can handle helm.Service or helm.Ingress
 	Magenta(ICON_SERVICE+" Generating service for ", name)
 	ks := helm.NewService(name)
 
@@ -434,6 +257,7 @@ func waitPort(name string) chan int {
 	return c
 }
 
+// Build the selector for the service.
 func buildSelector(name string, s *compose.Service) map[string]string {
 	return map[string]string{
 		"katenary.io/component": name,
@@ -441,6 +265,7 @@ func buildSelector(name string, s *compose.Service) map[string]string {
 	}
 }
 
+// buildCMFromPath generates a ConfigMap from a path.
 func buildCMFromPath(path string) *helm.ConfigMap {
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -471,4 +296,280 @@ func buildCMFromPath(path string) *helm.ConfigMap {
 	cm := helm.NewConfigMap("")
 	cm.Data = files
 	return cm
+}
+
+// generateContainerPorts add the container ports of a service.
+func generateContainerPorts(s *compose.Service, name string, container *helm.Container) {
+
+	exists := make(map[int]string)
+	for _, port := range s.Ports {
+		_p := strings.Split(port, ":")
+		port = _p[0]
+		if len(_p) > 1 {
+			port = _p[1]
+		}
+		portNumber, _ := strconv.Atoi(port)
+		portName := name
+		for _, n := range exists {
+			if name == n {
+				portName = fmt.Sprintf("%s-%d", name, portNumber)
+			}
+		}
+		container.Ports = append(container.Ports, &helm.ContainerPort{
+			Name:          portName,
+			ContainerPort: portNumber,
+		})
+		exists[portNumber] = name
+	}
+
+	// manage the "expose" section to be a NodePort in Kubernetes
+	for _, port := range s.Expose {
+		if _, exist := exists[port]; exist {
+			continue
+		}
+		container.Ports = append(container.Ports, &helm.ContainerPort{
+			Name:          name,
+			ContainerPort: port,
+		})
+	}
+}
+
+// prepareVolumes add the volumes of a service.
+func prepareVolumes(name string, s *compose.Service, container *helm.Container, ret chan interface{}) []map[string]interface{} {
+
+	volumes := make([]map[string]interface{}, 0)
+	mountPoints := make([]interface{}, 0)
+	configMapsVolumes := make([]string, 0)
+	if v, ok := s.Labels[helm.LABEL_VOL_CM]; ok {
+		configMapsVolumes = strings.Split(v, ",")
+	}
+	for _, volume := range s.Volumes {
+		parts := strings.Split(volume, ":")
+		volname := parts[0]
+		volepath := parts[1]
+
+		isCM := false
+		for _, cmVol := range configMapsVolumes {
+			cmVol = strings.TrimSpace(cmVol)
+			if volname == cmVol {
+				isCM = true
+				break
+			}
+		}
+
+		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
+			// local volume cannt be mounted
+			ActivateColors = true
+			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
+			ActivateColors = false
+			continue
+		}
+		if isCM {
+			// the volume is a path and it's explicitally asked to be a configmap in labels
+			cm := buildCMFromPath(volname)
+			volname = strings.Replace(volname, "./", "", 1)
+			volname = strings.ReplaceAll(volname, ".", "-")
+			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
+			// build a configmap from the volume path
+			volumes = append(volumes, map[string]interface{}{
+				"name": volname,
+				"configMap": map[string]string{
+					"name": cm.K8sBase.Metadata.Name,
+				},
+			})
+			mountPoints = append(mountPoints, map[string]interface{}{
+				"name":      volname,
+				"mountPath": volepath,
+			})
+			ret <- cm
+		} else {
+
+			// rmove minus sign from volume name
+			volname = strings.ReplaceAll(volname, "-", "")
+
+			pvc := helm.NewPVC(name, volname)
+			volumes = append(volumes, map[string]interface{}{
+				"name": volname,
+				"persistentVolumeClaim": map[string]string{
+					"claimName": RELEASE_NAME + "-" + volname,
+				},
+			})
+			mountPoints = append(mountPoints, map[string]interface{}{
+				"name":      volname,
+				"mountPath": volepath,
+			})
+
+			Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
+			locker.Lock()
+			if _, ok := VolumeValues[name]; !ok {
+				VolumeValues[name] = make(map[string]map[string]interface{})
+			}
+			VolumeValues[name][volname] = map[string]interface{}{
+				"enabled":  false,
+				"capacity": "1Gi",
+			}
+			locker.Unlock()
+			ret <- pvc
+		}
+	}
+	container.VolumeMounts = mountPoints
+	return volumes
+}
+
+// prepareInitContainers add the init containers of a service.
+func prepareInitContainers(name string, s *compose.Service, container *helm.Container) []*helm.Container {
+
+	// We need to detect others services, but we probably not have parsed them yet, so
+	// we will wait for them for a while.
+	initContainers := make([]*helm.Container, 0)
+	for _, dp := range s.DependsOn {
+		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
+		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
+
+		foundPort := -1
+		if defaultPort, err := getPort(dp); err != nil {
+			// BUG: Sometimes the chan remains opened
+			foundPort = <-waitPort(dp)
+		} else {
+			foundPort = defaultPort
+		}
+		if foundPort == -1 {
+			log.Fatalf(
+				"ERROR, the %s service is waiting for %s port number, "+
+					"but it is never discovered. You must declare at least one port in "+
+					"the \"ports\" section of the service in the docker-compose file",
+				name,
+				dp,
+			)
+		}
+		command = strings.ReplaceAll(command, "__port__", strconv.Itoa(foundPort))
+
+		c.Command = []string{
+			"sh",
+			"-c",
+			command,
+		}
+		initContainers = append(initContainers, c)
+	}
+	return initContainers
+}
+
+// prepareProbes generate http/tcp/command probes for a service.
+func prepareProbes(name string, s *compose.Service, container *helm.Container) {
+
+	// manage the healthcheck property, if any
+	if s.HealthCheck != nil {
+		if s.HealthCheck.Interval == "" {
+			s.HealthCheck.Interval = "10s"
+		}
+		interval, err := time.ParseDuration(s.HealthCheck.Interval)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		if s.HealthCheck.StartPeriod == "" {
+			s.HealthCheck.StartPeriod = "0s"
+		}
+
+		initialDelaySeconds, err := time.ParseDuration(s.HealthCheck.StartPeriod)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		probe := helm.NewProbe(int(interval.Seconds()), int(initialDelaySeconds.Seconds()), 1, s.HealthCheck.Retries)
+
+		healthCheckLabel := s.Labels[helm.LABEL_HEALTHCHECK]
+
+		if healthCheckLabel != "" {
+
+			path := "/"
+			port := 80
+
+			u, err := url.Parse(healthCheckLabel)
+			if err == nil {
+				path = u.Path
+				port, _ = strconv.Atoi(u.Port())
+			} else {
+				path = "/"
+				port = 80
+			}
+
+			if strings.HasPrefix(healthCheckLabel, "http://") {
+				probe.HttpGet = &helm.HttpGet{
+					Path: path,
+					Port: port,
+				}
+			} else if strings.HasPrefix(healthCheckLabel, "tcp://") {
+				if err != nil {
+					log.Fatal(err)
+				}
+				probe.TCP = &helm.TCP{
+					Port: port,
+				}
+			} else {
+				c, _ := shlex.Split(healthCheckLabel)
+				probe.Exec = &helm.Exec{
+
+					Command: c,
+				}
+			}
+		} else if s.HealthCheck.Test[0] == "CMD" {
+			probe.Exec = &helm.Exec{
+				Command: s.HealthCheck.Test[1:],
+			}
+		}
+		container.LivenessProbe = probe
+	}
+}
+
+// prepareEnvFromFiles generate configMap or secrets from environment files.
+func prepareEnvFromFiles(name string, s *compose.Service, container *helm.Container, ret chan interface{}) {
+
+	// prepare secrets
+	secretsFiles := make([]string, 0)
+	if v, ok := s.Labels[helm.LABEL_ENV_SECRET]; ok {
+		secretsFiles = strings.Split(v, ",")
+	}
+
+	// manage environment files (env_file in compose)
+	for _, envfile := range s.EnvFiles {
+		f := strings.ReplaceAll(envfile, "_", "-")
+		f = strings.ReplaceAll(f, ".env", "")
+		f = strings.ReplaceAll(f, ".", "")
+		f = strings.ReplaceAll(f, "/", "")
+		cf := f + "-" + name
+		isSecret := false
+		for _, s := range secretsFiles {
+			if s == envfile {
+				isSecret = true
+			}
+		}
+		var store helm.InlineConfig
+		if !isSecret {
+			Bluef(ICON_CONF+" Generating configMap %s\n", cf)
+			store = helm.NewConfigMap(cf)
+		} else {
+			Bluef(ICON_SECRET+" Generating secret %s\n", cf)
+			store = helm.NewSecret(cf)
+		}
+		if err := store.AddEnvFile(envfile); err != nil {
+			ActivateColors = true
+			Red(err.Error())
+			ActivateColors = false
+			os.Exit(2)
+		}
+
+		section := "configMapRef"
+		if isSecret {
+			section = "secretRef"
+		}
+
+		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
+			section: {
+				"name": store.Metadata().Name,
+			},
+		})
+
+		ret <- store
+	}
 }
