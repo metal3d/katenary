@@ -48,7 +48,7 @@ else
 endif
 	echo
 	echo "Check the version"
-	echo "'./katenary -version' => $(shell ./katenary -version)"
+	echo "'./katenary version' => $(shell ./katenary version)"
 
 
 install: build
