@@ -7,7 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Version = "master" // set at build time to the git version/tag
+var Version = "master" // changed at compile time
+
 var longHelp = `Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
 It will create deployments, services, volumes, secrets, and ingress resources.
 But it will also create initContainers based on depend_on, healthcheck, and other features.
@@ -25,6 +26,10 @@ or
 `
 
 func main() {
+
+	// set the version to "cmd" package - yes... it's ugly
+	cmd.Version = Version
+
 	// The base command
 	rootCmd := &cobra.Command{
 		Use:   "katenary",

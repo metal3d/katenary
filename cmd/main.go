@@ -11,13 +11,14 @@ import (
 	"strings"
 )
 
-var composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
-var ComposeFile = ""
-var AppName = "MyApp"
-var Version = "master" // set at build time to the git version/tag
-var ChartsDir = "chart"
-
-var AppVersion = "0.0.1"
+var (
+	composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
+	ComposeFile  = ""
+	AppName      = "MyApp"
+	ChartsDir    = "chart"
+	Version      = "master"
+	AppVersion   = "0.0.1"
+)
 
 func init() {
 	FindComposeFile()

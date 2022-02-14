@@ -38,8 +38,8 @@ else
 	@echo "=> Build in container using" $(CTN)
 	@echo
 endif
-ifeq ($(GO),local)
 	echo $(BLD_CMD)
+ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
 	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang $(BLD_CMD)
@@ -48,7 +48,8 @@ else
 endif
 	echo
 	echo "Check the version"
-	echo "'./katenary version' => $(shell ./katenary version)"
+	echo -n "'./katenary version' => "; ./katenary version
+	echo
 
 
 install: build
