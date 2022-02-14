@@ -1,150 +1,87 @@
 package main
 
 import (
-	"errors"
-	"flag"
-	"fmt"
-	"katenary/compose"
-	"katenary/generator"
+	"katenary/cmd"
 	"katenary/helm"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+
+	"github.com/spf13/cobra"
 )
 
-var composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
-var ComposeFile = ""
-var AppName = "MyApp"
 var Version = "master" // set at build time to the git version/tag
-var ChartsDir = "chart"
+var longHelp = `Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
+It will create deployments, services, volumes, secrets, and ingress resources.
+But it will also create initContainers based on depend_on, healthcheck, and other features.
+It's not magical, sometimes you'll need to fix the generated charts.
+The general way to use it is to call one of these commands:
 
-func findComposeFile() bool {
-	for _, file := range composeFiles {
-		if _, err := os.Stat(file); err == nil {
-			ComposeFile = file
-			return true
-		}
-	}
-	return false
-}
+    katenary convert
+    katenary convert -f docker-compose.yml
+    katenary convert -f docker-compose.yml -o ./charts
 
-func detectGitVersion() (string, error) {
-	defaulVersion := "0.0.1"
-	// Check if .git directory exists
-	if s, err := os.Stat(".git"); err != nil {
-		// .git should be a directory
-		return defaulVersion, errors.New("no git repository found")
-	} else if !s.IsDir() {
-		// .git should be a directory
-		return defaulVersion, errors.New(".git is not a directory")
-	}
-
-	// check if "git" executable is callable
-	if _, err := exec.LookPath("git"); err != nil {
-		return defaulVersion, errors.New("git executable not found")
-	}
-
-	// get the latest commit hash
-	if out, err := exec.Command("git", "log", "-n1", "--pretty=format:%h").Output(); err == nil {
-		latestCommit := strings.TrimSpace(string(out))
-		// then get the current branch/tag
-		out, err := exec.Command("git", "branch", "--show-current").Output()
-		if err != nil {
-			return defaulVersion, errors.New("git branch --show-current failed")
-		} else {
-			currentBranch := strings.TrimSpace(string(out))
-			// finally, check if the current tag (if exists) correspond to the current commit
-			// git describe --exact-match --tags <latestCommit>
-			out, err := exec.Command("git", "describe", "--exact-match", "--tags", latestCommit).Output()
-			if err == nil {
-				return strings.TrimSpace(string(out)), nil
-			} else {
-				return currentBranch + "-" + latestCommit, nil
-			}
-		}
-	}
-	return defaulVersion, errors.New("git log failed")
-}
+In case of, check the help of each command using:
+    katenary <command> --help
+or
+    "katenary help <command>"
+`
 
 func main() {
-
-	appVersion := "0.0.1"
-	helpMessageForAppversion := "The version of the application. " +
-		"Default is 0.0.1. If you are using git, it will be the git version. " +
-		"Otherwise, it will be the branch name and the commit hash."
-	if v, err := detectGitVersion(); err == nil {
-		appVersion = v
-		helpMessageForAppversion = "The version of the application. " +
-			"If not set, the version will be detected from git."
+	// The base command
+	rootCmd := &cobra.Command{
+		Use:   "katenary",
+		Long:  longHelp,
+		Short: "Katenary is a tool to convert docker-compose files to Helm Charts",
 	}
 
-	// flags
-	composeFound := findComposeFile()
-
-	flag.StringVar(&ChartsDir, "chart-dir", ChartsDir, "set the chart directory")
-	flag.StringVar(&ComposeFile, "compose", ComposeFile, "set the compose file to parse")
-	flag.StringVar(&AppName, "appname", helm.GetProjectName(), "set the helm chart app name")
-	flag.StringVar(&appVersion, "appversion", appVersion, helpMessageForAppversion)
-	version := flag.Bool("version", false, "show version and exit")
-	force := flag.Bool("force", false, "force the removal of the chart-dir")
-	showLabels := flag.Bool("labels", false, "show possible labels and exit")
-
-	flag.Parse()
-
-	if *showLabels {
-		// display labels from helm/types.go
-		fmt.Println(helm.GetLabelsDocumentation())
-		os.Exit(0)
+	// to display the version
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Display version",
+		Run:   func(c *cobra.Command, args []string) { c.Println(Version) },
 	}
 
-	// Only display the version
-	if *version {
-		fmt.Println(Version)
-		os.Exit(0)
+	// convert command, need some flags
+	convertCmd := &cobra.Command{
+		Use:   "convert",
+		Short: "Convert docker-compose to helm chart",
+		Long: "Convert docker-compose to helm chart. The resulting helm chart will be in the current directory/" +
+			cmd.ChartsDir + "/" + cmd.AppName +
+			".\nThe appversion will be produced that waty:\n" +
+			"- from git version or tag\n" +
+			"- if it's not defined, so the version will be get from the --apVersion flag \n" +
+			"- if it's not defined, so the 0.0.1 version is used",
+		Run: func(c *cobra.Command, args []string) {
+			force := c.Flag("force").Changed
+			appversion := c.Flag("app-version").Value.String()
+			composeFile := c.Flag("compose-file").Value.String()
+			appName := c.Flag("app-name").Value.String()
+			chartDir := c.Flag("output-dir").Value.String()
+			cmd.Convert(composeFile, appversion, appName, chartDir, force)
+		},
+	}
+	convertCmd.Flags().BoolP(
+		"force", "f", false, "Force overwrite of existing files")
+	convertCmd.Flags().StringP(
+		"app-version", "a", cmd.AppVersion, "App version")
+	convertCmd.Flags().StringP(
+		"compose-file", "c", cmd.ComposeFile, "Docker compose file")
+	convertCmd.Flags().StringP(
+		"app-name", "n", cmd.AppName, "Application name")
+	convertCmd.Flags().StringP(
+		"output-dir", "o", cmd.ChartsDir, "Chart directory")
+
+	// show possible labels to set in docker-compose file
+	showLabelsCmd := &cobra.Command{
+		Use:   "show-labels",
+		Short: "Show labels of a resource",
+		Run: func(c *cobra.Command, args []string) {
+			c.Println(helm.GetLabelsDocumentation())
+		},
 	}
 
-	_, err := os.Stat(ComposeFile)
-	if !composeFound && err != nil {
-		fmt.Println("No compose file found")
-		os.Exit(1)
-	}
+	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(convertCmd)
+	rootCmd.AddCommand(showLabelsCmd)
 
-	dirname := filepath.Join(ChartsDir, AppName)
-	if _, err := os.Stat(dirname); err == nil && !*force {
-		response := ""
-		for response != "y" && response != "n" {
-			response = "n"
-			fmt.Printf(""+
-				"The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m!\n"+
-				"Do you really want to continue? [y/N]: ", dirname)
-			fmt.Scanf("%s", &response)
-			response = strings.ToLower(response)
-		}
-		if response == "n" {
-			fmt.Println("Cancelled")
-			os.Exit(0)
-		}
-	}
-
-	// cleanup and create the chart directory (until "templates")
-	if err := os.RemoveAll(dirname); err != nil {
-		fmt.Printf("Error removing %s: %s\n", dirname, err)
-		os.Exit(1)
-	}
-
-	// create the templates directory
-	templatesDir := filepath.Join(dirname, "templates")
-	if err := os.MkdirAll(templatesDir, 0755); err != nil {
-		fmt.Printf("Error creating %s: %s\n", templatesDir, err)
-		os.Exit(1)
-	}
-
-	// Parse the compose file now
-	p := compose.NewParser(ComposeFile)
-	p.Parse(AppName)
-
-	// start generator
-	generator.Generate(p, Version, AppName, appVersion, ComposeFile, dirname)
+	rootCmd.Execute()
 
 }
