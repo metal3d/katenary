@@ -38,14 +38,16 @@ type IngressHttp struct {
 type IngressPath struct {
 	Path     string
 	PathType string `yaml:"pathType"`
-	Backend  IngressBackend
+	Backend  *IngressBackend
 }
 
 type IngressBackend struct {
-	Service IngressService
+	Service     IngressService
+	ServiceName string      `yaml:"serviceName"` // for kubernetes version < 1.18
+	ServicePort interface{} `yaml:"servicePort"` // for kubernetes version < 1.18
 }
 
 type IngressService struct {
-	Name string
-	Port map[string]interface{}
+	Name string                 `yaml:"name"`
+	Port map[string]interface{} `yaml:"port"`
 }

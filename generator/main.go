@@ -197,7 +197,7 @@ func createIngress(name string, port int, s *compose.Service) *helm.Ingress {
 				Paths: []helm.IngressPath{{
 					Path:     "/",
 					PathType: "Prefix",
-					Backend: helm.IngressBackend{
+					Backend: &helm.IngressBackend{
 						Service: helm.IngressService{
 							Name: RELEASE_NAME + "-" + name,
 							Port: map[string]interface{}{

@@ -10,7 +10,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const classAndVersionCondition = `{{- if and .Values.__name__.ingress.class (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}` + "\n"
+const versionCondition = `{{- if semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion }}` + "\n"
+
 func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
+	// Set the backend for 1.18
+	for _, b := range ingress.Spec.Rules {
+		for _, p := range b.Http.Paths {
+			p.Backend.ServiceName = p.Backend.Service.Name
+			if n, ok := p.Backend.Service.Port["number"]; ok {
+				p.Backend.ServicePort = n
+			}
+		}
+	}
 	kind := "ingress"
 	buffer := bytes.NewBuffer(nil)
 	fname := filepath.Join(templatesDir, name+"."+kind+".yaml")
@@ -23,18 +35,32 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 	fp, _ := os.Create(fname)
 	content := string(buffer.Bytes())
 	lines := strings.Split(content, "\n")
+
+	backendHit := false
 	for _, l := range lines {
 		if strings.Contains(l, "ingressClassName") {
-			p := strings.Split(l, ":")
-			condition := p[1]
-			condition = strings.ReplaceAll(condition, "'", "")
-			condition = strings.ReplaceAll(condition, "{{", "")
-			condition = strings.ReplaceAll(condition, "}}", "")
-			condition = strings.TrimSpace(condition)
-			condition = "{{- if " + condition + " }}"
-			l = "  " + condition + "\n" + l + "\n  {{- end }}"
+			// should be set only if the version of Kubernetes is 1.18-0 or higher
+			cond := strings.ReplaceAll(classAndVersionCondition, "__name__", name)
+			l = `  ` + cond + l + "\n" + `  {{- end }}`
 		}
+
+		// manage the backend format following the Kubernetes 1.18-0 version or higher
+		if strings.Contains(l, "service:") {
+			n := CountSpaces(l)
+			l = strings.Repeat(" ", n) + versionCondition + l
+		}
+		if strings.Contains(l, "serviceName:") || strings.Contains(l, "servicePort:") {
+			n := CountSpaces(l)
+			if !backendHit {
+				l = strings.Repeat(" ", n) + "{{- else }}\n" + l
+			} else {
+				l = l + "\n" + strings.Repeat(" ", n) + "{{- end }}\n"
+			}
+			backendHit = true
+		}
+
 		fp.WriteString(l + "\n")
 	}
+
 	fp.Close()
 }
