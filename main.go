@@ -54,7 +54,7 @@ func main() {
 			cmd.ChartsDir + "/" + cmd.AppName +
 			".\nThe appversion will be generated that way:\n" +
 			"- if it's in a git project, it takes git version or tag\n" +
-			"- if it's not defined, so the version will be get from the --apVersion flag \n" +
+			"- if it's not defined, so the version will be get from the --app-version flag \n" +
 			"- if it's not defined, so the 0.0.1 version is used",
 		Run: func(c *cobra.Command, args []string) {
 			force := c.Flag("force").Changed
