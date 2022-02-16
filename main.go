@@ -71,7 +71,7 @@ func main() {
 		},
 	}
 	convertCmd.Flags().BoolP(
-		"force", "f", false, "Force overwrite of existing files")
+		"force", "f", false, "Force overwrite of existing output files")
 	convertCmd.Flags().StringP(
 		"app-version", "a", cmd.AppVersion, "App version")
 	convertCmd.Flags().StringP(
