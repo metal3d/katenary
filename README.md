@@ -23,6 +23,27 @@ sudo make install PREFIX=/usr/local
 ```
 
 
+# Tips
+
+We strongly recommand to add the "completion" call to you SHELL using the common bashrc, or whatever the profile file you use.
+
+E.g. :
+
+```
+# bash in ~/.bashrc file
+source <(katenary completion bash)
+# if the documentation breaks a bit your completion:
+source <(katenary completion bash --no-description)
+
+# zsh in ~/.zshrc
+source <(helm completion zsh)
+
+# fish in ~/.config/fish/config.fish
+katenary completion fish | source
+
+# powershell (as we don't provide any support on Windows yet, please avoid this...)
+```
+
 # Usage
 
 ```bash
