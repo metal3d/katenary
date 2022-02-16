@@ -31,7 +31,7 @@ func GetLabelsDocumentation() string {
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress
 {{.LABEL_ENV_SERVICE | printf "%-33s"}}: specifies that the environment variable points on a service name
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volume points on a configmap
-{{.LABEL_SAMEPOD     | printf "%-33s}}: specifies that the pod should be deployed in the same pod than the given service name
+{{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the volume should be "emptyDir" instead of persistentVolumeClaim
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
