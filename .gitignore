@@ -1,5 +1,7 @@
+dist/*
 .cache/*
 chart/*
 docker-compose.yaml
 katenary
 *.env
+docker-compose*

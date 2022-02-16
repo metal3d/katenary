@@ -29,7 +29,7 @@ We strongly recommand to add the "completion" call to you SHELL using the common
 
 E.g. :
 
-```
+```bash
 # bash in ~/.bashrc file
 source <(katenary completion bash)
 # if the documentation breaks a bit your completion:
@@ -46,7 +46,7 @@ katenary completion fish | source
 
 # Usage
 
-```bash
+```
 Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
 It will create deployments, services, volumes, secrets, and ingress resources.
 But it will also create initContainers based on depend_on, healthcheck, and other features.

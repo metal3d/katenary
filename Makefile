@@ -6,6 +6,10 @@ PREFIX=~/.local
 
 GO=container
 BLD_CMD=go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" .
+GOOS=linux
+GOARCH=amd64
+
+BUILD_IMAGE=docker.io/golang:1.17
 
 .PHONY: help clean build
 
@@ -23,14 +27,63 @@ help:
 	$$ make build
 	$$ sudo make install PREFIX=/usr/local
 	
-	Katenary is statically built (in Go), so there is no library to install. 
+	Katenary is statically built (in Go), so there is no library to install.
+	
+	To build for others OS:
+	$$ make GOOS=linux GOARCH=amd64
+	This will build the binary for linux amd64.
+	$$ make GOOS=linux GOARCH=arm
+	This will build the binary for linux arm.
+	$$ make GOOS=windows GOARCH=amd64
+	This will build the binary for windows amd64.
+	$$ make GOOS=darwin GOARCH=amd64
+	This will build the binary for darwin amd64.
+
+	Or you can build all versions:
+	$$ make build-all
+
 	EOF
 
 
-build: katenary
+
+build: pull katenary
+
+build-all: pull dist dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin
+
+pull:
+	@echo -e "\033[1;32mPulling $(BUILD_IMAGE) docker image\033[0m"
+	@$(CTN) pull $(BUILD_IMAGE)
+
+dist:
+	mkdir -p dist
+
+dist/katenary-linux-amd64:
+	@echo -e "\033[1;32mBuilding katenary for linux-amd64...\033[0m"
+	$(MAKE) katenary GOOS=linux GOARCH=amd64
+	strip katenary
+	mv katenary dist/katenary-linux-amd64
+
+
+dist/katenary-linux-arm64:
+	@echo -e "\033[1;32mBuilding katenary for linux-arm...\033[0m"
+	$(MAKE) katenary GOOS=linux GOARCH=arm64
+	strip katenary
+	mv katenary dist/katenary-linux-arm64
+
+dist/katenary.exe:
+	@echo -e "\033[1;32mBuilding katenary for windows...\033[0m"
+	$(MAKE) katenary GOOS=windows GOARCH=amd64
+	strip katenary
+	mv katenary dist/katenary-windows.exe
+
+dist/katenary-darwin:
+	@echo -e "\033[1;32mBuilding katenary for darwin...\033[0m"
+	$(MAKE) katenary GOOS=darwin GOARCH=amd64
+	strip katenary
+	mv katenary dist/katenary-darwin
 
 katenary: $(wildcard */*.go Makefile go.mod go.sum)
-	@echo "=> Building Katenary version" $(VERSION)
+	@echo -e "\033[1;33mBuilding katenary $(VERSION)...\033[0m"
 ifeq ($(GO),local)
 	@echo "=> Build in host using go"
 	@echo
@@ -42,14 +95,11 @@ endif
 ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
-	@podman run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it golang $(BLD_CMD)
+	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it docker.io/golang $(BLD_CMD)
 else
-	@docker run --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it golang $(BLD_CMD)
+	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) --rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it docker.io/golang $(BLD_CMD)
 endif
-	echo
-	echo "Check the version"
-	echo -n "'./katenary version' => "; ./katenary version
-	echo
+	
 
 
 install: build
