@@ -71,17 +71,17 @@ func main() {
 		},
 	}
 	convertCmd.Flags().BoolP(
-		"force", "f", false, "Force overwrite of existing output files")
+		"force", "f", false, "force overwrite of existing output files")
 	convertCmd.Flags().StringP(
-		"app-version", "a", cmd.AppVersion, "App version")
+		"app-version", "a", cmd.AppVersion, "app version")
 	convertCmd.Flags().StringP(
-		"compose-file", "c", cmd.ComposeFile, "Docker compose file")
+		"compose-file", "c", cmd.ComposeFile, "docker compose file")
 	convertCmd.Flags().StringP(
-		"app-name", "n", cmd.AppName, "Application name")
+		"app-name", "n", cmd.AppName, "application name")
 	convertCmd.Flags().StringP(
-		"output-dir", "o", cmd.ChartsDir, "Chart directory")
+		"output-dir", "o", cmd.ChartsDir, "chart directory")
 	convertCmd.Flags().IntP(
-		"indent-size", "i", 2, "Set the indent size of the YAML files")
+		"indent-size", "i", 2, "set the indent size of the YAML files")
 
 	// show possible labels to set in docker-compose file
 	showLabelsCmd := &cobra.Command{
