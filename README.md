@@ -26,22 +26,38 @@ sudo make install PREFIX=/usr/local
 # Usage
 
 ```bash
-Usage of katenary:
-  -appname string
-    	sive the helm chart app name (default "MyApp")
-  -appversion string
-    	set the chart appVersion (default "0.0.1")
-  -chart-dir string
-    	set the chart directory (default "chart")
-  -compose string
-    	set the compose file to parse (default "docker-compose.yaml")
-  -force
-    	force the removal of the chart-dir
-  -version
-    	Show version and exit
+Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
+It will create deployments, services, volumes, secrets, and ingress resources.
+But it will also create initContainers based on depend_on, healthcheck, and other features.
+It's not magical, sometimes you'll need to fix the generated charts.
+The general way to use it is to call one of these commands:
+
+    katenary convert
+    katenary convert -f docker-compose.yml
+    katenary convert -f docker-compose.yml -o ./charts
+
+In case of, check the help of each command using:
+    katenary <command> --help
+or
+    "katenary help <command>"
+
+Usage:
+  katenary [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  convert     Convert docker-compose to helm chart
+  help        Help about any command
+  show-labels Show labels of a resource
+  version     Display version
+
+Flags:
+  -h, --help   help for katenary
+
+Use "katenary [command] --help" for more information about a command.
 ```
 
-Katenary will try to find a `docker-compose.yaml` file inside the current directory. It will check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask you if you want to delete it before recreating.
+Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask you if you want to delete it before recreating.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
@@ -94,8 +110,20 @@ services:
 
 # Labels
 
-- `katenary.io/env-to-service` binds the given (coma separated) variables names  to {{ .Release.Name }}-value
-- `katenary.io/ingress`: create an ingress and bind it to the given port
-- `katenary.io/secret-envfiles`: force the creation of a secret for the given coma separated list of "env_file"
-- `katenary.io/ports` is a coma separated list of ports if you want to avoid the "ports" section in your docker-compose for any reason
-- `katenary.io/configma-volumes` is a coma separated list of directory (should be declared as volumes also) to transform to a configMap object 
+These labels could be found by `katenary show-labels`, and can be placed as "labels" inside your docker-compose file:
+
+```
+katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap
+katenary.io/ports                : set the ports to expose as a service (coma separated)
+katenary.io/ingress              : set the port to expose in an ingress (coma separated)
+katenary.io/env-to-service       : specifies that the environment variable points on a service name (coma separated)
+katenary.io/configmap-volumes    : specifies that the volumes points on a configmap (coma separated)
+katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the given service name
+katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
+katenary.io/healthcheck          : specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
+                                   You can use these form of label values:
+                                   - "http://[not used address][:port][/path]" to specify an http healthcheck
+                                   - "tcp://[not used address]:port" to specify a tcp healthcheck
+                                   - other string is condidered as a "command" healthcheck
+```
+

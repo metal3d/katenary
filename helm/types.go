@@ -27,12 +27,12 @@ func GetLabelsDocumentation() string {
 	t, _ := template.New("labels").Parse(`
 # Labels
 {{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap
-{{.LABEL_PORT        | printf "%-33s"}}: set the port to expose as a service
-{{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress
-{{.LABEL_ENV_SERVICE | printf "%-33s"}}: specifies that the environment variable points on a service name
-{{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volume points on a configmap
+{{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
+{{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
+{{.LABEL_ENV_SERVICE | printf "%-33s"}}: specifies that the environment variable points on a service name (coma separated)
+{{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
 {{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
-{{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the volume should be "emptyDir" instead of persistentVolumeClaim
+{{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
 {{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
