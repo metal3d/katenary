@@ -19,6 +19,8 @@ const (
 	LABEL_ENV_SERVICE = K + "/env-to-service"
 	LABEL_VOL_CM      = K + "/configmap-volumes"
 	LABEL_HEALTHCHECK = K + "/healthcheck"
+	LABEL_SAMEPOD     = K + "/same-pod"
+	LABEL_EMPTYDIRS   = K + "/empty-dirs"
 )
 
 func GetLabelsDocumentation() string {
@@ -29,6 +31,8 @@ func GetLabelsDocumentation() string {
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress
 {{.LABEL_ENV_SERVICE | printf "%-33s"}}: specifies that the environment variable points on a service name
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volume points on a configmap
+{{.LABEL_SAMEPOD     | printf "%-33s}}: specifies that the pod should be deployed in the same pod than the given service name
+{{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the volume should be "emptyDir" instead of persistentVolumeClaim
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
 {{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
@@ -43,6 +47,8 @@ func GetLabelsDocumentation() string {
 		"LABEL_INGRESS":     LABEL_INGRESS,
 		"LABEL_VOL_CM":      LABEL_VOL_CM,
 		"LABEL_HEALTHCHECK": LABEL_HEALTHCHECK,
+		"LABEL_SAMEPOD":     LABEL_SAMEPOD,
+		"LABEL_EMPTYDIRS":   LABEL_EMPTYDIRS,
 	})
 	return buff.String()
 }

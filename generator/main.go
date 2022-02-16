@@ -39,6 +39,7 @@ const (
 // Values is kept in memory to create a values.yaml file.
 var Values = make(map[string]map[string]interface{})
 var VolumeValues = make(map[string]map[string]map[string]interface{})
+var EmptyDirs = []string{}
 
 var dependScript = `
 OK=0
@@ -51,18 +52,21 @@ echo
 echo "Done"
 `
 
+var madeDeployments = make(map[string]helm.Deployment, 0)
+
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
-func CreateReplicaObject(name string, s *compose.Service) chan interface{} {
+func CreateReplicaObject(name string, s *compose.Service, linked map[string]*compose.Service) chan interface{} {
 	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+1)
-	go parseService(name, s, ret)
+	go parseService(name, s, linked, ret)
 	return ret
 }
 
 // This function will try to yied deployment and services based on a service from the compose file structure.
-func parseService(name string, s *compose.Service, ret chan interface{}) {
+func parseService(name string, s *compose.Service, linked map[string]*compose.Service, ret chan interface{}) {
 	Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 
 	o := helm.NewDeployment(name)
+
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 
 	// prepare cm and secrets
@@ -83,7 +87,11 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
 
 	// Prepare volumes
-	o.Spec.Template.Spec.Volumes = prepareVolumes(name, s, container, ret)
+	madePVC := make(map[string]bool)
+	o.Spec.Template.Spec.Volumes = prepareVolumes(name, name, s, container, madePVC, ret)
+
+	// Now, for "depends_on" section, it's a bit tricky to get dependencies, see the function below.
+	o.Spec.Template.Spec.InitContainers = prepareInitContainers(name, s, container)
 
 	// Add selectors
 	selectors := buildSelector(name, s)
@@ -92,8 +100,38 @@ func parseService(name string, s *compose.Service, ret chan interface{}) {
 	}
 	o.Spec.Template.Metadata.Labels = selectors
 
-	// Now, for "depends_on" section, it's a bit tricky to get dependencies, see the function below.
-	o.Spec.Template.Spec.InitContainers = prepareInitContainers(name, s, container)
+	// Now, the linked services
+	for lname, link := range linked {
+		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
+		container.Image = "{{ .Values." + lname + ".image }}"
+		Values[lname] = map[string]interface{}{
+			"image": link.Image,
+		}
+		prepareProbes(lname, link, container)
+		generateContainerPorts(link, lname, container)
+		o.Spec.Template.Spec.Containers = append(o.Spec.Template.Spec.Containers, container)
+		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, prepareVolumes(name, lname, link, container, madePVC, ret)...)
+		o.Spec.Template.Spec.InitContainers = append(o.Spec.Template.Spec.InitContainers, prepareInitContainers(lname, link, container)...)
+		//append ports and expose ports to the deployment, to be able to generate them in the Service file
+		if len(link.Ports) > 0 || len(link.Expose) > 0 {
+			s.Ports = append(s.Ports, link.Ports...)
+			s.Expose = append(s.Expose, link.Expose...)
+		}
+	}
+
+	// Remove duplicates in volumes
+	volumes := make([]map[string]interface{}, 0)
+	done := make(map[string]bool)
+	for _, vol := range o.Spec.Template.Spec.Volumes {
+		name := vol["name"].(string)
+		if _, ok := done[name]; ok {
+			continue
+		} else {
+			done[name] = true
+			volumes = append(volumes, vol)
+		}
+	}
+	o.Spec.Template.Spec.Volumes = volumes
 
 	// Then, create Services and possible Ingresses for ingress labels, "ports" and "expose" section
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
@@ -335,7 +373,7 @@ func generateContainerPorts(s *compose.Service, name string, container *helm.Con
 }
 
 // prepareVolumes add the volumes of a service.
-func prepareVolumes(name string, s *compose.Service, container *helm.Container, ret chan interface{}) []map[string]interface{} {
+func prepareVolumes(deployment, name string, s *compose.Service, container *helm.Container, madePVC map[string]bool, ret chan interface{}) []map[string]interface{} {
 
 	volumes := make([]map[string]interface{}, 0)
 	mountPoints := make([]interface{}, 0)
@@ -383,11 +421,25 @@ func prepareVolumes(name string, s *compose.Service, container *helm.Container, 
 			})
 			ret <- cm
 		} else {
-
 			// rmove minus sign from volume name
 			volname = strings.ReplaceAll(volname, "-", "")
 
-			pvc := helm.NewPVC(name, volname)
+			isEmptyDir := false
+			for _, v := range EmptyDirs {
+				v = strings.ReplaceAll(v, "-", "")
+				if v == volname {
+					volumes = append(volumes, map[string]interface{}{
+						"name":     volname,
+						"emptyDir": map[string]string{},
+					})
+					isEmptyDir = true
+					break
+				}
+			}
+			if isEmptyDir {
+				continue
+			}
+
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"persistentVolumeClaim": map[string]string{
@@ -399,17 +451,22 @@ func prepareVolumes(name string, s *compose.Service, container *helm.Container, 
 				"mountPath": volepath,
 			})
 
-			Yellow(ICON_STORE+" Generate volume values for ", volname, " in deployment ", name)
+			Yellow(ICON_STORE+" Generate volume values", volname, "for container named", name, "in deployment", deployment)
 			locker.Lock()
-			if _, ok := VolumeValues[name]; !ok {
-				VolumeValues[name] = make(map[string]map[string]interface{})
+			if _, ok := VolumeValues[deployment]; !ok {
+				VolumeValues[deployment] = make(map[string]map[string]interface{})
 			}
-			VolumeValues[name][volname] = map[string]interface{}{
+			VolumeValues[deployment][volname] = map[string]interface{}{
 				"enabled":  false,
 				"capacity": "1Gi",
 			}
 			locker.Unlock()
-			ret <- pvc
+
+			if _, ok := madePVC[deployment+volname]; !ok {
+				madePVC[deployment+volname] = true
+				pvc := helm.NewPVC(deployment, volname)
+				ret <- pvc
+			}
 		}
 	}
 	container.VolumeMounts = mountPoints

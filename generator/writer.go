@@ -23,8 +23,39 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 	templatesDir := filepath.Join(dirName, "templates")
 	files := make(map[string]chan interface{})
 
+	// list avoided services
+	avoids := make(map[string]bool)
+	for n, service := range p.Data.Services {
+		if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
+			avoids[n] = true
+		}
+	}
+
 	for name, s := range p.Data.Services {
-		files[name] = CreateReplicaObject(name, s)
+
+		// Manage emptyDir volumes
+		if empty, ok := s.Labels[helm.LABEL_EMPTYDIRS]; ok {
+			//split empty list by coma
+			emptyDirs := strings.Split(empty, ",")
+			//append them in EmptyDirs
+			EmptyDirs = append(EmptyDirs, emptyDirs...)
+		}
+
+		// fetch corresponding service in "links"
+		linked := make(map[string]*compose.Service, 0)
+		// find service linked to this one
+		for n, service := range p.Data.Services {
+			if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
+				if service.Labels[helm.LABEL_SAMEPOD] == name {
+					linked[n] = service
+				}
+			}
+		}
+
+		if _, found := avoids[name]; found {
+			continue
+		}
+		files[name] = CreateReplicaObject(name, s, linked)
 	}
 
 	// to generate notes, we need to keep an Ingresses list
