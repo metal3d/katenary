@@ -17,7 +17,7 @@ func BuildService(service *helm.Service, name, templatesDir string) {
 	fname := filepath.Join(templatesDir, name+suffix+"."+kind+".yaml")
 	fp, _ := os.Create(fname)
 	enc := yaml.NewEncoder(fp)
-	enc.SetIndent(2)
+	enc.SetIndent(IndentSize)
 	enc.Encode(service)
 	fp.Close()
 }

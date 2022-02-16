@@ -15,7 +15,7 @@ func BuildStorage(storage *helm.Storage, name, templatesDir string) {
 	volname := storage.K8sBase.Metadata.Labels[helm.K+"/pvc-name"]
 	fp.WriteString("{{ if .Values." + name + ".persistence." + volname + ".enabled }}\n")
 	enc := yaml.NewEncoder(fp)
-	enc.SetIndent(2)
+	enc.SetIndent(IndentSize)
 	enc.Encode(storage)
 	fp.WriteString("{{- end -}}")
 }

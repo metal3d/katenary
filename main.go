@@ -2,7 +2,9 @@ package main
 
 import (
 	"katenary/cmd"
+	"katenary/generator/writers"
 	"katenary/helm"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -50,16 +52,21 @@ func main() {
 		Short: "Convert docker-compose to helm chart",
 		Long: "Convert docker-compose to helm chart. The resulting helm chart will be in the current directory/" +
 			cmd.ChartsDir + "/" + cmd.AppName +
-			".\nThe appversion will be produced that waty:\n" +
-			"- from git version or tag\n" +
+			".\nThe appversion will be generated that way:\n" +
+			"- if it's in a git project, it takes git version or tag\n" +
 			"- if it's not defined, so the version will be get from the --apVersion flag \n" +
 			"- if it's not defined, so the 0.0.1 version is used",
 		Run: func(c *cobra.Command, args []string) {
 			force := c.Flag("force").Changed
+			// TODO: is there a way to get typed values from cobra?
 			appversion := c.Flag("app-version").Value.String()
 			composeFile := c.Flag("compose-file").Value.String()
 			appName := c.Flag("app-name").Value.String()
 			chartDir := c.Flag("output-dir").Value.String()
+			indentation, err := strconv.Atoi(c.Flag("indent-size").Value.String())
+			if err != nil {
+				writers.IndentSize = indentation
+			}
 			cmd.Convert(composeFile, appversion, appName, chartDir, force)
 		},
 	}
@@ -73,6 +80,8 @@ func main() {
 		"app-name", "n", cmd.AppName, "Application name")
 	convertCmd.Flags().StringP(
 		"output-dir", "o", cmd.ChartsDir, "Chart directory")
+	convertCmd.Flags().IntP(
+		"indent-size", "i", 2, "Set the indent size of the YAML files")
 
 	// show possible labels to set in docker-compose file
 	showLabelsCmd := &cobra.Command{

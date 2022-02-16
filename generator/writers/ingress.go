@@ -27,7 +27,7 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 	buffer := bytes.NewBuffer(nil)
 	fname := filepath.Join(templatesDir, name+"."+kind+".yaml")
 	enc := yaml.NewEncoder(buffer)
-	enc.SetIndent(2)
+	enc.SetIndent(IndentSize)
 	buffer.WriteString("{{- if .Values." + name + ".ingress.enabled -}}\n")
 	enc.Encode(ingress)
 	buffer.WriteString("{{- end -}}")
