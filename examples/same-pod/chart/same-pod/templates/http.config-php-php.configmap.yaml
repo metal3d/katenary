@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Release.Name }}-config-php-php'
+  labels:
+    katenary.io/component: ""
+    katenary.io/project: same-pod
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: 74e67695bfdbb829f15531321e158808018280e0
+    katenary.io/version: master-bf44d44
+data:
+  www.conf: |
+    [www]
+    user = www-data
+    group = www-data
+
+    listen = /sock/fpm.sock
+
+    pm = dynamic
+    pm.max_children = 5
+    pm.start_servers = 2
+    pm.min_spare_servers = 1
+    pm.max_spare_servers = 3
+
+    access.log = /proc/self/fd/2
+    log_limit = 8192
+    clear_env = no
+    catch_workers_output = yes
+    decorate_workers_output = no

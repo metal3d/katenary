@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ .Release.Name }}-database'
+  labels:
+    katenary.io/component: database
+    katenary.io/project: basic
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: b9f12bb7d1e97901c1d7680394209525763f6640
+    katenary.io/version: master-3619cc4
+spec:
+  selector:
+    katenary.io/component: database
+    katenary.io/release: '{{ .Release.Name }}'
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306

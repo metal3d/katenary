@@ -1,0 +1,8 @@
+
+Congratulations,
+
+Your application is now deployed. This may take a while to be up and responding.
+
+{{ if .Values.webapp.ingress.enabled -}}
+- webapp is accessible on : http://{{ .Values.webapp.ingress.host }}
+{{- end }}

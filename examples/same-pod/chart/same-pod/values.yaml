@@ -1,0 +1,8 @@
+http:
+  image: nginx:alpine
+  ingress:
+    class: nginx
+    enabled: false
+    host: http.same-pod.tld
+php:
+  image: php:fpm

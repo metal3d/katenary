@@ -1,0 +1,34 @@
+{{- if .Values.webapp.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: '{{ .Release.Name }}-webapp'
+  labels:
+    katenary.io/component: webapp
+    katenary.io/project: basic
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: b9f12bb7d1e97901c1d7680394209525763f6640
+    katenary.io/version: master-3619cc4
+spec:
+  {{- if and .Values.webapp.ingress.class (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: '{{ .Values.webapp.ingress.class }}'
+  {{- end }}
+  rules:
+    - host: '{{ .Values.webapp.ingress.host }}'
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              {{- if semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: '{{ .Release.Name }}-webapp'
+                port:
+                  number: 80
+              {{- else }}
+              serviceName: '{{ .Release.Name }}-webapp'
+              servicePort: 80
+              {{- end }}
+
+{{- end -}}
