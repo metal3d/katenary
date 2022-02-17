@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+
+  webapp:
+    image: php:7-apache
+
+    environment:
+      DB_HOST: database
+    ports:
+      - "8080:80"
+    labels:
+      # expose an ingress
+      katenary.io/ingress: 80
+      # DB_HOST is actually a service name
+      katenary.io/env-to-service: DB_HOST
+    depends_on:
+      - database
+
+  database:
+    image: mariadb:10
+    environment:
+      MARIADB_ROOT_PASSWORD: foobar
+      MARIADB_USER: foo
+      MARIADB_PASSWORD: foo
+      MARIADB_DATABASE: myapp
+    labels:
+      # because we don't provide "ports" or "expose", alert katenary
+      # to use the mysql port for service declaration
+      katenary.io/ports: 3306

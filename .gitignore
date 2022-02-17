@@ -5,3 +5,4 @@ docker-compose.yaml
 katenary
 *.env
 docker-compose*
+!examples/**/docker-compose*
