@@ -432,6 +432,11 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 						"name":     volname,
 						"emptyDir": map[string]string{},
 					})
+					mountPoints = append(mountPoints, map[string]interface{}{
+						"name":      volname,
+						"mountPath": volepath,
+					})
+					container.VolumeMounts = mountPoints
 					isEmptyDir = true
 					break
 				}
