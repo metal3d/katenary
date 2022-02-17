@@ -9,6 +9,8 @@ This project is partially made at [Smile](https://smile.eu)
 
 # Install
 
+You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
+
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
 ```bash
