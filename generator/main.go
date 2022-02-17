@@ -403,12 +403,21 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 			continue
 		}
 		if isCM {
+			// check if the volname path points on a file, if so, we need to add subvolume to the interface
+			stat, _ := os.Stat(volname)
+			pointToFile := ""
+			if !stat.IsDir() {
+				pointToFile = filepath.Base(volname)
+				volname = filepath.Dir(volname)
+			}
+
 			// the volume is a path and it's explicitally asked to be a configmap in labels
 			cm := buildCMFromPath(volname)
 			volname = strings.Replace(volname, "./", "", 1)
 			volname = strings.ReplaceAll(volname, "/", "-")
 			volname = strings.ReplaceAll(volname, ".", "-")
 			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
+
 			// build a configmap from the volume path
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
@@ -416,10 +425,18 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 					"name": cm.K8sBase.Metadata.Name,
 				},
 			})
-			mountPoints = append(mountPoints, map[string]interface{}{
-				"name":      volname,
-				"mountPath": volepath,
-			})
+			if len(pointToFile) > 0 {
+				mountPoints = append(mountPoints, map[string]interface{}{
+					"name":      volname,
+					"mountPath": volepath,
+					"subPath":   pointToFile,
+				})
+			} else {
+				mountPoints = append(mountPoints, map[string]interface{}{
+					"name":      volname,
+					"mountPath": volepath,
+				})
+			}
 			ret <- cm
 		} else {
 			// rmove minus sign from volume name
