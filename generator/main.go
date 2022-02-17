@@ -406,6 +406,7 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 			// the volume is a path and it's explicitally asked to be a configmap in labels
 			cm := buildCMFromPath(volname)
 			volname = strings.Replace(volname, "./", "", 1)
+			volname = strings.ReplaceAll(volname, "/", "-")
 			volname = strings.ReplaceAll(volname, ".", "-")
 			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
 			// build a configmap from the volume path
