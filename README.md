@@ -157,3 +157,12 @@ katenary.io/healthcheck          : specifies that the container should be monito
                                    - other string is condidered as a "command" healthcheck
 ```
 
+# What a name...
+
+Katenary is the stylized name of the project that comes from the "catenary" word.
+
+A catenary is a curve formed by a wire, rope, or chain hanging freely from two points that are not in the same vertical line. For example, the anchor chain between a bot and the anchor.
+
+This "curved link" represents what we try to do, the project is a "streched link from docker-compose to helm chart".
+
+
