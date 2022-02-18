@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"katenary/cmd"
 	"katenary/generator/writers"
 	"katenary/helm"
+	"katenary/update"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -92,10 +94,57 @@ func main() {
 		},
 	}
 
-	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(convertCmd)
-	rootCmd.AddCommand(showLabelsCmd)
+	// Update the binary to the latest version
+	updateCmd := &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade katenary to the latest version if available",
+		Run: func(c *cobra.Command, args []string) {
+			version, assets, err := update.CheckLatestVersion()
+			if err != nil {
+				c.Println(err)
+				return
+			}
+			c.Println("Updating to version: " + version)
+			err = update.DownloadLatestVersion(assets)
+			if err != nil {
+				c.Println(err)
+				return
+			}
+			c.Println("Update completed")
+		},
+	}
 
-	rootCmd.Execute()
+	rootCmd.AddCommand(
+		versionCmd,
+		convertCmd,
+		showLabelsCmd,
+		updateCmd,
+	)
 
+	// in parallel, check if the current katenary version is the latest
+	ch := make(chan string)
+	go func() {
+		version, _, err := update.CheckLatestVersion()
+		if err != nil {
+			ch <- ""
+			return
+		}
+		if cmd.Version != version {
+			ch <- fmt.Sprintf("\x1b[33mNew version available: " +
+				version +
+				" - to auto upgrade katenary, you can execute: katenary upgrade\x1b[0m\n")
+		}
+	}()
+
+	// Execute the command
+	finalize := make(chan error)
+	go func() {
+		finalize <- rootCmd.Execute()
+	}()
+
+	// Wait for both goroutines to finish
+	if err := <-finalize; err != nil {
+		fmt.Println(err)
+	}
+	fmt.Print(<-ch)
 }
