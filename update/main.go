@@ -43,18 +43,26 @@ func CheckLatestVersion() (string, []Asset, error) {
 
 	// Get tag_name from the json response
 	var release = struct {
-		TagName string  `json:"tag_name"`
-		Assets  []Asset `json:"assets"`
+		TagName    string  `json:"tag_name"`
+		Assets     []Asset `json:"assets"`
+		PreRelease bool    `json:"prerelease"`
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {
 		return "", nil, err
 	}
 
+	// if it's a prerelease, don't update
+	if release.PreRelease {
+		return "", nil, errors.New("Prerelease detected, not updating")
+	}
+
+	// no tag, don't update
 	if release.TagName == "" {
 		return "", nil, errors.New("No release found")
 	}
 
+	// if the current version is the same as the latest version, don't update
 	if cmd.Version == release.TagName {
 		fmt.Println("You are using the latest version")
 		return "", nil, errors.New("You are using the latest version")
