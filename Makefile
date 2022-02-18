@@ -30,18 +30,20 @@ help:
 	Katenary is statically built (in Go), so there is no library to install.
 	
 	To build for others OS:
-	$$ make GOOS=linux GOARCH=amd64
+	$$ make build GOOS=linux GOARCH=amd64
 	This will build the binary for linux amd64.
-	$$ make GOOS=linux GOARCH=arm
+	
+	$$ make build GOOS=linux GOARCH=arm
 	This will build the binary for linux arm.
-	$$ make GOOS=windows GOARCH=amd64
+	
+	$$ make build GOOS=windows GOARCH=amd64
 	This will build the binary for windows amd64.
-	$$ make GOOS=darwin GOARCH=amd64
+	
+	$$ make build GOOS=darwin GOARCH=amd64
 	This will build the binary for darwin amd64.
-
+	
 	Or you can build all versions:
 	$$ make build-all
-
 	EOF
 
 
@@ -51,8 +53,10 @@ build: pull katenary
 build-all: pull dist dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin
 
 pull:
+ifneq ($(GO),local)
 	@echo -e "\033[1;32mPulling $(BUILD_IMAGE) docker image\033[0m"
 	@$(CTN) pull $(BUILD_IMAGE)
+endif
 
 dist:
 	mkdir -p dist
@@ -110,5 +114,6 @@ uninstall:
 
 clean:
 	rm -f katenary
+	rm -rf dist
 
  

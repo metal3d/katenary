@@ -1,8 +1,10 @@
-![Logo](misc/logo.png)
+<div style="text-align:center">
+<img src="./misc/logo.png" alt="Katenary Logo" />
+</div>
 
 Katenary is a tool to help transforming `docker-compose` files to a working Helm Chart for Kubernetes.
 
-> **Important Note** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
+> **Important Note:** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
 
 This project is partially made at [Smile](https://www.smile.eu) 
 
@@ -13,6 +15,23 @@ This project is partially made at [Smile](https://www.smile.eu)
 # Install
 
 You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
+
+
+You can use this commands on Linux:
+
+```bash
+uname -m | grep -P "x86_64|amd64" && _arch="amd64" || _arch="arm64"
+echo "$PATH" | grep $HOME/.local/bin && _prefix=~/.local/bin || _prefix=/usr/local/bin
+
+curl -s https://api.github.com/repos/metal3d/katenary/releases/latest | \
+    grep -wo "https.*katenary-linux-$(_arch)" | \
+    xargs curl -L -o $_prefix/katenary
+chmod +x $_prefix/katenary
+
+unset _prefix _arch
+```
+
+# Else... Build yourself
 
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
@@ -30,6 +49,17 @@ It will use the default PREFIX (`~/.local/`) to install the binary in the `bin` 
 ```bash
 sudo make install PREFIX=/usr/local
 ```
+
+If that goes wrong, you can use your local Go compiler:
+
+```bash
+make build GO=local
+
+# To force OS or architecture
+make build GO=local GOOS=linux GOARCH=arm64
+```
+
+Then place the `katenary` binary file inside your PATH.
 
 
 # Tips
