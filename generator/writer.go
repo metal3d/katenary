@@ -21,6 +21,13 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 	helm.Appname = appName
 	helm.Version = katernayVersion
 	templatesDir := filepath.Join(dirName, "templates")
+
+	// try to create the directory
+	err := os.MkdirAll(templatesDir, 0755)
+	if err != nil {
+		panic(err)
+	}
+
 	files := make(map[string]chan interface{})
 
 	// list avoided services
@@ -123,7 +130,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 	fp.WriteString(`# Create on ` + time.Now().Format(time.RFC3339) + "\n")
 	fp.WriteString(`# Katenary command line: ` + strings.Join(os.Args, " ") + "\n")
 	enc = yaml.NewEncoder(fp)
-	enc.SetIndent(2)
+	enc.SetIndent(writers.IndentSize)
 	enc.Encode(map[string]interface{}{
 		"apiVersion":  "v2",
 		"name":        appName,

@@ -14,6 +14,7 @@ func TestDownloadLatestRelease(t *testing.T) {
 
 	// change "exe" to /tmp/test-katenary
 	exe = "/tmp/test-katenary"
+	defer os.Remove(exe)
 
 	// Now call the CheckLatestVersion function
 	version, assets, err := CheckLatestVersion()

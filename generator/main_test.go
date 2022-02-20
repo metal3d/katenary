@@ -1,0 +1,159 @@
+package generator
+
+import (
+	"io/ioutil"
+	"katenary/compose"
+	"katenary/helm"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+const DOCKER_COMPOSE_YML = `version: '3'
+services:
+    # first service, very simple
+    http:
+        image: nginx
+        ports:
+            - "80:80"
+
+    # second service, with environment variables
+    http2:
+        image: nginx
+        environment:
+            SOME_ENV_VAR: some_value
+            ANOTHER_ENV_VAR: another_value
+
+    # third service with ingress label
+    web:
+        image: nginx
+        labels:
+            katenary.io/ingress: 80
+
+    # fourth service is a php service depending on database
+    php:
+        image: php:7.2-apache
+        depends_on:
+            - database
+        environment:
+            SOME_ENV_VAR: some_value
+            ANOTHER_ENV_VAR: another_value
+            DB_HOST: database
+        labels:
+            katenary.io/env-to-service: DB_HOST
+
+    database:
+        image: mysql:5.7
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: database
+            MYSQL_USER: user
+            MYSQL_PASSWORD: password
+        volumes:
+            - data:/var/lib/mysql
+        labels:
+            katenary.io/ports: 3306
+
+
+    # try to deploy 2 services but one is in the same pod than the other
+    http3:
+        image: nginx
+
+    http4:
+        image: nginx
+        labels:
+            katenary.io/same-pod: http3
+
+volumes:
+    data:
+        driver: local
+`
+
+func TestGenerate(t *testing.T) {
+	p := compose.NewParser("", DOCKER_COMPOSE_YML)
+	p.Parse("testapp")
+
+	// create a temporary directory
+	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test")
+	t.Log("Generated ", tmp, "directory")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmp)
+
+	Generate(p, "test-0", "testapp", "1.2.3", DOCKER_COMPOSE_YML, tmp)
+
+	// for each service name, there should be a deploument file in temporary directory
+	for name, service := range p.Data.Services {
+		path := filepath.Join(tmp, "templates", name+".deployment.yaml")
+		if _, found := service.Labels[helm.LABEL_SAMEPOD]; found {
+			// fail if the service has a deployment
+			if _, err := os.Stat(path); err == nil {
+				t.Error("Service ", name, " should not have a deployment")
+			}
+			continue
+		}
+
+		// others should have a deployment file
+		t.Log("Checking ", name, " deployment file")
+		_, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// if the service has a port found in helm.LABEL_PORT or ports, so the service file should exist
+		hasPort := false
+		if _, found := service.Labels[helm.LABEL_PORT]; found {
+			hasPort = true
+		}
+		if service.Ports != nil {
+			hasPort = true
+		}
+		if hasPort {
+			path = filepath.Join(tmp, "templates", name+".service.yaml")
+			t.Log("Checking ", name, " service file")
+			_, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// the "database" service should have a pvc file in templates (name-data.pvc.yaml)
+		if name == "database" {
+			path = filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
+			t.Log("Checking ", name, " pvc file")
+			_, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		if name == "php" {
+			// the "DB_HOST" environment variable inside the template must be set to '{{ .Release.Name }}-database'
+			path = filepath.Join(tmp, "templates", name+".deployment.yaml")
+			// read the file and find the DB_HOST variable
+			matched := false
+			fp, _ := os.Open(path)
+			defer fp.Close()
+			lines, _ := ioutil.ReadAll(fp)
+			next := false
+			for _, line := range strings.Split(string(lines), "\n") {
+				if strings.Contains(line, "DB_HOST") {
+					next = true
+					continue
+				}
+				if next {
+					matched = true
+					if !strings.Contains(line, helm.RELEASE_NAME+"-database") {
+						t.Error("DB_HOST variable should be set to " + helm.RELEASE_NAME + "-database")
+					}
+					break
+				}
+			}
+			if !matched {
+				t.Error("DB_HOST variable not found in ", path)
+			}
+		}
+	}
+}
