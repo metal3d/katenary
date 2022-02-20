@@ -4,7 +4,6 @@ services:
 
   webapp:
     image: php:7-apache
-
     environment:
       DB_HOST: database
     ports:
