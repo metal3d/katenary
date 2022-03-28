@@ -5,7 +5,7 @@ CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
 GO=container
-BLD_CMD=go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" .
+BLD_CMD=go build -o katenary  -ldflags="-X 'main.Version=$(VERSION)'" ./cmd/*.go
 GOOS=linux
 GOARCH=amd64
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"katenary/cmd"
 	"net/http"
 	"os"
 	"runtime"
@@ -13,6 +12,7 @@ import (
 )
 
 var exe, _ = os.Executable()
+var Version = "master" // reset by cmd/main.go
 
 // Asset is a github asset from release url.
 type Asset struct {
@@ -63,7 +63,7 @@ func CheckLatestVersion() (string, []Asset, error) {
 	}
 
 	// if the current version is the same as the latest version, don't update
-	if cmd.Version == release.TagName {
+	if Version == release.TagName {
 		fmt.Println("You are using the latest version")
 		return "", nil, errors.New("You are using the latest version")
 	}
