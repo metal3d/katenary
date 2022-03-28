@@ -116,4 +116,6 @@ clean:
 	rm -f katenary
 	rm -rf dist
 
- 
+test:
+	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
+	go test -v ./...
