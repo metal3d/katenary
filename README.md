@@ -109,6 +109,7 @@ Available Commands:
   convert     Convert docker-compose to helm chart
   help        Help about any command
   show-labels Show labels of a resource
+  upgrade     Upgrade katenary to the latest version if available
   version     Display version
 
 Flags:
