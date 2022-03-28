@@ -68,20 +68,7 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 	o := helm.NewDeployment(name)
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
-
-	// prepare cm and secrets
-	prepareEnvFromFiles(name, s, container, ret)
-
-	// check the image, and make it "variable" in values.yaml
-	container.Image = "{{ .Values." + name + ".image }}"
-	Values[name] = map[string]interface{}{
-		"image": s.Image,
-	}
-
-	// manage the healthcheck property, if any
-	prepareProbes(name, s, container)
-	// manage ports
-	generateContainerPorts(s, name, container)
+	prepareContainer(container, s, name)
 
 	// Set the container to the deployment
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
@@ -103,12 +90,7 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 	// Now, the linked services
 	for lname, link := range linked {
 		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
-		container.Image = "{{ .Values." + lname + ".image }}"
-		Values[lname] = map[string]interface{}{
-			"image": link.Image,
-		}
-		prepareProbes(lname, link, container)
-		generateContainerPorts(link, lname, container)
+		prepareContainer(container, link, lname)
 		o.Spec.Template.Spec.Containers = append(o.Spec.Template.Spec.Containers, container)
 		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, prepareVolumes(name, lname, link, container, madePVC, ret)...)
 		o.Spec.Template.Spec.InitContainers = append(o.Spec.Template.Spec.InitContainers, prepareInitContainers(lname, link, container)...)
@@ -172,6 +154,17 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 
 	// and then, we can say that it's the end
 	ret <- nil
+}
+
+// prepareContainer assigns image, command, env, and labels to a container.
+func prepareContainer(container *helm.Container, service *compose.Service, servicename string) {
+	container.Image = "{{ .Values." + servicename + ".image }}"
+	container.Command = service.Command
+	Values[servicename] = map[string]interface{}{
+		"image": service.Image,
+	}
+	prepareProbes(servicename, service, container)
+	generateContainerPorts(service, servicename, container)
 }
 
 // Create a service (k8s).
