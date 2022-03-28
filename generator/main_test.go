@@ -28,8 +28,14 @@ services:
     # third service with ingress label
     web:
         image: nginx
+        ports:
+            - "80:80"
         labels:
             katenary.io/ingress: 80
+
+    web2:
+        image: nginx
+        command: ["/bin/sh", "-c", "while true; do echo hello; sleep 1; done"]
 
     # fourth service is a php service depending on database
     php:
@@ -70,7 +76,7 @@ volumes:
         driver: local
 `
 
-func TestGenerate(t *testing.T) {
+func setUp(t *testing.T) (string, *compose.Parser) {
 	p := compose.NewParser("", DOCKER_COMPOSE_YML)
 	p.Parse("testapp")
 
@@ -80,58 +86,66 @@ func TestGenerate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tmp)
 
 	Generate(p, "test-0", "testapp", "1.2.3", DOCKER_COMPOSE_YML, tmp)
 
-	// for each service name, there should be a deploument file in temporary directory
-	for name, service := range p.Data.Services {
-		path := filepath.Join(tmp, "templates", name+".deployment.yaml")
-		if _, found := service.Labels[helm.LABEL_SAMEPOD]; found {
-			// fail if the service has a deployment
-			if _, err := os.Stat(path); err == nil {
-				t.Error("Service ", name, " should not have a deployment")
-			}
-			continue
-		}
+	return tmp, p
+}
 
-		// others should have a deployment file
-		t.Log("Checking ", name, " deployment file")
-		_, err := os.Stat(path)
-		if err != nil {
-			t.Fatal(err)
-		}
+// Check if the web2 service has got a command.
+func TestCommand(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
 
-		// if the service has a port found in helm.LABEL_PORT or ports, so the service file should exist
-		hasPort := false
-		if _, found := service.Labels[helm.LABEL_PORT]; found {
-			hasPort = true
-		}
-		if service.Ports != nil {
-			hasPort = true
-		}
-		if hasPort {
-			path = filepath.Join(tmp, "templates", name+".service.yaml")
-			t.Log("Checking ", name, " service file")
-			_, err := os.Stat(path)
-			if err != nil {
-				t.Fatal(err)
+	for name := range p.Data.Services {
+		if name == "web2" {
+			// Ensure that the command is correctly set
+			// The command should be a string array
+			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
+			path = filepath.Join(tmp, "templates", name+".deployment.yaml")
+			fp, _ := os.Open(path)
+			defer fp.Close()
+			lines, _ := ioutil.ReadAll(fp)
+			next := false
+			commands := make([]string, 0)
+			for _, line := range strings.Split(string(lines), "\n") {
+				if strings.Contains(line, "command") {
+					next = true
+					continue
+				}
+				if next {
+					commands = append(commands, line)
+				}
+			}
+			ok := 0
+			for _, command := range commands {
+				if strings.Contains(command, "- /bin/sh") {
+					ok++
+				}
+				if strings.Contains(command, "- -c") {
+					ok++
+				}
+				if strings.Contains(command, "while true; do") {
+					ok++
+				}
+			}
+			if ok != 3 {
+				t.Error("Command is not correctly set")
 			}
 		}
+	}
+}
 
-		// the "database" service should have a pvc file in templates (name-data.pvc.yaml)
-		if name == "database" {
-			path = filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
-			t.Log("Checking ", name, " pvc file")
-			_, err := os.Stat(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}
+// Check if environment is correctly set.
+func TestEnvs(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name := range p.Data.Services {
 
 		if name == "php" {
 			// the "DB_HOST" environment variable inside the template must be set to '{{ .Release.Name }}-database'
-			path = filepath.Join(tmp, "templates", name+".deployment.yaml")
+			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 			// read the file and find the DB_HOST variable
 			matched := false
 			fp, _ := os.Open(path)
@@ -153,6 +167,98 @@ func TestGenerate(t *testing.T) {
 			}
 			if !matched {
 				t.Error("DB_HOST variable not found in ", path)
+			}
+		}
+	}
+}
+
+// Check if the same pod is not deployed twice.
+func TestSamePod(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name, service := range p.Data.Services {
+		path := filepath.Join(tmp, "templates", name+".deployment.yaml")
+
+		if _, found := service.Labels[helm.LABEL_SAMEPOD]; found {
+			// fail if the service has a deployment
+			if _, err := os.Stat(path); err == nil {
+				t.Error("Service ", name, " should not have a deployment")
+			}
+			continue
+		}
+
+		// others should have a deployment file
+		t.Log("Checking ", name, " deployment file")
+		_, err := os.Stat(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// Check if the ports are correctly set.
+func TestPorts(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name, service := range p.Data.Services {
+		path := ""
+
+		// if the service has a port found in helm.LABEL_PORT or ports, so the service file should exist
+		hasPort := false
+		if _, found := service.Labels[helm.LABEL_PORT]; found {
+			hasPort = true
+		}
+		if service.Ports != nil {
+			hasPort = true
+		}
+		if hasPort {
+			path = filepath.Join(tmp, "templates", name+".service.yaml")
+			t.Log("Checking ", name, " service file")
+			_, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+}
+
+// Check if the volumes are correctly set.
+func TestPVC(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name := range p.Data.Services {
+		path := filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
+
+		// the "database" service should have a pvc file in templates (name-data.pvc.yaml)
+		if name == "database" {
+			path = filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
+			t.Log("Checking ", name, " pvc file")
+			_, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+}
+
+//Check if web service has got a ingress.
+func TestIngress(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name := range p.Data.Services {
+		path := filepath.Join(tmp, "templates", name+".ingress.yaml")
+
+		// the "web" service should have a ingress file in templates (name.ingress.yaml)
+		if name == "web" {
+			path = filepath.Join(tmp, "templates", name+".ingress.yaml")
+			t.Log("Checking ", name, " ingress file")
+			_, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
 			}
 		}
 	}
