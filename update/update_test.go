@@ -34,3 +34,19 @@ func TestDownloadLatestRelease(t *testing.T) {
 		t.Errorf("Error: %s", err)
 	}
 }
+
+func TestAlreadyUpToDate(t *testing.T) {
+	Version = "99999.999.99"
+	exe = "/tmp/test-katenary"
+	defer os.Remove(exe)
+
+	// Call the version check
+	version, _, err := CheckLatestVersion()
+
+	if err == nil {
+		t.Errorf("Error: %s", err)
+	}
+
+	t.Log("Version is already the most recent", version)
+
+}

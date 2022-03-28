@@ -9,6 +9,8 @@ import (
 	"os"
 	"runtime"
 	"time"
+
+	"golang.org/x/mod/semver"
 )
 
 var exe, _ = os.Executable()
@@ -62,15 +64,17 @@ func CheckLatestVersion() (string, []Asset, error) {
 		return "", nil, errors.New("No release found")
 	}
 
-	// if the current version is the same as the latest version, don't update
-	if Version == release.TagName {
-		fmt.Println("You are using the latest version")
-		return "", nil, errors.New("You are using the latest version")
+	// compare the current version, if the current version is the same or lower than the latest version, don't update
+	versions := []string{Version, release.TagName}
+	semver.Sort(versions)
+	if versions[1] == Version {
+		return "", nil, errors.New("Current version is the latest version")
 	}
 
 	return release.TagName, release.Assets, nil
 }
 
+// DownloadLatestVersion will download the latest version of katenary.
 func DownloadLatestVersion(assets []Asset) error {
 	// Download the latest version
 	fmt.Println("Downloading the latest version...")
@@ -118,6 +122,7 @@ func DownloadLatestVersion(assets []Asset) error {
 	return err
 }
 
+// DownloadFile will download a url to a local file. It also ensure that the file is executable.
 func DownloadFile(url, exe string) error {
 	// Download the url binary to exe path
 	resp, err := http.Get(url)
