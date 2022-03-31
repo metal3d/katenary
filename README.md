@@ -20,15 +20,7 @@ You can download the binaries from the [Release](https://github.com/metal3d/kate
 You can use this commands on Linux:
 
 ```bash
-uname -m | grep -P "x86_64|amd64" && _arch="amd64" || _arch="arm64"
-echo "$PATH" | grep $HOME/.local/bin && _prefix=~/.local/bin || _prefix=/usr/local/bin
-
-curl -s https://api.github.com/repos/metal3d/katenary/releases/latest | \
-    grep -wo "https.*katenary-linux-$(_arch)" | \
-    xargs curl -L -o $_prefix/katenary
-chmod +x $_prefix/katenary
-
-unset _prefix _arch
+sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
 ```
 
 # Else... Build yourself
@@ -93,8 +85,8 @@ It's not magical, sometimes you'll need to fix the generated charts.
 The general way to use it is to call one of these commands:
 
     katenary convert
-    katenary convert -f docker-compose.yml
-    katenary convert -f docker-compose.yml -o ./charts
+    katenary convert -c docker-compose.yml
+    katenary convert -c docker-compose.yml -o ./charts
 
 In case of, check the help of each command using:
     katenary <command> --help
