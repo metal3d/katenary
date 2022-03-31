@@ -6,3 +6,4 @@ katenary
 *.env
 docker-compose*
 !examples/**/docker-compose*
+.credentials
