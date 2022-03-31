@@ -147,6 +147,6 @@ push-release: build-all
 			-H "Accept: application/vnd.github.v3+json" \
 			-H "Content-Type: application/octet-stream" \
 			--data-binary @$$i \
-			https://uploads.github.com/repos/metal3d/katenary/releases/$(shell cat release.id)/assets?name=$$(basename $$i)
+			https://uploads.github.com/repos/metal3d/katenary/releases/$$(cat release.id)/assets?name=$$(basename $$i)
 	done
 	@rm -f release.id
