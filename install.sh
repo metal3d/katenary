@@ -23,7 +23,6 @@ fi
 
 BIN_URL="$BASE/katenary-$OS-$ARCH"
 
-INSTALL_TYPE="global"
 if [ "$INSTALL_TYPE" = "local" ]; then
     echo "Installing to local directory, installing in $HOME/.local/bin"
     BIN_PATH="$HOME/.local/bin"
