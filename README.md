@@ -1,8 +1,10 @@
-![Logo](misc/logo.png)
+<div style="text-align:center">
+<img src="./misc/logo.png" alt="Katenary Logo" />
+</div>
 
 Katenary is a tool to help transforming `docker-compose` files to a working Helm Chart for Kubernetes.
 
-> **Important Note** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
+> **Important Note:** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
 
 This project is partially made at [Smile](https://www.smile.eu) 
 
@@ -13,6 +15,15 @@ This project is partially made at [Smile](https://www.smile.eu)
 # Install
 
 You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
+
+
+You can use this commands on Linux:
+
+```bash
+sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
+```
+
+# Else... Build yourself
 
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
@@ -30,6 +41,17 @@ It will use the default PREFIX (`~/.local/`) to install the binary in the `bin` 
 ```bash
 sudo make install PREFIX=/usr/local
 ```
+
+If that goes wrong, you can use your local Go compiler:
+
+```bash
+make build GO=local
+
+# To force OS or architecture
+make build GO=local GOOS=linux GOARCH=arm64
+```
+
+Then place the `katenary` binary file inside your PATH.
 
 
 # Tips
@@ -63,8 +85,8 @@ It's not magical, sometimes you'll need to fix the generated charts.
 The general way to use it is to call one of these commands:
 
     katenary convert
-    katenary convert -f docker-compose.yml
-    katenary convert -f docker-compose.yml -o ./charts
+    katenary convert -c docker-compose.yml
+    katenary convert -c docker-compose.yml -o ./charts
 
 In case of, check the help of each command using:
     katenary <command> --help
@@ -79,6 +101,7 @@ Available Commands:
   convert     Convert docker-compose to helm chart
   help        Help about any command
   show-labels Show labels of a resource
+  upgrade     Upgrade katenary to the latest version if available
   version     Display version
 
 Flags:

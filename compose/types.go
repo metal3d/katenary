@@ -36,4 +36,5 @@ type Service struct {
 	EnvFiles    []string          `yaml:"env_file"`
 	RawBuild    interface{}       `yaml:"build"`
 	HealthCheck *HealthCheck      `yaml:"healthcheck"`
+	Command     []string          `yaml:"command"`
 }

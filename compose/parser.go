@@ -21,22 +21,40 @@ type Parser struct {
 
 var Appname = ""
 
-// NewParser create a Parser and parse the file given in filename.
-func NewParser(filename string) *Parser {
+// NewParser create a Parser and parse the file given in filename. If filename is empty, we try to parse the content[0] argument that should be a valid YAML content.
+func NewParser(filename string, content ...string) *Parser {
 
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
 	c := NewCompose()
-	dec := yaml.NewDecoder(f)
-	dec.Decode(c)
+	if filename != "" {
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dec := yaml.NewDecoder(f)
+		err = dec.Decode(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		dec := yaml.NewDecoder(strings.NewReader(content[0]))
+		err := dec.Decode(c)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	p := &Parser{Data: c}
+
+	return p
+}
+
+func (p *Parser) Parse(appname string) {
+	Appname = appname
 
 	services := make(map[string][]string)
 	// get the service list, to be sure that everything is ok
 
+	c := p.Data
 	for name, s := range c.Services {
 		if portlabel, ok := s.Labels[helm.LABEL_PORT]; ok {
 			services := strings.Split(portlabel, ",")
@@ -87,10 +105,4 @@ func NewParser(filename string) *Parser {
 			" for the \"" + name + "\" service \x1b[0m")
 
 	}
-
-	return p
-}
-
-func (p *Parser) Parse(appname string) {
-	Appname = appname
 }

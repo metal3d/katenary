@@ -1,141 +1,151 @@
-package cmd
+package main
 
 import (
-	"errors"
 	"fmt"
-	"katenary/compose"
-	"katenary/generator"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"katenary/generator/writers"
+	"katenary/helm"
+	"katenary/update"
+	"strconv"
+
+	"github.com/spf13/cobra"
 )
 
-var (
-	composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
-	ComposeFile  = ""
-	AppName      = "MyApp"
-	ChartsDir    = "chart"
-	Version      = "master"
-	AppVersion   = "0.0.1"
-)
+var Version = "master" // changed at compile time
+
+var longHelp = `Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
+It will create deployments, services, volumes, secrets, and ingress resources.
+But it will also create initContainers based on depend_on, healthcheck, and other features.
+It's not magical, sometimes you'll need to fix the generated charts.
+The general way to use it is to call one of these commands:
+
+    katenary convert
+    katenary convert -c docker-compose.yml
+    katenary convert -c docker-compose.yml -o ./charts
+
+In case of, check the help of each command using:
+    katenary <command> --help
+or
+    "katenary help <command>"
+`
 
 func init() {
-	FindComposeFile()
-	SetAppName()
-	SetAppVersion()
+	// apply the version to the "update" package
+	update.Version = Version
 }
 
-func FindComposeFile() bool {
-	for _, file := range composeFiles {
-		if _, err := os.Stat(file); err == nil {
-			ComposeFile = file
-			return true
-		}
-	}
-	return false
-}
+func main() {
 
-// SetAppName sets the application name from the current directory name.
-func SetAppName() {
-	wd, err := os.Getwd()
-	if err != nil {
-		return
-	}
-	AppName = filepath.Base(wd)
-
-	if AppName == "" {
-		AppName = "MyApp"
-	}
-}
-
-// SetAppVersion set the AppVersion variable to the git version/tag
-func SetAppVersion() {
-	AppVersion, _ = detectGitVersion()
-}
-
-// Try to detect the git version/tag.
-func detectGitVersion() (string, error) {
-	defaulVersion := "0.0.1"
-	// Check if .git directory exists
-	if s, err := os.Stat(".git"); err != nil {
-		// .git should be a directory
-		return defaulVersion, errors.New("no git repository found")
-	} else if !s.IsDir() {
-		// .git should be a directory
-		return defaulVersion, errors.New(".git is not a directory")
+	// The base command
+	rootCmd := &cobra.Command{
+		Use:   "katenary",
+		Long:  longHelp,
+		Short: "Katenary is a tool to convert docker-compose files to Helm Charts",
 	}
 
-	// check if "git" executable is callable
-	if _, err := exec.LookPath("git"); err != nil {
-		return defaulVersion, errors.New("git executable not found")
+	// to display the version
+	versionCmd := &cobra.Command{
+		Use:   "version",
+		Short: "Display version",
+		Run:   func(c *cobra.Command, args []string) { c.Println(Version) },
 	}
 
-	// get the latest commit hash
-	if out, err := exec.Command("git", "log", "-n1", "--pretty=format:%h").Output(); err == nil {
-		latestCommit := strings.TrimSpace(string(out))
-		// then get the current branch/tag
-		out, err := exec.Command("git", "branch", "--show-current").Output()
-		if err != nil {
-			return defaulVersion, errors.New("git branch --show-current failed")
-		} else {
-			currentBranch := strings.TrimSpace(string(out))
-			// finally, check if the current tag (if exists) correspond to the current commit
-			// git describe --exact-match --tags <latestCommit>
-			out, err := exec.Command("git", "describe", "--exact-match", "--tags", latestCommit).Output()
-			if err == nil {
-				return strings.TrimSpace(string(out)), nil
-			} else {
-				return currentBranch + "-" + latestCommit, nil
+	// convert command, need some flags
+	convertCmd := &cobra.Command{
+		Use:   "convert",
+		Short: "Convert docker-compose to helm chart",
+		Long: "Convert docker-compose to helm chart. The resulting helm chart will be in the current directory/" +
+			ChartsDir + "/" + AppName +
+			".\nThe appversion will be generated that way:\n" +
+			"- if it's in a git project, it takes git version or tag\n" +
+			"- if it's not defined, so the version will be get from the --app-version flag \n" +
+			"- if it's not defined, so the 0.0.1 version is used",
+		Run: func(c *cobra.Command, args []string) {
+			force := c.Flag("force").Changed
+			// TODO: is there a way to get typed values from cobra?
+			appversion := c.Flag("app-version").Value.String()
+			composeFile := c.Flag("compose-file").Value.String()
+			appName := c.Flag("app-name").Value.String()
+			chartDir := c.Flag("output-dir").Value.String()
+			indentation, err := strconv.Atoi(c.Flag("indent-size").Value.String())
+			if err != nil {
+				writers.IndentSize = indentation
 			}
+			Convert(composeFile, appversion, appName, chartDir, force)
+		},
+	}
+	convertCmd.Flags().BoolP(
+		"force", "f", false, "force overwrite of existing output files")
+	convertCmd.Flags().StringP(
+		"app-version", "a", AppVersion, "app version")
+	convertCmd.Flags().StringP(
+		"compose-file", "c", ComposeFile, "docker compose file")
+	convertCmd.Flags().StringP(
+		"app-name", "n", AppName, "application name")
+	convertCmd.Flags().StringP(
+		"output-dir", "o", ChartsDir, "chart directory")
+	convertCmd.Flags().IntP(
+		"indent-size", "i", 2, "set the indent size of the YAML files")
+
+	// show possible labels to set in docker-compose file
+	showLabelsCmd := &cobra.Command{
+		Use:   "show-labels",
+		Short: "Show labels of a resource",
+		Run: func(c *cobra.Command, args []string) {
+			c.Println(helm.GetLabelsDocumentation())
+		},
+	}
+
+	// Update the binary to the latest version
+	updateCmd := &cobra.Command{
+		Use:   "upgrade",
+		Short: "Upgrade katenary to the latest version if available",
+		Run: func(c *cobra.Command, args []string) {
+			version, assets, err := update.CheckLatestVersion()
+			if err != nil {
+				c.Println(err)
+				return
+			}
+			c.Println("Updating to version: " + version)
+			err = update.DownloadLatestVersion(assets)
+			if err != nil {
+				c.Println(err)
+				return
+			}
+			c.Println("Update completed")
+		},
+	}
+
+	rootCmd.AddCommand(
+		versionCmd,
+		convertCmd,
+		showLabelsCmd,
+		updateCmd,
+	)
+
+	// in parallel, check if the current katenary version is the latest
+	ch := make(chan string)
+	go func() {
+		version, _, err := update.CheckLatestVersion()
+		if err != nil {
+			ch <- ""
+			return
 		}
-	}
-	return defaulVersion, errors.New("git log failed")
-}
-
-func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
-	composeFound := FindComposeFile()
-	_, err := os.Stat(ComposeFile)
-	if !composeFound && err != nil {
-		fmt.Println("No compose file found")
-		os.Exit(1)
-	}
-
-	dirname := filepath.Join(chartDir, appName)
-	if _, err := os.Stat(dirname); err == nil && !force {
-		response := ""
-		for response != "y" && response != "n" {
-			response = "n"
-			fmt.Printf(""+
-				"The %s directory already exists, it will be \x1b[31;1mremoved\x1b[0m!\n"+
-				"Do you really want to continue? [y/N]: ", dirname)
-			fmt.Scanf("%s", &response)
-			response = strings.ToLower(response)
+		if Version != version {
+			ch <- fmt.Sprintf("\x1b[33mNew version available: " +
+				version +
+				" - to auto upgrade katenary, you can execute: katenary upgrade\x1b[0m\n")
 		}
-		if response == "n" {
-			fmt.Println("Cancelled")
-			os.Exit(0)
-		}
+	}()
+
+	// Execute the command
+	finalize := make(chan error)
+	go func() {
+		finalize <- rootCmd.Execute()
+	}()
+
+	// Wait for both goroutines to finish
+	if err := <-finalize; err != nil {
+		fmt.Println(err)
 	}
-
-	// cleanup and create the chart directory (until "templates")
-	if err := os.RemoveAll(dirname); err != nil {
-		fmt.Printf("Error removing %s: %s\n", dirname, err)
-		os.Exit(1)
-	}
-
-	// create the templates directory
-	templatesDir := filepath.Join(dirname, "templates")
-	if err := os.MkdirAll(templatesDir, 0755); err != nil {
-		fmt.Printf("Error creating %s: %s\n", templatesDir, err)
-		os.Exit(1)
-	}
-
-	// Parse the compose file now
-	p := compose.NewParser(ComposeFile)
-	p.Parse(appName)
-
-	// start generator
-	generator.Generate(p, Version, appName, appVersion, ComposeFile, dirname)
-
+	fmt.Print(<-ch)
 }
