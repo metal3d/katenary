@@ -119,8 +119,7 @@ uninstall:
 	rm -f $(PREFIX)/bin/katenary
 
 clean:
-	rm -f katenary
-	rm -rf dist
+	rm -rf katenary dist/* release.id 
 
 
 tests: test
