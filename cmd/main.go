@@ -19,8 +19,8 @@ It's not magical, sometimes you'll need to fix the generated charts.
 The general way to use it is to call one of these commands:
 
     katenary convert
-    katenary convert -f docker-compose.yml
-    katenary convert -f docker-compose.yml -o ./charts
+    katenary convert -c docker-compose.yml
+    katenary convert -c docker-compose.yml -o ./charts
 
 In case of, check the help of each command using:
     katenary <command> --help
