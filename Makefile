@@ -129,11 +129,10 @@ test:
 
 
 .ONESHELL:
-push-release:
+push-release: build-all
 	@rm -f release.id
 	# read personal access token from .git-credentials
 	TOKEN=$(shell cat .credentials)
-	# create the body of the release from latest tag
 	# create a new release based on current tag and get the release id
 	@curl -sSL -X POST \
 		-H "Accept: application/vnd.github.v3+json" \
