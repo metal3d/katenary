@@ -59,6 +59,7 @@ func (p *Parser) Parse(appname string) {
 	for _, s := range p.Data.Services {
 		parseEnv(s)
 		parseCommand(s)
+		parseEnvFiles(s)
 	}
 
 	c := p.Data
@@ -143,7 +144,8 @@ func parseEnv(s *Service) {
 		env = s.RawEnvironment.(map[string]string)
 	case map[string]interface{}:
 		for k, v := range s.RawEnvironment.(map[string]interface{}) {
-			env[k] = v.(string)
+			// force to string
+			env[k] = fmt.Sprintf("%v", v)
 		}
 	case []interface{}:
 		for _, v := range s.RawEnvironment.([]interface{}) {
@@ -156,7 +158,6 @@ func parseEnv(s *Service) {
 		env[parts[0]] = parts[1]
 	default:
 		log.Printf("%+v, %T", s.RawEnvironment, s.RawEnvironment)
-		log.Printf("%+v", s)
 		log.Fatal("Environment type not supported")
 	}
 	s.Environment = env
@@ -187,4 +188,24 @@ func parseCommand(s *Service) {
 		log.Printf("%+v %T", s.RawCommand, s.RawCommand)
 		log.Fatal("Command type not supported")
 	}
+}
+
+func parseEnvFiles(s *Service) {
+	// Same than parseEnv, but for env files
+	if s.RawEnvFiles == nil {
+		return
+	}
+	envfiles := make([]string, 0)
+	switch s.RawEnvFiles.(type) {
+	case []string:
+		envfiles = s.RawEnvFiles.([]string)
+	case []interface{}:
+		for _, v := range s.RawEnvFiles.([]interface{}) {
+			envfiles = append(envfiles, v.(string))
+		}
+	default:
+		log.Printf("%+v %T", s.RawEnvFiles, s.RawEnvFiles)
+		log.Fatal("EnvFile type not supported")
+	}
+	s.EnvFiles = envfiles
 }

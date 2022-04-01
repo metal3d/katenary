@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"katenary/compose"
 	"katenary/helm"
+	"katenary/logger"
 	"log"
 	"net/url"
 	"os"
@@ -63,12 +64,13 @@ func CreateReplicaObject(name string, s *compose.Service, linked map[string]*com
 
 // This function will try to yied deployment and services based on a service from the compose file structure.
 func parseService(name string, s *compose.Service, linked map[string]*compose.Service, ret chan interface{}) {
-	Magenta(ICON_PACKAGE+" Generating deployment for ", name)
+	logger.Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 
 	o := helm.NewDeployment(name)
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 	prepareContainer(container, s, name)
+	prepareEnvFromFiles(name, s, container, ret)
 
 	// Set the container to the deployment
 	o.Spec.Template.Spec.Containers = []*helm.Container{container}
@@ -91,6 +93,7 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 	for lname, link := range linked {
 		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
 		prepareContainer(container, link, lname)
+		prepareEnvFromFiles(lname, link, container, ret)
 		o.Spec.Template.Spec.Containers = append(o.Spec.Template.Spec.Containers, container)
 		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, prepareVolumes(name, lname, link, container, madePVC, ret)...)
 		o.Spec.Template.Spec.InitContainers = append(o.Spec.Template.Spec.InitContainers, prepareInitContainers(lname, link, container)...)
@@ -182,7 +185,7 @@ func prepareContainer(container *helm.Container, service *compose.Service, servi
 func generateServicesAndIngresses(name string, s *compose.Service) []interface{} {
 
 	ret := make([]interface{}, 0) // can handle helm.Service or helm.Ingress
-	Magenta(ICON_SERVICE+" Generating service for ", name)
+	logger.Magenta(ICON_SERVICE+" Generating service for ", name)
 	ks := helm.NewService(name)
 
 	for i, p := range s.Ports {
@@ -205,13 +208,13 @@ func generateServicesAndIngresses(name string, s *compose.Service) []interface{}
 		if err != nil {
 			log.Fatalf("The given port \"%v\" as ingress port in \"%s\" service is not an integer\n", v, name)
 		}
-		Cyanf(ICON_INGRESS+" Create an ingress for port %d on %s service\n", port, name)
+		logger.Cyanf(ICON_INGRESS+" Create an ingress for port %d on %s service\n", port, name)
 		ing := createIngress(name, port, s)
 		ret = append(ret, ing)
 	}
 
 	if len(s.Expose) > 0 {
-		Magenta(ICON_SERVICE+" Generating service for ", name+"-external")
+		logger.Magenta(ICON_SERVICE+" Generating service for ", name+"-external")
 		ks := helm.NewService(name + "-external")
 		ks.Spec.Type = "NodePort"
 		for _, p := range s.Expose {
@@ -322,10 +325,10 @@ func buildCMFromPath(path string) *helm.ConfigMap {
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "An error occured reading volume path %s\n", err.Error())
 				} else {
-					ActivateColors = true
-					Yellowf("Warning, %s is a directory, at this time we only "+
+					logger.ActivateColors = true
+					logger.Yellowf("Warning, %s is a directory, at this time we only "+
 						"can create configmap for first level file list\n", f)
-					ActivateColors = false
+					logger.ActivateColors = false
 				}
 				continue
 			}
@@ -408,9 +411,9 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 
 		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
 			// local volume cannt be mounted
-			ActivateColors = true
-			Redf("You cannot, at this time, have local volume in %s deployment\n", name)
-			ActivateColors = false
+			logger.ActivateColors = true
+			logger.Redf("You cannot, at this time, have local volume in %s deployment\n", name)
+			logger.ActivateColors = false
 			continue
 		}
 		if isCM {
@@ -485,7 +488,7 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 				"mountPath": volepath,
 			})
 
-			Yellow(ICON_STORE+" Generate volume values", volname, "for container named", name, "in deployment", deployment)
+			logger.Yellow(ICON_STORE+" Generate volume values", volname, "for container named", name, "in deployment", deployment)
 			locker.Lock()
 			if _, ok := VolumeValues[deployment]; !ok {
 				VolumeValues[deployment] = make(map[string]map[string]interface{})
@@ -637,16 +640,16 @@ func prepareEnvFromFiles(name string, s *compose.Service, container *helm.Contai
 		}
 		var store helm.InlineConfig
 		if !isSecret {
-			Bluef(ICON_CONF+" Generating configMap %s\n", cf)
+			logger.Bluef(ICON_CONF+" Generating configMap %s\n", cf)
 			store = helm.NewConfigMap(cf)
 		} else {
-			Bluef(ICON_SECRET+" Generating secret %s\n", cf)
+			logger.Bluef(ICON_SECRET+" Generating secret %s\n", cf)
 			store = helm.NewSecret(cf)
 		}
 		if err := store.AddEnvFile(envfile); err != nil {
-			ActivateColors = true
-			Red(err.Error())
-			ActivateColors = false
+			logger.ActivateColors = true
+			logger.Red(err.Error())
+			logger.ActivateColors = false
 			os.Exit(2)
 		}
 

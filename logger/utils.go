@@ -1,4 +1,4 @@
-package generator
+package logger
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 type Color int
 
 var ActivateColors = false
+var NOLOG = false
 
 const (
 	GREY Color = 30 + iota
@@ -23,6 +24,9 @@ const (
 var waiter = sync.Mutex{}
 
 func color(c Color, args ...interface{}) {
+	if NOLOG {
+		return
+	}
 	if !ActivateColors {
 		fmt.Println(args...)
 		return
@@ -35,6 +39,9 @@ func color(c Color, args ...interface{}) {
 }
 
 func colorf(c Color, format string, args ...interface{}) {
+	if NOLOG {
+		return
+	}
 	if !ActivateColors {
 		fmt.Printf(format, args...)
 		return

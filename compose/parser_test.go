@@ -1,6 +1,9 @@
 package compose
 
-import "testing"
+import (
+	"katenary/logger"
+	"testing"
+)
 
 const DOCKER_COMPOSE_YML1 = `
 version: "3"
@@ -29,7 +32,19 @@ services:
         labels:
             katenary.io/ports: "5432"
 
+    commander1:
+        image: foo
+        command: ["/bin/sh", "-c", "echo 'hello world'"]
+
+    commander2:
+        image: foo
+        command: echo "hello world"
+
 `
+
+func init() {
+	logger.NOLOG = true
+}
 
 func TestParser(t *testing.T) {
 	p := NewParser("", DOCKER_COMPOSE_YML1)
@@ -85,5 +100,39 @@ func TestParser(t *testing.T) {
 			}
 		}
 	}
+}
 
+func TestParseCommand(t *testing.T) {
+	p := NewParser("", DOCKER_COMPOSE_YML1)
+	p.Parse("test")
+
+	for name, s := range p.Data.Services {
+		if name == "commander1" {
+			t.Log(s.Command)
+			if len(s.Command) != 3 {
+				t.Errorf("Expected 3 command, got %d", len(s.Command))
+			}
+			if s.Command[0] != "/bin/sh" {
+				t.Errorf("Expected /bin/sh, got %s", s.Command[0])
+			}
+			if s.Command[1] != "-c" {
+				t.Errorf("Expected -c, got %s", s.Command[1])
+			}
+			if s.Command[2] != "echo 'hello world'" {
+				t.Errorf("Expected echo 'hello world', got %s", s.Command[2])
+			}
+		}
+		if name == "commander2" {
+			t.Log(s.Command)
+			if len(s.Command) != 2 {
+				t.Errorf("Expected 1 command, got %d", len(s.Command))
+			}
+			if s.Command[0] != "echo" {
+				t.Errorf("Expected echo, got %s", s.Command[0])
+			}
+			if s.Command[1] != "hello world" {
+				t.Errorf("Expected hello world, got %s", s.Command[1])
+			}
+		}
+	}
 }

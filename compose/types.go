@@ -34,8 +34,10 @@ type Service struct {
 	DependsOn      []string          `yaml:"depends_on"`
 	Volumes        []string          `yaml:"volumes"`
 	Expose         []int             `yaml:"expose"`
-	EnvFiles       []string          `yaml:"env_file"`
+	EnvFiles       []string          `yaml:"-"`
+	RawEnvFiles    interface{}       `yaml:"env_file"`
 	RawBuild       interface{}       `yaml:"build"`
 	HealthCheck    *HealthCheck      `yaml:"healthcheck"`
-	Command        []string          `yaml:"command"`
+	Command        []string          `yaml:"-"`
+	RawCommand     interface{}       `yaml:"command"`
 }

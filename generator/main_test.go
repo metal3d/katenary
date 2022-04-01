@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"katenary/compose"
 	"katenary/helm"
+	"katenary/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -90,6 +91,10 @@ volumes:
     data:
         driver: local
 `
+
+func init() {
+	logger.NOLOG = true
+}
 
 func setUp(t *testing.T) (string, *compose.Parser) {
 	p := compose.NewParser("", DOCKER_COMPOSE_YML)
