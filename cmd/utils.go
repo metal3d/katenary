@@ -93,9 +93,12 @@ func detectGitVersion() (string, error) {
 }
 
 func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
-	composeFound := FindComposeFile()
+	if len(composeFile) == 0 {
+		fmt.Println("No compose file given")
+		return
+	}
 	_, err := os.Stat(ComposeFile)
-	if !composeFound && err != nil {
+	if err != nil {
 		fmt.Println("No compose file found")
 		os.Exit(1)
 	}
@@ -131,7 +134,7 @@ func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
 	}
 
 	// Parse the compose file now
-	p := compose.NewParser(ComposeFile)
+	p := compose.NewParser(composeFile)
 	p.Parse(appName)
 
 	// start generator
