@@ -170,18 +170,18 @@ func parseCommand(s *Service) {
 	}
 
 	// following the command type, it can be a "slice" or a simple sting, so we need to check it
-	switch s.RawCommand.(type) {
+	switch v := s.RawCommand.(type) {
 	case string:
 		// use shlex to parse the command
-		command, err := shlex.Split(s.RawCommand.(string))
+		command, err := shlex.Split(v)
 		if err != nil {
 			log.Fatal(err)
 		}
 		s.Command = command
 	case []string:
-		s.Command = s.RawCommand.([]string)
+		s.Command = v
 	case []interface{}:
-		for _, v := range s.RawCommand.([]interface{}) {
+		for _, v := range v {
 			s.Command = append(s.Command, v.(string))
 		}
 	default:
@@ -196,11 +196,11 @@ func parseEnvFiles(s *Service) {
 		return
 	}
 	envfiles := make([]string, 0)
-	switch s.RawEnvFiles.(type) {
+	switch v := s.RawEnvFiles.(type) {
 	case []string:
-		envfiles = s.RawEnvFiles.([]string)
+		envfiles = v
 	case []interface{}:
-		for _, v := range s.RawEnvFiles.([]interface{}) {
+		for _, v := range v {
 			envfiles = append(envfiles, v.(string))
 		}
 	default:
@@ -208,4 +208,29 @@ func parseEnvFiles(s *Service) {
 		log.Fatal("EnvFile type not supported")
 	}
 	s.EnvFiles = envfiles
+}
+
+func parseHealthCheck(s *Service) {
+	// HealthCheck command can be a string or slice of strings
+	if s.HealthCheck.RawTest == nil {
+		return
+	}
+	switch v := s.HealthCheck.RawTest.(type) {
+	case string:
+		var err error
+		s.HealthCheck.Test, err = shlex.Split(v)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case []string:
+		s.HealthCheck.Test = v
+
+	case []interface{}:
+		for _, v := range v {
+			s.HealthCheck.Test = append(s.HealthCheck.Test, v.(string))
+		}
+	default:
+		log.Printf("%+v %T", s.HealthCheck.RawTest, s.HealthCheck.RawTest)
+		log.Fatal("HealthCheck type not supported")
+	}
 }

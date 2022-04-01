@@ -17,11 +17,12 @@ func NewCompose() *Compose {
 
 // HealthCheck manage generic type to handle TCP, HTTP and TCP health check.
 type HealthCheck struct {
-	Test        []string `yaml:"test"`
-	Interval    string   `yaml:"interval"`
-	Timeout     string   `yaml:"timeout"`
-	Retries     int      `yaml:"retries"`
-	StartPeriod string   `yaml:"start_period"`
+	Test        []string    `yaml:"-"`
+	RawTest     interface{} `yaml:"test"`
+	Interval    string      `yaml:"interval"`
+	Timeout     string      `yaml:"timeout"`
+	Retries     int         `yaml:"retries"`
+	StartPeriod string      `yaml:"start_period"`
 }
 
 // Service represent a "service" in a docker-compose file.
