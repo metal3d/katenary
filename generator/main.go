@@ -380,6 +380,10 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 	}
 	for _, volume := range s.Volumes {
 		parts := strings.Split(volume, ":")
+		if len(parts) == 1 {
+			// this is a volume declaration for Docker only, avoid it
+			continue
+		}
 		volname := parts[0]
 		volepath := parts[1]
 
