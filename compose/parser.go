@@ -94,6 +94,22 @@ func (p *Parser) Parse(appname string) {
 		log.Fatal(strings.Join(missing, "\n"))
 	}
 
+	// check if all "image" properties are set
+	missing = []string{}
+	for name, s := range c.Services {
+		if s.Image == "" {
+			missing = append(missing, fmt.Sprintf(
+				"The service \"%s\" hasn't got "+
+					"an image property - please "+
+					"append an image property in the docker-compose file",
+				name,
+			))
+		}
+	}
+	if len(missing) > 0 {
+		log.Fatal(strings.Join(missing, "\n"))
+	}
+
 	// check the build element
 	for name, s := range c.Services {
 		if s.RawBuild == nil {

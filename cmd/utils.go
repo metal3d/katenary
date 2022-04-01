@@ -103,6 +103,10 @@ func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
 		os.Exit(1)
 	}
 
+	// Parse the compose file now
+	p := compose.NewParser(composeFile)
+	p.Parse(appName)
+
 	dirname := filepath.Join(chartDir, appName)
 	if _, err := os.Stat(dirname); err == nil && !force {
 		response := ""
@@ -132,10 +136,6 @@ func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
 		fmt.Printf("Error creating %s: %s\n", templatesDir, err)
 		os.Exit(1)
 	}
-
-	// Parse the compose file now
-	p := compose.NewParser(composeFile)
-	p.Parse(appName)
 
 	// start generator
 	generator.Generate(p, Version, appName, appVersion, ComposeFile, dirname)
