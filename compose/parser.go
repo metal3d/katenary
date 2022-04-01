@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/shlex"
 	"gopkg.in/yaml.v3"
 )
 
@@ -54,8 +55,10 @@ func (p *Parser) Parse(appname string) {
 	services := make(map[string][]string)
 	// get the service list, to be sure that everything is ok
 
+	// fix ugly types
 	for _, s := range p.Data.Services {
 		parseEnv(s)
+		parseCommand(s)
 	}
 
 	c := p.Data
@@ -157,4 +160,31 @@ func parseEnv(s *Service) {
 		log.Fatal("Environment type not supported")
 	}
 	s.Environment = env
+}
+
+func parseCommand(s *Service) {
+
+	if s.RawCommand == nil {
+		return
+	}
+
+	// following the command type, it can be a "slice" or a simple sting, so we need to check it
+	switch s.RawCommand.(type) {
+	case string:
+		// use shlex to parse the command
+		command, err := shlex.Split(s.RawCommand.(string))
+		if err != nil {
+			log.Fatal(err)
+		}
+		s.Command = command
+	case []string:
+		s.Command = s.RawCommand.([]string)
+	case []interface{}:
+		for _, v := range s.RawCommand.([]interface{}) {
+			s.Command = append(s.Command, v.(string))
+		}
+	default:
+		log.Printf("%+v %T", s.RawCommand, s.RawCommand)
+		log.Fatal("Command type not supported")
+	}
 }
