@@ -204,6 +204,8 @@ func parseEnvFiles(s *Service) {
 		for _, v := range v {
 			envfiles = append(envfiles, v.(string))
 		}
+	case string:
+		envfiles = append(envfiles, v)
 	default:
 		log.Printf("%+v %T", s.RawEnvFiles, s.RawEnvFiles)
 		log.Fatal("EnvFile type not supported")
