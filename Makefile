@@ -49,7 +49,11 @@ help:
 
 build: pull katenary
 
-build-all: pull dist dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
+build-all:
+	rm -f dist/*
+	$(MAKE) _build-all
+
+_build-all: pull dist dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
 
 pull:
 ifneq ($(GO),local)
