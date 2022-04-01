@@ -71,6 +71,14 @@ services:
         labels:
             katenary.io/same-pod: http3
 
+    # unmapped volumes
+    novol:
+        image: nginx
+        volumes:
+            - /tmp/data
+        labels:
+            katenary.io/ports: 80
+
 volumes:
     data:
         driver: local
@@ -259,6 +267,26 @@ func TestIngress(t *testing.T) {
 			_, err := os.Stat(path)
 			if err != nil {
 				t.Fatal(err)
+			}
+		}
+	}
+}
+
+// Check unmapped volumes
+func TestUnmappedVolumes(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	for name := range p.Data.Services {
+		if name == "novol" {
+			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
+			fp, _ := os.Open(path)
+			defer fp.Close()
+			lines, _ := ioutil.ReadAll(fp)
+			for _, line := range strings.Split(string(lines), "\n") {
+				if strings.Contains(line, "novol-data") {
+					t.Error("novol service should not have a volume")
+				}
 			}
 		}
 	}
