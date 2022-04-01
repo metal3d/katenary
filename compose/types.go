@@ -26,15 +26,16 @@ type HealthCheck struct {
 
 // Service represent a "service" in a docker-compose file.
 type Service struct {
-	Image       string            `yaml:"image"`
-	Ports       []string          `yaml:"ports"`
-	Environment map[string]string `yaml:"environment"`
-	Labels      map[string]string `yaml:"labels"`
-	DependsOn   []string          `yaml:"depends_on"`
-	Volumes     []string          `yaml:"volumes"`
-	Expose      []int             `yaml:"expose"`
-	EnvFiles    []string          `yaml:"env_file"`
-	RawBuild    interface{}       `yaml:"build"`
-	HealthCheck *HealthCheck      `yaml:"healthcheck"`
-	Command     []string          `yaml:"command"`
+	Image          string            `yaml:"image"`
+	Ports          []string          `yaml:"ports"`
+	Environment    map[string]string `yaml:"-"`
+	RawEnvironment interface{}       `yaml:"environment"`
+	Labels         map[string]string `yaml:"labels"`
+	DependsOn      []string          `yaml:"depends_on"`
+	Volumes        []string          `yaml:"volumes"`
+	Expose         []int             `yaml:"expose"`
+	EnvFiles       []string          `yaml:"env_file"`
+	RawBuild       interface{}       `yaml:"build"`
+	HealthCheck    *HealthCheck      `yaml:"healthcheck"`
+	Command        []string          `yaml:"command"`
 }

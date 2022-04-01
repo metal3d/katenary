@@ -128,6 +128,13 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 	if len(s.Ports) == 0 {
 		// alert any current or **future** waiters that this service is not exposed
 		go func() {
+			defer func() {
+				// recover from panic
+				if r := recover(); r != nil {
+					// log the stack trace
+					fmt.Println(r)
+				}
+			}()
 			for {
 				select {
 				case <-time.Tick(1 * time.Millisecond):
@@ -378,12 +385,15 @@ func prepareVolumes(deployment, name string, s *compose.Service, container *helm
 	if v, ok := s.Labels[helm.LABEL_VOL_CM]; ok {
 		configMapsVolumes = strings.Split(v, ",")
 	}
+
 	for _, volume := range s.Volumes {
+
 		parts := strings.Split(volume, ":")
 		if len(parts) == 1 {
 			// this is a volume declaration for Docker only, avoid it
 			continue
 		}
+
 		volname := parts[0]
 		volepath := parts[1]
 

@@ -79,6 +79,13 @@ services:
         labels:
             katenary.io/ports: 80
 
+    # use = sign for environment variables
+    eqenv:
+        image: nginx
+        environment:
+          - SOME_ENV_VAR=some_value
+          - ANOTHER_ENV_VAR=another_value
+
 volumes:
     data:
         driver: local
@@ -287,6 +294,37 @@ func TestUnmappedVolumes(t *testing.T) {
 				if strings.Contains(line, "novol-data") {
 					t.Error("novol service should not have a volume")
 				}
+			}
+		}
+	}
+}
+
+// Check if service using equal sign for environment works
+func TestEqualSignOnEnv(t *testing.T) {
+	tmp, p := setUp(t)
+	defer os.RemoveAll(tmp)
+
+	// if the name is eqenv, the service should habe environment
+	for name, _ := range p.Data.Services {
+		if name == "eqenv" {
+			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
+			fp, _ := os.Open(path)
+			defer fp.Close()
+			lines, _ := ioutil.ReadAll(fp)
+			match := 0
+			for _, line := range strings.Split(string(lines), "\n") {
+				// we must find the line with the environment variable name
+				if strings.Contains(line, "SOME_ENV_VAR") {
+					// we must find the line with the environment variable value
+					match++
+				}
+				if strings.Contains(line, "ANOTHER_ENV_VAR") {
+					// we must find the line with the environment variable value
+					match++
+				}
+			}
+			if match != 2 {
+				t.Error("eqenv service should have 2 environment variables")
 			}
 		}
 	}

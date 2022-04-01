@@ -54,6 +54,10 @@ func (p *Parser) Parse(appname string) {
 	services := make(map[string][]string)
 	// get the service list, to be sure that everything is ok
 
+	for _, s := range p.Data.Services {
+		parseEnv(s)
+	}
+
 	c := p.Data
 	for name, s := range c.Services {
 		if portlabel, ok := s.Labels[helm.LABEL_PORT]; ok {
@@ -121,4 +125,36 @@ func (p *Parser) Parse(appname string) {
 			" for the \"" + name + "\" service \x1b[0m")
 
 	}
+
+}
+
+// manage environment variables, if the type is map[string]string so we can use it, else we need to split "=" sign
+// and apply this in env variable
+func parseEnv(s *Service) {
+	env := make(map[string]string)
+	if s.RawEnvironment == nil {
+		return
+	}
+	switch s.RawEnvironment.(type) {
+	case map[string]string:
+		env = s.RawEnvironment.(map[string]string)
+	case map[string]interface{}:
+		for k, v := range s.RawEnvironment.(map[string]interface{}) {
+			env[k] = v.(string)
+		}
+	case []interface{}:
+		for _, v := range s.RawEnvironment.([]interface{}) {
+			// Splot the value of the env variable with "="
+			parts := strings.Split(v.(string), "=")
+			env[parts[0]] = parts[1]
+		}
+	case string:
+		parts := strings.Split(s.RawEnvironment.(string), "=")
+		env[parts[0]] = parts[1]
+	default:
+		log.Printf("%+v, %T", s.RawEnvironment, s.RawEnvironment)
+		log.Printf("%+v", s)
+		log.Fatal("Environment type not supported")
+	}
+	s.Environment = env
 }
