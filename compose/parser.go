@@ -60,6 +60,7 @@ func (p *Parser) Parse(appname string) {
 		parseEnv(s)
 		parseCommand(s)
 		parseEnvFiles(s)
+		parseHealthCheck(s)
 	}
 
 	c := p.Data
@@ -212,18 +213,27 @@ func parseEnvFiles(s *Service) {
 
 func parseHealthCheck(s *Service) {
 	// HealthCheck command can be a string or slice of strings
+	if s.HealthCheck == nil {
+		return
+	}
 	if s.HealthCheck.RawTest == nil {
 		return
 	}
+
 	switch v := s.HealthCheck.RawTest.(type) {
 	case string:
-		var err error
-		s.HealthCheck.Test, err = shlex.Split(v)
+		c, err := shlex.Split(v)
 		if err != nil {
 			log.Fatal(err)
 		}
+		s.HealthCheck = &HealthCheck{
+			Test: c,
+		}
+
 	case []string:
-		s.HealthCheck.Test = v
+		s.HealthCheck = &HealthCheck{
+			Test: v,
+		}
 
 	case []interface{}:
 		for _, v := range v {

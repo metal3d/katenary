@@ -40,6 +40,22 @@ services:
         image: foo
         command: echo "hello world"
 
+    hc1:
+        image: foo
+        healthcheck:
+            test: ["CMD-SHELL", "echo 'hello world1'"]
+
+    hc2:
+        image: foo
+        healthcheck:
+            test: echo "hello world2"
+
+    hc3:
+        image: foo
+        healthcheck:
+            test: ["CMD", "echo 'hello world3'"]
+
+
 `
 
 func init() {
@@ -132,6 +148,51 @@ func TestParseCommand(t *testing.T) {
 			}
 			if s.Command[1] != "hello world" {
 				t.Errorf("Expected hello world, got %s", s.Command[1])
+			}
+		}
+	}
+}
+
+func TestHealthChecks(t *testing.T) {
+	p := NewParser("", DOCKER_COMPOSE_YML1)
+	p.Parse("test")
+
+	for name, s := range p.Data.Services {
+		if name != "hc1" && name != "hc2" && name != "hc3" {
+			continue
+		}
+
+		if name == "hc1" {
+			if len(s.HealthCheck.Test) != 2 {
+				t.Errorf("Expected 2 healthcheck tests, got %d", len(s.HealthCheck.Test))
+			}
+			if s.HealthCheck.Test[0] != "CMD-SHELL" {
+				t.Errorf("Expected CMD-SHELL, got %s", s.HealthCheck.Test[0])
+			}
+			if s.HealthCheck.Test[1] != "echo 'hello world1'" {
+				t.Errorf("Expected echo 'hello world1', got %s", s.HealthCheck.Test[1])
+			}
+		}
+		if name == "hc2" {
+			if len(s.HealthCheck.Test) != 2 {
+				t.Errorf("Expected 2 healthcheck tests, got %d", len(s.HealthCheck.Test))
+			}
+			if s.HealthCheck.Test[0] != "echo" {
+				t.Errorf("Expected echo, got %s", s.HealthCheck.Test[1])
+			}
+			if s.HealthCheck.Test[1] != "hello world2" {
+				t.Errorf("Expected echo 'hello world2', got %s", s.HealthCheck.Test[1])
+			}
+		}
+		if name == "hc3" {
+			if len(s.HealthCheck.Test) != 2 {
+				t.Errorf("Expected 2 healthcheck tests, got %d", len(s.HealthCheck.Test))
+			}
+			if s.HealthCheck.Test[0] != "CMD" {
+				t.Errorf("Expected CMD, got %s", s.HealthCheck.Test[0])
+			}
+			if s.HealthCheck.Test[1] != "echo 'hello world3'" {
+				t.Errorf("Expected echo 'hello world3', got %s", s.HealthCheck.Test[1])
 			}
 		}
 	}

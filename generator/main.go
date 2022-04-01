@@ -607,9 +607,13 @@ func prepareProbes(name string, s *compose.Service, container *helm.Container) {
 					Command: c,
 				}
 			}
-		} else if s.HealthCheck.Test[0] == "CMD" {
+		} else if s.HealthCheck.Test[0] == "CMD" || s.HealthCheck.Test[0] == "CMD-SHELL" {
 			probe.Exec = &helm.Exec{
 				Command: s.HealthCheck.Test[1:],
+			}
+		} else {
+			probe.Exec = &helm.Exec{
+				Command: s.HealthCheck.Test,
 			}
 		}
 		container.LivenessProbe = probe
