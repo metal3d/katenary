@@ -158,6 +158,10 @@ func parseService(name string, s *compose.Service, linked map[string]*compose.Se
 
 // prepareContainer assigns image, command, env, and labels to a container.
 func prepareContainer(container *helm.Container, service *compose.Service, servicename string) {
+	// if there is no image name, this should fail!
+	if service.Image == "" {
+		log.Fatal(ICON_PACKAGE+" No image name for service ", servicename)
+	}
 	container.Image = "{{ .Values." + servicename + ".image }}"
 	container.Command = service.Command
 	Values[servicename] = map[string]interface{}{
