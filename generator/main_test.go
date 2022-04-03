@@ -117,7 +117,8 @@ func TestCommand(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "web2" {
 			// Ensure that the command is correctly set
 			// The command should be a string array
@@ -161,7 +162,8 @@ func TestEnvs(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 
 		if name == "php" {
 			// the "DB_HOST" environment variable inside the template must be set to '{{ .Release.Name }}-database'
@@ -197,7 +199,8 @@ func TestSamePod(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name, service := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 
 		if _, found := service.Labels[helm.LABEL_SAMEPOD]; found {
@@ -222,7 +225,8 @@ func TestPorts(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name, service := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := ""
 
 		// if the service has a port found in helm.LABEL_PORT or ports, so the service file should exist
@@ -249,7 +253,8 @@ func TestPVC(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
 
 		// the "database" service should have a pvc file in templates (name-data.pvc.yaml)
@@ -269,7 +274,8 @@ func TestIngress(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+".ingress.yaml")
 
 		// the "web" service should have a ingress file in templates (name.ingress.yaml)
@@ -289,7 +295,8 @@ func TestUnmappedVolumes(t *testing.T) {
 	tmp, p := setUp(t)
 	defer os.RemoveAll(tmp)
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "novol" {
 			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 			fp, _ := os.Open(path)
@@ -310,7 +317,8 @@ func TestEqualSignOnEnv(t *testing.T) {
 	defer os.RemoveAll(tmp)
 
 	// if the name is eqenv, the service should habe environment
-	for name, _ := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "eqenv" {
 			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 			fp, _ := os.Open(path)

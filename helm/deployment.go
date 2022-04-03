@@ -1,6 +1,10 @@
 package helm
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/compose-spec/compose-go/types"
+)
 
 // Deployment is a k8s deployment.
 type Deployment struct {
@@ -82,7 +86,7 @@ func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
 	}
 }
 
-func NewContainer(name, image string, environment, labels map[string]string) *Container {
+func NewContainer(name, image string, environment types.MappingWithEquals, labels map[string]string) *Container {
 	container := &Container{
 		Image:   image,
 		Name:    name,
@@ -100,7 +104,7 @@ func NewContainer(name, image string, environment, labels map[string]string) *Co
 	for n, v := range environment {
 		for _, name := range toServices {
 			if name == n {
-				v = RELEASE_NAME + "-" + v
+				*v = RELEASE_NAME + "-" + *v
 			}
 		}
 		container.Env[idx] = Value{Name: n, Value: v}

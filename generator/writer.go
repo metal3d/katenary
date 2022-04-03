@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,13 +33,15 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 
 	// list avoided services
 	avoids := make(map[string]bool)
-	for n, service := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		n := service.Name
 		if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
 			avoids[n] = true
 		}
 	}
 
-	for name, s := range p.Data.Services {
+	for _, s := range p.Data.Services {
+		name := s.Name
 
 		// Manage emptyDir volumes
 		if empty, ok := s.Labels[helm.LABEL_EMPTYDIRS]; ok {
@@ -49,11 +52,12 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		}
 
 		// fetch corresponding service in "links"
-		linked := make(map[string]*compose.Service, 0)
+		linked := make(map[string]types.ServiceConfig, 0)
 		// find service linked to this one
-		for n, service := range p.Data.Services {
-			if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
-				if service.Labels[helm.LABEL_SAMEPOD] == name {
+		for _, service := range p.Data.Services {
+			n := service.Name
+			for _, label := range service.Labels {
+				if label == helm.LABEL_SAMEPOD {
 					linked[n] = service
 				}
 			}

@@ -3,6 +3,7 @@ module katenary
 go 1.16
 
 require (
+	github.com/compose-spec/compose-go v1.2.2
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/spf13/cobra v1.4.0
