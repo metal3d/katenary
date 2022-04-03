@@ -501,7 +501,7 @@ func prepareInitContainers(name string, s types.ServiceConfig, container *helm.C
 	// We need to detect others services, but we probably not have parsed them yet, so
 	// we will wait for them for a while.
 	initContainers := make([]*helm.Container, 0)
-	for dp, _ := range s.DependsOn {
+	for dp := range s.DependsOn {
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
 		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
 
