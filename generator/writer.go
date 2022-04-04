@@ -4,6 +4,7 @@ import (
 	"katenary/compose"
 	"katenary/generator/writers"
 	"katenary/helm"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -26,33 +27,38 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 	// try to create the directory
 	err := os.MkdirAll(templatesDir, 0755)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	files := make(map[string]chan interface{})
 
-	// list avoided services
+	// Manage services, avoid linked pods and store all services port in servicesMap
 	avoids := make(map[string]bool)
+	linked := make(map[string]types.ServiceConfig, 0)
 	for _, service := range p.Data.Services {
 		n := service.Name
+
+		// find port and store it in servicesMap
+		for _, port := range service.Ports {
+			target := int(port.Target)
+			if target != 0 {
+				servicesMap[n] = target
+			}
+		}
+
+		// avoid linked pods
 		if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
 			avoids[n] = true
 		}
-	}
 
-	for _, s := range p.Data.Services {
-		name := s.Name
-
-		// Manage emptyDir volumes
-		if empty, ok := s.Labels[helm.LABEL_EMPTYDIRS]; ok {
+		// manage emptyDir volumes
+		if empty, ok := service.Labels[helm.LABEL_EMPTYDIRS]; ok {
 			//split empty list by coma
 			emptyDirs := strings.Split(empty, ",")
 			//append them in EmptyDirs
 			EmptyDirs = append(EmptyDirs, emptyDirs...)
 		}
 
-		// fetch corresponding service in "links"
-		linked := make(map[string]types.ServiceConfig, 0)
 		// find service linked to this one
 		for _, service := range p.Data.Services {
 			n := service.Name
@@ -62,6 +68,11 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 				}
 			}
 		}
+	}
+
+	// for all services in linked map, and not in avoids map, generate the service
+	for _, s := range p.Data.Services {
+		name := s.Name
 
 		if _, found := avoids[name]; found {
 			continue

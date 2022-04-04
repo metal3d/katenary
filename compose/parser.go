@@ -3,11 +3,10 @@ package compose
 import (
 	"log"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/types"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -16,7 +15,8 @@ const (
 
 // Parser is a docker-compose parser.
 type Parser struct {
-	Data *types.Project
+	Data      *types.Project
+	temporary *string
 }
 
 var Appname = ""
@@ -24,30 +24,44 @@ var Appname = ""
 // NewParser create a Parser and parse the file given in filename. If filename is empty, we try to parse the content[0] argument that should be a valid YAML content.
 func NewParser(filename string, content ...string) *Parser {
 
-	c := NewCompose()
-	if filename != "" {
-		f, err := os.Open(filename)
+	p := &Parser{}
+
+	if len(content) > 0 {
+		//write it in a temporary file
+		tmp, err := os.MkdirTemp(os.TempDir(), "katenary-")
 		if err != nil {
 			log.Fatal(err)
 		}
-		dec := yaml.NewDecoder(f)
-		err = dec.Decode(c)
+		tmpfile, err := os.Create(filepath.Join(tmp, "tmp.yml"))
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
-		dec := yaml.NewDecoder(strings.NewReader(content[0]))
-		err := dec.Decode(c)
-		if err != nil {
-			log.Fatal(err)
+		tmpfile.WriteString(content[0])
+		tmpfile.Close()
+		filename = tmpfile.Name()
+		p.temporary = &tmp
+		cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
+	}
+	// if filename is not in cli Default files, add it
+	if len(filename) > 0 {
+		found := false
+		for _, f := range cli.DefaultFileNames {
+			if f == filename {
+				found = true
+				break
+			}
+		}
+		// add the file at first position
+		if !found {
+			cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
 		}
 	}
-
-	p := &Parser{}
+	log.Println(cli.DefaultFileNames)
 
 	return p
 }
 
+// Parse using compose-go parser, adapt a bit the Project and set Appname.
 func (p *Parser) Parse(appname string) {
 
 	// Reminder:
@@ -66,11 +80,12 @@ func (p *Parser) Parse(appname string) {
 
 	proj, err := cli.ProjectFromOptions(options)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to create project", err)
 	}
 
 	Appname = proj.Name
-
 	p.Data = proj
-
+	if p.temporary != nil {
+		defer os.RemoveAll(*p.temporary)
+	}
 }

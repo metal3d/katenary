@@ -97,7 +97,7 @@ func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
 		fmt.Println("No compose file given")
 		return
 	}
-	_, err := os.Stat(ComposeFile)
+	_, err := os.Stat(composeFile)
 	if err != nil {
 		fmt.Println("No compose file found")
 		os.Exit(1)

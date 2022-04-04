@@ -11,9 +11,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
-	"errors"
 
 	"github.com/compose-spec/compose-go/types"
 )
@@ -123,33 +120,6 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 		}
 	}
 
-	// Special case, it there is no "ports", so there is no associated services...
-	// But... some other deployment can wait for it, so we alert that this deployment hasn't got any
-	// associated service.
-	if len(s.Ports) == 0 {
-		// alert any current or **future** waiters that this service is not exposed
-		go func() {
-			defer func() {
-				// recover from panic
-				if r := recover(); r != nil {
-					// log the stack trace
-					fmt.Println(r)
-				}
-			}()
-			for {
-				select {
-				case <-time.Tick(1 * time.Millisecond):
-					locker.Lock()
-					for _, c := range serviceWaiters[name] {
-						c <- -1
-						close(c)
-					}
-					locker.Unlock()
-				}
-			}
-		}()
-	}
-
 	// add the volumes in Values
 	if len(VolumeValues[name]) > 0 {
 		locker.Lock()
@@ -166,6 +136,8 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 
 // prepareContainer assigns image, command, env, and labels to a container.
 func prepareContainer(container *helm.Container, service types.ServiceConfig, servicename string) {
+	locker.Lock()
+	defer locker.Unlock()
 	// if there is no image name, this should fail!
 	if service.Image == "" {
 		log.Fatal(ICON_PACKAGE+" No image name for service ", servicename)
@@ -186,11 +158,8 @@ func generateServicesAndIngresses(name string, s types.ServiceConfig) []interfac
 	logger.Magenta(ICON_SERVICE+" Generating service for ", name)
 	ks := helm.NewService(name)
 
-	for i, p := range s.Ports {
+	for _, p := range s.Ports {
 		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(int(p.Target), int(p.Target)))
-		if i == 0 {
-			detected(name, int(p.Target))
-		}
 	}
 	ks.Spec.Selector = buildSelector(name, s)
 
@@ -253,49 +222,6 @@ func createIngress(name string, port int, s types.ServiceConfig) *helm.Ingress {
 	return ingress
 }
 
-// This function is called when a possible service is detected, it append the port in a map to make others
-// to be able to get the service name. It also try to send the data to any "waiter" for this service.
-func detected(name string, port int) {
-	locker.Lock()
-	defer locker.Unlock()
-	if _, ok := servicesMap[name]; ok {
-		return
-	}
-	servicesMap[name] = port
-	go func() {
-		locker.Lock()
-		defer locker.Unlock()
-		if cx, ok := serviceWaiters[name]; ok {
-			for _, c := range cx {
-				c <- port
-			}
-		}
-	}()
-}
-
-func getPort(name string) (int, error) {
-	if v, ok := servicesMap[name]; ok {
-		return v, nil
-	}
-	return -1, errors.New("Not found")
-}
-
-// Waits for a service to be discovered. Sometimes, a deployment depends on another one. See the detected() function.
-func waitPort(name string) chan int {
-	locker.Lock()
-	defer locker.Unlock()
-	c := make(chan int, 0)
-	serviceWaiters[name] = append(serviceWaiters[name], c)
-	go func() {
-		locker.Lock()
-		defer locker.Unlock()
-		if v, ok := servicesMap[name]; ok {
-			c <- v
-		}
-	}()
-	return c
-}
-
 // Build the selector for the service.
 func buildSelector(name string, s types.ServiceConfig) map[string]string {
 	return map[string]string{
@@ -353,6 +279,20 @@ func generateContainerPorts(s types.ServiceConfig, name string, container *helm.
 			ContainerPort: int(port.Target),
 		})
 		exists[int(port.Target)] = name
+	}
+
+	// Get ports from label
+	if v, ok := s.Labels[helm.LABEL_PORT]; ok {
+		// split port by ","
+		ports := strings.Split(v, ",")
+		for _, port := range ports {
+			port, _ := strconv.Atoi(port)
+			container.Ports = append(container.Ports, &helm.ContainerPort{
+				Name:          name,
+				ContainerPort: port,
+			})
+			exists[port] = name
+		}
 	}
 
 	// manage the "expose" section to be a NodePort in Kubernetes
@@ -506,9 +446,11 @@ func prepareInitContainers(name string, s types.ServiceConfig, container *helm.C
 		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
 
 		foundPort := -1
-		if defaultPort, err := getPort(dp); err != nil {
-			// BUG: Sometimes the chan remains opened
-			foundPort = <-waitPort(dp)
+		locker.Lock()
+		defer locker.Unlock()
+		if defaultPort, ok := servicesMap[dp]; !ok {
+			logger.Redf("Error while getting port for service %s\n", dp)
+			os.Exit(1)
 		} else {
 			foundPort = defaultPort
 		}

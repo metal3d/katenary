@@ -5,10 +5,13 @@ import (
 	"katenary/compose"
 	"katenary/helm"
 	"katenary/logger"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/compose-spec/compose-go/cli"
 )
 
 const DOCKER_COMPOSE_YML = `version: '3'
@@ -92,17 +95,19 @@ volumes:
         driver: local
 `
 
+var defaultCliFiles = cli.DefaultFileNames
+
 func init() {
 	logger.NOLOG = true
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
+	cli.DefaultFileNames = defaultCliFiles
 	p := compose.NewParser("", DOCKER_COMPOSE_YML)
 	p.Parse("testapp")
 
 	// create a temporary directory
 	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test")
-	t.Log("Generated ", tmp, "directory")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +120,8 @@ func setUp(t *testing.T) (string, *compose.Parser) {
 // Check if the web2 service has got a command.
 func TestCommand(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	//defer os.RemoveAll(tmp)
+	log.Println(tmp)
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -138,6 +144,7 @@ func TestCommand(t *testing.T) {
 					commands = append(commands, line)
 				}
 			}
+			//log.Printf("%#v\n", commands)
 			ok := 0
 			for _, command := range commands {
 				if strings.Contains(command, "- /bin/sh") {
@@ -242,7 +249,7 @@ func TestPorts(t *testing.T) {
 			t.Log("Checking ", name, " service file")
 			_, err := os.Stat(path)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}
 	}
