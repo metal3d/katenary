@@ -15,10 +15,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
-var servicesMap = make(map[string]int)
-var serviceWaiters = make(map[string][]chan int)
-var locker = &sync.Mutex{}
-
 const (
 	ICON_PACKAGE = "📦"
 	ICON_SERVICE = "🔌"
@@ -33,11 +29,15 @@ const (
 )
 
 // Values is kept in memory to create a values.yaml file.
-var Values = make(map[string]map[string]interface{})
-var VolumeValues = make(map[string]map[string]map[string]interface{})
-var EmptyDirs = []string{}
+var (
+	Values         = make(map[string]map[string]interface{})
+	VolumeValues   = make(map[string]map[string]map[string]interface{})
+	EmptyDirs      = []string{}
+	servicesMap    = make(map[string]int)
+	serviceWaiters = make(map[string][]chan int)
+	locker         = &sync.Mutex{}
 
-var dependScript = `
+	dependScript = `
 OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
@@ -48,11 +48,12 @@ echo
 echo "Done"
 `
 
-var madeDeployments = make(map[string]helm.Deployment, 0)
+	madeDeployments = make(map[string]helm.Deployment, 0)
+)
 
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
 func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig) chan interface{} {
-	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+1)
+	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+2)
 	go parseService(name, s, linked, ret)
 	return ret
 }
@@ -136,17 +137,17 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 
 // prepareContainer assigns image, command, env, and labels to a container.
 func prepareContainer(container *helm.Container, service types.ServiceConfig, servicename string) {
-	locker.Lock()
-	defer locker.Unlock()
 	// if there is no image name, this should fail!
 	if service.Image == "" {
 		log.Fatal(ICON_PACKAGE+" No image name for service ", servicename)
 	}
 	container.Image = "{{ .Values." + servicename + ".image }}"
 	container.Command = service.Command
+	locker.Lock()
 	Values[servicename] = map[string]interface{}{
 		"image": service.Image,
 	}
+	locker.Unlock()
 	prepareProbes(servicename, service, container)
 	generateContainerPorts(service, servicename, container)
 }
@@ -159,7 +160,8 @@ func generateServicesAndIngresses(name string, s types.ServiceConfig) []interfac
 	ks := helm.NewService(name)
 
 	for _, p := range s.Ports {
-		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(int(p.Target), int(p.Target)))
+		target := int(p.Target)
+		ks.Spec.Ports = append(ks.Spec.Ports, helm.NewServicePort(target, target))
 	}
 	ks.Spec.Selector = buildSelector(name, s)
 
@@ -286,7 +288,10 @@ func generateContainerPorts(s types.ServiceConfig, name string, container *helm.
 		// split port by ","
 		ports := strings.Split(v, ",")
 		for _, port := range ports {
-			port, _ := strconv.Atoi(port)
+			port, err := strconv.Atoi(port)
+			if err != nil {
+				log.Fatalf("The given port \"%v\" as container port in \"%s\" service is not an integer\n", v, name)
+			}
 			container.Ports = append(container.Ports, &helm.ContainerPort{
 				Name:          name,
 				ContainerPort: port,
@@ -343,7 +348,13 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 		}
 		if isCM {
 			// check if the volname path points on a file, if so, we need to add subvolume to the interface
-			stat, _ := os.Stat(volname)
+			stat, err := os.Stat(volname)
+			if err != nil {
+				logger.ActivateColors = true
+				logger.Redf("An error occured reading volume path %s\n", err.Error())
+				logger.ActivateColors = false
+				continue
+			}
 			pointToFile := ""
 			if !stat.IsDir() {
 				pointToFile = filepath.Base(volname)
@@ -447,13 +458,13 @@ func prepareInitContainers(name string, s types.ServiceConfig, container *helm.C
 
 		foundPort := -1
 		locker.Lock()
-		defer locker.Unlock()
 		if defaultPort, ok := servicesMap[dp]; !ok {
 			logger.Redf("Error while getting port for service %s\n", dp)
 			os.Exit(1)
 		} else {
 			foundPort = defaultPort
 		}
+		locker.Unlock()
 		if foundPort == -1 {
 			log.Fatalf(
 				"ERROR, the %s service is waiting for %s port number, "+

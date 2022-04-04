@@ -40,7 +40,7 @@ func NewParser(filename string, content ...string) *Parser {
 		tmpfile.Close()
 		filename = tmpfile.Name()
 		p.temporary = &tmp
-		cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
+		cli.DefaultFileNames = []string{filename}
 	}
 	// if filename is not in cli Default files, add it
 	if len(filename) > 0 {
@@ -56,7 +56,6 @@ func NewParser(filename string, content ...string) *Parser {
 			cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
 		}
 	}
-	log.Println(cli.DefaultFileNames)
 
 	return p
 }

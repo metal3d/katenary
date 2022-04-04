@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,15 +35,29 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 
 	// Manage services, avoid linked pods and store all services port in servicesMap
 	avoids := make(map[string]bool)
-	linked := make(map[string]types.ServiceConfig, 0)
-	for _, service := range p.Data.Services {
+	for i, service := range p.Data.Services {
 		n := service.Name
 
+		if ports, ok := service.Labels[helm.LABEL_PORT]; ok {
+			if service.Ports == nil {
+				service.Ports = make([]types.ServicePortConfig, 0)
+			}
+			for _, port := range strings.Split(ports, ",") {
+				target, err := strconv.Atoi(port)
+				if err != nil {
+					log.Fatal(err)
+				}
+				service.Ports = append(service.Ports, types.ServicePortConfig{
+					Target: uint32(target),
+				})
+			}
+		}
 		// find port and store it in servicesMap
 		for _, port := range service.Ports {
 			target := int(port.Target)
 			if target != 0 {
 				servicesMap[n] = target
+				break
 			}
 		}
 
@@ -58,16 +73,8 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 			//append them in EmptyDirs
 			EmptyDirs = append(EmptyDirs, emptyDirs...)
 		}
+		p.Data.Services[i] = service
 
-		// find service linked to this one
-		for _, service := range p.Data.Services {
-			n := service.Name
-			for _, label := range service.Labels {
-				if label == helm.LABEL_SAMEPOD {
-					linked[n] = service
-				}
-			}
-		}
 	}
 
 	// for all services in linked map, and not in avoids map, generate the service
@@ -77,6 +84,15 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		if _, found := avoids[name]; found {
 			continue
 		}
+		linked := make(map[string]types.ServiceConfig, 0)
+		// find service
+		for _, service := range p.Data.Services {
+			n := service.Name
+			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == name {
+				linked[n] = service
+			}
+		}
+
 		files[name] = CreateReplicaObject(name, s, linked)
 	}
 

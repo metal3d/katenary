@@ -5,7 +5,6 @@ import (
 	"katenary/compose"
 	"katenary/helm"
 	"katenary/logger"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,7 +97,7 @@ volumes:
 var defaultCliFiles = cli.DefaultFileNames
 
 func init() {
-	logger.NOLOG = true
+	logger.NOLOG = false
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
@@ -120,8 +119,7 @@ func setUp(t *testing.T) (string, *compose.Parser) {
 // Check if the web2 service has got a command.
 func TestCommand(t *testing.T) {
 	tmp, p := setUp(t)
-	//defer os.RemoveAll(tmp)
-	log.Println(tmp)
+	defer os.RemoveAll(tmp)
 
 	for _, service := range p.Data.Services {
 		name := service.Name
