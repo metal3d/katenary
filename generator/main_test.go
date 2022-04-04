@@ -97,7 +97,7 @@ volumes:
 var defaultCliFiles = cli.DefaultFileNames
 
 func init() {
-	logger.NOLOG = false
+	logger.NOLOG = true
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
