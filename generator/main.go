@@ -281,23 +281,6 @@ func generateContainerPorts(s types.ServiceConfig, name string, container *helm.
 		exists[int(port.Target)] = name
 	}
 
-	// Get ports from label
-	if v, ok := s.Labels[helm.LABEL_PORT]; ok {
-		// split port by ","
-		ports := strings.Split(v, ",")
-		for _, port := range ports {
-			port, err := strconv.Atoi(port)
-			if err != nil {
-				log.Fatalf("The given port \"%v\" as container port in \"%s\" service is not an integer\n", v, name)
-			}
-			container.Ports = append(container.Ports, &helm.ContainerPort{
-				Name:          name,
-				ContainerPort: port,
-			})
-			exists[port] = name
-		}
-	}
-
 	// manage the "expose" section to be a NodePort in Kubernetes
 	for _, expose := range s.Expose {
 
