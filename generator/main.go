@@ -7,6 +7,7 @@ import (
 	"katenary/helm"
 	"katenary/logger"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -63,37 +64,37 @@ func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]t
 func parseService(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig, ret chan interface{}) {
 	logger.Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 
-	o := helm.NewDeployment(name)
+	deployment := helm.NewDeployment(name)
 
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 	prepareContainer(container, s, name)
 	prepareEnvFromFiles(name, s, container, ret)
 
 	// Set the container to the deployment
-	o.Spec.Template.Spec.Containers = []*helm.Container{container}
+	deployment.Spec.Template.Spec.Containers = []*helm.Container{container}
 
 	// Prepare volumes
 	madePVC := make(map[string]bool)
-	o.Spec.Template.Spec.Volumes = prepareVolumes(name, name, s, container, madePVC, ret)
+	deployment.Spec.Template.Spec.Volumes = prepareVolumes(name, name, s, container, madePVC, ret)
 
 	// Now, for "depends_on" section, it's a bit tricky to get dependencies, see the function below.
-	o.Spec.Template.Spec.InitContainers = prepareInitContainers(name, s, container)
+	deployment.Spec.Template.Spec.InitContainers = prepareInitContainers(name, s, container)
 
 	// Add selectors
 	selectors := buildSelector(name, s)
-	o.Spec.Selector = map[string]interface{}{
+	deployment.Spec.Selector = map[string]interface{}{
 		"matchLabels": selectors,
 	}
-	o.Spec.Template.Metadata.Labels = selectors
+	deployment.Spec.Template.Metadata.Labels = selectors
 
 	// Now, the linked services
 	for lname, link := range linked {
 		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
 		prepareContainer(container, link, lname)
 		prepareEnvFromFiles(lname, link, container, ret)
-		o.Spec.Template.Spec.Containers = append(o.Spec.Template.Spec.Containers, container)
-		o.Spec.Template.Spec.Volumes = append(o.Spec.Template.Spec.Volumes, prepareVolumes(name, lname, link, container, madePVC, ret)...)
-		o.Spec.Template.Spec.InitContainers = append(o.Spec.Template.Spec.InitContainers, prepareInitContainers(lname, link, container)...)
+		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, container)
+		deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, prepareVolumes(name, lname, link, container, madePVC, ret)...)
+		deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, prepareInitContainers(lname, link, container)...)
 		//append ports and expose ports to the deployment, to be able to generate them in the Service file
 		if len(link.Ports) > 0 || len(link.Expose) > 0 {
 			s.Ports = append(s.Ports, link.Ports...)
@@ -104,7 +105,7 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 	// Remove duplicates in volumes
 	volumes := make([]map[string]interface{}, 0)
 	done := make(map[string]bool)
-	for _, vol := range o.Spec.Template.Spec.Volumes {
+	for _, vol := range deployment.Spec.Template.Spec.Volumes {
 		name := vol["name"].(string)
 		if _, ok := done[name]; ok {
 			continue
@@ -113,7 +114,7 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 			volumes = append(volumes, vol)
 		}
 	}
-	o.Spec.Template.Spec.Volumes = volumes
+	deployment.Spec.Template.Spec.Volumes = volumes
 
 	// Then, create Services and possible Ingresses for ingress labels, "ports" and "expose" section
 	if len(s.Ports) > 0 || len(s.Expose) > 0 {
@@ -128,7 +129,7 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 	}
 
 	// the deployment is ready, give it
-	ret <- o
+	ret <- deployment
 
 	// and then, we can say that it's the end
 	ret <- nil
@@ -464,6 +465,77 @@ func prepareInitContainers(name string, s types.ServiceConfig, container *helm.C
 
 // prepareProbes generate http/tcp/command probes for a service.
 func prepareProbes(name string, s types.ServiceConfig, container *helm.Container) {
+	// first, check if there is no label for the probe
+	if check, ok := s.Labels[helm.LABEL_HEALTHCHECK]; ok {
+		check = strings.TrimSpace(check)
+		// get the port of the "url" check
+		if checkurl, err := url.Parse(check); err == nil {
+			if err == nil {
+				container.LivenessProbe = buildProtoProbe(checkurl)
+			}
+		} else {
+			// it's a command
+			container.LivenessProbe = &helm.Probe{
+				Exec: &helm.Exec{
+					Command: []string{
+						"sh",
+						"-c",
+						check,
+					},
+				},
+			}
+		}
+		return // label overrides everything
+	}
+	// if not, we will use the default one
+	if s.HealthCheck != nil {
+		container.LivenessProbe = buildCommandProbe(s)
+	}
+}
+
+func buildProtoProbe(u *url.URL) *helm.Probe {
+	probe := helm.Probe{}
+	port, err := strconv.Atoi(u.Port())
+	if err != nil {
+		port = 80
+	}
+	switch u.Scheme {
+	case "http", "https":
+		probe.HttpGet = &helm.HttpGet{
+			Path: u.Path,
+			Port: port,
+		}
+	case "tcp":
+		probe.TCP = &helm.TCP{
+			Port: port,
+		}
+	default:
+		logger.Redf("Error while parsing healthcheck url %s\n", u.String())
+		os.Exit(1)
+	}
+	return &probe
+}
+
+func buildCommandProbe(s types.ServiceConfig) *helm.Probe {
+
+	// Get the first element of the command from ServiceConfig
+	first := s.HealthCheck.Test[0]
+	switch first {
+	case "CMD", "CMD-SHELL":
+		// CMD or CMD-SHELL
+		return &helm.Probe{
+			Exec: &helm.Exec{
+				Command: s.HealthCheck.Test[1:],
+			},
+		}
+	default:
+		// badly made but it should work...
+		return &helm.Probe{
+			Exec: &helm.Exec{
+				Command: []string(s.HealthCheck.Test),
+			},
+		}
+	}
 
 }
 
