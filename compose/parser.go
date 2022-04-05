@@ -1,6 +1,7 @@
 package compose
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,27 +20,24 @@ type Parser struct {
 	temporary *string
 }
 
-var Appname = ""
+var (
+	Appname        = ""
+	CURRENT_DIR, _ = os.Getwd()
+)
 
 // NewParser create a Parser and parse the file given in filename. If filename is empty, we try to parse the content[0] argument that should be a valid YAML content.
 func NewParser(filename string, content ...string) *Parser {
 
 	p := &Parser{}
 
-	if len(content) > 0 {
-		//write it in a temporary file
-		tmp, err := os.MkdirTemp(os.TempDir(), "katenary-")
+	if len(content) > 0 { // mainly for the tests...
+		dir := filepath.Dir(filename)
+		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
-		tmpfile, err := os.Create(filepath.Join(tmp, "tmp.yml"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		tmpfile.WriteString(content[0])
-		tmpfile.Close()
-		filename = tmpfile.Name()
-		p.temporary = &tmp
+		p.temporary = &dir
+		ioutil.WriteFile(filename, []byte(content[0]), 0644)
 		cli.DefaultFileNames = []string{filename}
 	}
 	// if filename is not in cli Default files, add it
@@ -84,7 +82,9 @@ func (p *Parser) Parse(appname string) {
 
 	Appname = proj.Name
 	p.Data = proj
-	if p.temporary != nil {
-		defer os.RemoveAll(*p.temporary)
-	}
+	CURRENT_DIR = p.Data.WorkingDir
+}
+
+func GetCurrentDir() string {
+	return CURRENT_DIR
 }

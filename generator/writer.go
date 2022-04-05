@@ -18,6 +18,16 @@ import (
 
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
 
+func portExists(port int, ports []types.ServicePortConfig) bool {
+	for _, p := range ports {
+		if p.Target == uint32(port) {
+			log.Println("portExists:", port, p.Target)
+			return true
+		}
+	}
+	return false
+}
+
 func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFile, dirName string) {
 
 	// make the appname global (yes... ugly but easy)
@@ -47,6 +57,10 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 				if err != nil {
 					log.Fatal(err)
 				}
+				if portExists(target, service.Ports) {
+					continue
+				}
+				log.Println("Add port to service:", n, target)
 				service.Ports = append(service.Ports, types.ServicePortConfig{
 					Target: uint32(target),
 				})

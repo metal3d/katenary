@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"io/ioutil"
+	"katenary/compose"
 	"katenary/helm"
 	"katenary/logger"
 	"log"
@@ -123,9 +124,7 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 
 	// add the volumes in Values
 	if len(VolumeValues[name]) > 0 {
-		locker.Lock()
-		Values[name]["persistence"] = VolumeValues[name]
-		locker.Unlock()
+		AddValues(name, map[string]interface{}{"persistence": VolumeValues[name]})
 	}
 
 	// the deployment is ready, give it
@@ -143,11 +142,7 @@ func prepareContainer(container *helm.Container, service types.ServiceConfig, se
 	}
 	container.Image = "{{ .Values." + servicename + ".image }}"
 	container.Command = service.Command
-	locker.Lock()
-	Values[servicename] = map[string]interface{}{
-		"image": service.Image,
-	}
-	locker.Unlock()
+	AddValues(servicename, map[string]interface{}{"image": service.Image})
 	prepareProbes(servicename, service, container)
 	generateContainerPorts(service, servicename, container)
 }
@@ -195,11 +190,14 @@ func generateServicesAndIngresses(name string, s types.ServiceConfig) []interfac
 // Create an ingress.
 func createIngress(name string, port int, s types.ServiceConfig) *helm.Ingress {
 	ingress := helm.NewIngress(name)
-	Values[name]["ingress"] = map[string]interface{}{
+
+	ingressVal := map[string]interface{}{
 		"class":   "nginx",
 		"host":    name + "." + helm.Appname + ".tld",
 		"enabled": false,
 	}
+	AddValues(name, map[string]interface{}{"ingress": ingressVal})
+
 	ingress.Spec.Rules = []helm.IngressRule{
 		{
 			Host: fmt.Sprintf("{{ .Values.%s.ingress.host }}", name),
@@ -425,15 +423,10 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 			})
 
 			logger.Yellow(ICON_STORE+" Generate volume values", volname, "for container named", name, "in deployment", deployment)
-			locker.Lock()
-			if _, ok := VolumeValues[deployment]; !ok {
-				VolumeValues[deployment] = make(map[string]map[string]interface{})
-			}
-			VolumeValues[deployment][volname] = map[string]interface{}{
+			AddVolumeValues(deployment, volname, map[string]interface{}{
 				"enabled":  false,
 				"capacity": "1Gi",
-			}
-			locker.Unlock()
+			})
 
 			if _, ok := madePVC[deployment+volname]; !ok {
 				madePVC[deployment+volname] = true
@@ -521,6 +514,8 @@ func prepareEnvFromFiles(name string, s types.ServiceConfig, container *helm.Con
 			logger.Bluef(ICON_SECRET+" Generating secret %s\n", cf)
 			store = helm.NewSecret(cf)
 		}
+
+		envfile = filepath.Join(compose.GetCurrentDir(), envfile)
 		if err := store.AddEnvFile(envfile); err != nil {
 			logger.ActivateColors = true
 			logger.Red(err.Error())
@@ -541,4 +536,28 @@ func prepareEnvFromFiles(name string, s types.ServiceConfig, container *helm.Con
 
 		ret <- store
 	}
+}
+
+func AddValues(servicename string, values map[string]interface{}) {
+	locker.Lock()
+	defer locker.Unlock()
+
+	if _, ok := values[servicename]; !ok {
+		Values[servicename] = make(map[string]interface{})
+	}
+
+	for k, v := range values {
+		Values[servicename][k] = v
+	}
+
+}
+
+func AddVolumeValues(deployment string, volname string, values map[string]interface{}) {
+	locker.Lock()
+	defer locker.Unlock()
+
+	if _, ok := VolumeValues[deployment]; !ok {
+		VolumeValues[deployment] = make(map[string]map[string]interface{})
+	}
+	VolumeValues[deployment][volname] = values
 }

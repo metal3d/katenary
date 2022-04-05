@@ -89,37 +89,79 @@ services:
           - SOME_ENV_VAR=some_value
           - ANOTHER_ENV_VAR=another_value
 
+    # use environment file
+    useenvfile:
+        image: nginx
+        env_file:
+          - config/env
+
 volumes:
     data:
         driver: local
 `
 
 var defaultCliFiles = cli.DefaultFileNames
+var TMP_DIR = ""
+var TMPWORK_DIR = ""
 
 func init() {
-	logger.NOLOG = true
+	logger.NOLOG = len(os.Getenv("NOLOG")) < 1
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
 	cli.DefaultFileNames = defaultCliFiles
-	p := compose.NewParser("", DOCKER_COMPOSE_YML)
-	p.Parse("testapp")
 
 	// create a temporary directory
-	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test")
+	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	tmpwork, err := os.MkdirTemp(os.TempDir(), "katenary-test-work-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	composefile := filepath.Join(tmpwork, "docker-compose.yaml")
+	p := compose.NewParser(composefile, DOCKER_COMPOSE_YML)
+
+	// create envfile for "useenvfile" service
+	err = os.Mkdir(filepath.Join(tmpwork, "config"), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envfile := filepath.Join(tmpwork, "config", "env")
+	fp, err := os.Create(envfile)
+	if err != nil {
+		t.Fatal("MKFILE", err)
+	}
+	fp.WriteString("FILEENV1=some_value\n")
+	fp.WriteString("FILEENV2=another_value\n")
+	fp.Close()
+
+	TMP_DIR = tmp
+	TMPWORK_DIR = tmpwork
+
+	p.Parse("testapp")
 
 	Generate(p, "test-0", "testapp", "1.2.3", DOCKER_COMPOSE_YML, tmp)
 
 	return tmp, p
 }
 
+func tearDown() {
+	if len(TMP_DIR) > 0 {
+		os.RemoveAll(TMP_DIR)
+	}
+	if len(TMPWORK_DIR) > 0 {
+		os.RemoveAll(TMPWORK_DIR)
+	}
+}
+
 // Check if the web2 service has got a command.
 func TestCommand(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -142,7 +184,6 @@ func TestCommand(t *testing.T) {
 					commands = append(commands, line)
 				}
 			}
-			//log.Printf("%#v\n", commands)
 			ok := 0
 			for _, command := range commands {
 				if strings.Contains(command, "- /bin/sh") {
@@ -165,7 +206,7 @@ func TestCommand(t *testing.T) {
 // Check if environment is correctly set.
 func TestEnvs(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -202,7 +243,7 @@ func TestEnvs(t *testing.T) {
 // Check if the same pod is not deployed twice.
 func TestSamePod(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -228,7 +269,7 @@ func TestSamePod(t *testing.T) {
 // Check if the ports are correctly set.
 func TestPorts(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -256,7 +297,7 @@ func TestPorts(t *testing.T) {
 // Check if the volumes are correctly set.
 func TestPVC(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -277,7 +318,7 @@ func TestPVC(t *testing.T) {
 //Check if web service has got a ingress.
 func TestIngress(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -298,7 +339,7 @@ func TestIngress(t *testing.T) {
 // Check unmapped volumes
 func TestUnmappedVolumes(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	for _, service := range p.Data.Services {
 		name := service.Name
@@ -319,7 +360,7 @@ func TestUnmappedVolumes(t *testing.T) {
 // Check if service using equal sign for environment works
 func TestEqualSignOnEnv(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	// if the name is eqenv, the service should habe environment
 	for _, service := range p.Data.Services {
