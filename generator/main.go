@@ -312,6 +312,13 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 		volname := vol.Source
 		volepath := vol.Target
 
+		if volname == "" {
+			logger.ActivateColors = true
+			logger.Yellowf("Warning, volume source to %s is empty for %s -- skipping\n", volepath, name)
+			logger.ActivateColors = false
+			continue
+		}
+
 		isCM := false
 		for _, cmVol := range configMapsVolumes {
 			cmVol = strings.TrimSpace(cmVol)
