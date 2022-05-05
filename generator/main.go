@@ -471,14 +471,15 @@ func prepareProbes(name string, s types.ServiceConfig, container *helm.Container
 	// first, check if there is no label for the probe
 	if check, ok := s.Labels[helm.LABEL_HEALTHCHECK]; ok {
 		check = strings.TrimSpace(check)
+		p := helm.NewProbeFromService(&s)
 		// get the port of the "url" check
 		if checkurl, err := url.Parse(check); err == nil {
 			if err == nil {
-				container.LivenessProbe = buildProtoProbe(checkurl)
+				container.LivenessProbe = buildProtoProbe(p, checkurl)
 			}
 		} else {
 			// it's a command
-			container.LivenessProbe = helm.NewProbe(0, 0, 0, 0)
+			container.LivenessProbe = p
 			container.LivenessProbe.Exec = &helm.Exec{
 				Command: []string{
 					"sh",
@@ -496,8 +497,7 @@ func prepareProbes(name string, s types.ServiceConfig, container *helm.Container
 }
 
 // buildProtoProbe builds a probe from a url that can be http or tcp.
-func buildProtoProbe(u *url.URL) *helm.Probe {
-	probe := helm.NewProbe(0, 0, 0, 0)
+func buildProtoProbe(probe *helm.Probe, u *url.URL) *helm.Probe {
 	port, err := strconv.Atoi(u.Port())
 	if err != nil {
 		port = 80
@@ -529,7 +529,8 @@ func buildCommandProbe(s types.ServiceConfig) *helm.Probe {
 
 	// Get the first element of the command from ServiceConfig
 	first := s.HealthCheck.Test[0]
-	p := helm.NewProbe(0, 0, 0, 0)
+
+	p := helm.NewProbeFromService(&s)
 	switch first {
 	case "CMD", "CMD-SHELL":
 		// CMD or CMD-SHELL

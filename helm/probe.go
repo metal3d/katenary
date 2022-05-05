@@ -1,18 +1,24 @@
 package helm
 
+import (
+	"time"
+
+	"github.com/compose-spec/compose-go/types"
+)
+
 // Probe is a struct that can be used to create a Liveness or Readiness probe.
 type Probe struct {
 	HttpGet      *HttpGet `yaml:"httpGet,omitempty"`
 	Exec         *Exec    `yaml:"exec,omitempty"`
 	TCP          *TCP     `yaml:"tcp,omitempty"`
-	Period       int      `yaml:"periodSeconds"`
-	Success      int      `yaml:"successThreshold"`
-	Failure      int      `yaml:"failureThreshold"`
-	InitialDelay int      `yaml:"initialDelaySeconds"`
+	Period       float64  `yaml:"periodSeconds"`
+	InitialDelay float64  `yaml:"initialDelaySeconds"`
+	Success      uint64   `yaml:"successThreshold"`
+	Failure      uint64   `yaml:"failureThreshold"`
 }
 
 // Create a new Probe object that can be apply to HttpProbe or TCPProbe.
-func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
+func NewProbe(period, initialDelaySeconds float64, success, failure uint64) *Probe {
 	probe := &Probe{
 		Period:       period,
 		Success:      success,
@@ -32,6 +38,53 @@ func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
 		probe.Failure = 3
 	}
 	return probe
+}
+
+// NewProbeWithDuration creates a new Probe object with the given duration from types.
+func NewProbeWithDuration(period, initialDelaySeconds *types.Duration, success, failure *uint64) *Probe {
+
+	if period == nil {
+		d := types.Duration(0 * time.Second)
+		period = &d
+	}
+
+	if initialDelaySeconds == nil {
+		d := types.Duration(0 * time.Second)
+		initialDelaySeconds = &d
+	}
+
+	if success == nil {
+		s := uint64(0)
+		success = &s
+	}
+
+	if failure == nil {
+		f := uint64(0)
+		failure = &f
+	}
+
+	p, err := time.ParseDuration(period.String())
+	if err != nil {
+		p = time.Second * 10
+	}
+
+	i, err := time.ParseDuration(initialDelaySeconds.String())
+	if err != nil {
+		i = time.Second * 0
+	}
+
+	return NewProbe(p.Seconds(), i.Seconds(), *success, *failure)
+
+}
+
+// NewProbeFromService creates a new Probe object from a ServiceConfig.
+func NewProbeFromService(s *types.ServiceConfig) *Probe {
+	if s == nil || s.HealthCheck == nil {
+		return NewProbe(0, 0, 0, 0)
+	}
+
+	return NewProbeWithDuration(s.HealthCheck.Interval, s.HealthCheck.StartPeriod, nil, s.HealthCheck.Retries)
+
 }
 
 // HttpGet is a Probe configuration to check http health.
