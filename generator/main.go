@@ -620,14 +620,13 @@ func AddValues(servicename string, values map[string]interface{}) {
 	locker.Lock()
 	defer locker.Unlock()
 
-	if _, ok := values[servicename]; !ok {
+	if _, ok := Values[servicename]; !ok {
 		Values[servicename] = make(map[string]interface{})
 	}
 
 	for k, v := range values {
 		Values[servicename][k] = v
 	}
-
 }
 
 // AddVolumeValues add a volume to the values.yaml map for the given deployment name.
