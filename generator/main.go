@@ -596,6 +596,19 @@ func prepareEnvFromFiles(name string, s types.ServiceConfig, container *helm.Con
 			},
 		})
 
+		// read the envfile and remove them from the container environment or secret
+		envs := readEnvFile(envfile)
+		for varname := range envs {
+			if !isSecret {
+				// remove varname from container
+				for i, s := range container.Env {
+					if s.Name == varname {
+						container.Env = append(container.Env[:i], container.Env[i+1:]...)
+					}
+				}
+			}
+		}
+
 		ret <- store
 	}
 }
@@ -622,4 +635,24 @@ func AddVolumeValues(deployment string, volname string, values map[string]interf
 		VolumeValues[deployment] = make(map[string]map[string]interface{})
 	}
 	VolumeValues[deployment][volname] = values
+}
+
+func readEnvFile(envfilename string) map[string]string {
+	env := make(map[string]string)
+	content, err := ioutil.ReadFile(envfilename)
+	if err != nil {
+		logger.ActivateColors = true
+		logger.Red(err.Error())
+		logger.ActivateColors = false
+		os.Exit(2)
+	}
+	// each value is on a separate line with KEY=value
+	lines := strings.Split(string(content), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "=") {
+			kv := strings.SplitN(line, "=", 2)
+			env[kv[0]] = kv[1]
+		}
+	}
+	return env
 }
