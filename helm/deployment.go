@@ -1,11 +1,5 @@
 package helm
 
-import (
-	"strings"
-
-	"github.com/compose-spec/compose-go/types"
-)
-
 // Deployment is a k8s deployment.
 type Deployment struct {
 	*K8sBase `yaml:",inline"`
@@ -31,100 +25,6 @@ func NewDepSpec() *DepSpec {
 	return &DepSpec{
 		Replicas: 1,
 	}
-}
-
-type Value struct {
-	Name  string      `yaml:"name"`
-	Value interface{} `yaml:"value"`
-}
-
-type ContainerPort struct {
-	Name          string
-	ContainerPort int `yaml:"containerPort"`
-}
-
-type Container struct {
-	Name          string                         `yaml:"name,omitempty"`
-	Image         string                         `yaml:"image"`
-	Ports         []*ContainerPort               `yaml:"ports,omitempty"`
-	Env           []Value                        `yaml:"env,omitempty"`
-	EnvFrom       []map[string]map[string]string `yaml:"envFrom,omitempty"`
-	Command       []string                       `yaml:"command,omitempty"`
-	VolumeMounts  []interface{}                  `yaml:"volumeMounts,omitempty"`
-	LivenessProbe *Probe                         `yaml:"livenessProbe,omitempty"`
-}
-
-type HttpGet struct {
-	Path string `yaml:"path"`
-	Port int    `yaml:"port"`
-}
-
-type Exec struct {
-	Command []string `yaml:"command"`
-}
-
-type TCP struct {
-	Port int `yaml:"port"`
-}
-
-type Probe struct {
-	HttpGet      *HttpGet `yaml:"httpGet,omitempty"`
-	Exec         *Exec    `yaml:"exec,omitempty"`
-	TCP          *TCP     `yaml:"tcp,omitempty"`
-	Period       int      `yaml:"periodSeconds"`
-	Success      int      `yaml:"successThreshold"`
-	Failure      int      `yaml:"failureThreshold"`
-	InitialDelay int      `yaml:"initialDelaySeconds"`
-}
-
-// Create a new Probe object that can be apply to HttpProbe or TCPProbe.
-func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
-	probe := &Probe{
-		Period:       period,
-		Success:      success,
-		Failure:      failure,
-		InitialDelay: initialDelaySeconds,
-	}
-
-	// fix default values from
-	// https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-	if period == 0 {
-		probe.Period = 10
-	}
-	if success == 0 {
-		probe.Success = 1
-	}
-	if failure == 0 {
-		probe.Failure = 3
-	}
-	return probe
-}
-
-func NewContainer(name, image string, environment types.MappingWithEquals, labels map[string]string) *Container {
-	container := &Container{
-		Image:   image,
-		Name:    name,
-		Env:     make([]Value, len(environment)),
-		EnvFrom: make([]map[string]map[string]string, 0),
-	}
-
-	// find bound environment variable to a service
-	toServices := make([]string, 0)
-	if bound, ok := labels[LABEL_ENV_SERVICE]; ok {
-		toServices = strings.Split(bound, ",")
-	}
-
-	idx := 0
-	for n, v := range environment {
-		for _, name := range toServices {
-			if name == n {
-				*v = RELEASE_NAME + "-" + *v
-			}
-		}
-		container.Env[idx] = Value{Name: n, Value: v}
-		idx++
-	}
-	return container
 }
 
 type PodSpec struct {

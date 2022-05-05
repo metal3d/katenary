@@ -1,5 +1,6 @@
 package helm
 
+// Ingress is the kubernetes ingress object.
 type Ingress struct {
 	*K8sBase `yaml:",inline"`
 	Spec     IngressSpec

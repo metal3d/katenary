@@ -1,10 +1,12 @@
 package helm
 
+// Storage is a struct for a PersistentVolumeClaim.
 type Storage struct {
 	*K8sBase `yaml:",inline"`
 	Spec     *PVCSpec
 }
 
+// NewPVC creates a new PersistentVolumeClaim object.
 func NewPVC(name, storageName string) *Storage {
 	pvc := &Storage{}
 	pvc.K8sBase = NewBase()
@@ -24,6 +26,7 @@ func NewPVC(name, storageName string) *Storage {
 	return pvc
 }
 
+// PVCSpec is a struct for a PersistentVolumeClaim spec.
 type PVCSpec struct {
 	Resouces    map[string]interface{} `yaml:"resources"`
 	AccessModes []string               `yaml:"accessModes"`

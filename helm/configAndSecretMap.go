@@ -13,11 +13,13 @@ type InlineConfig interface {
 	Metadata() *Metadata
 }
 
+// ConfigMap is made to represent a configMap with data.
 type ConfigMap struct {
 	*K8sBase `yaml:",inline"`
 	Data     map[string]string `yaml:"data"`
 }
 
+// NewConfigMap returns a new initialzed ConfigMap.
 func NewConfigMap(name string) *ConfigMap {
 	base := NewBase()
 	base.ApiVersion = "v1"
@@ -30,10 +32,12 @@ func NewConfigMap(name string) *ConfigMap {
 	}
 }
 
+// Metadata returns the metadata of the configMap.
 func (c *ConfigMap) Metadata() *Metadata {
 	return c.K8sBase.Metadata
 }
 
+// AddEnvFile adds an environment file to the configMap.
 func (c *ConfigMap) AddEnvFile(file string) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -57,11 +61,13 @@ func (c *ConfigMap) AddEnvFile(file string) error {
 
 }
 
+// Secret is made to represent a secret with data.
 type Secret struct {
 	*K8sBase `yaml:",inline"`
 	Data     map[string]string `yaml:"data"`
 }
 
+// NewSecret returns a new initialzed Secret.
 func NewSecret(name string) *Secret {
 	base := NewBase()
 	base.ApiVersion = "v1"
@@ -74,6 +80,7 @@ func NewSecret(name string) *Secret {
 	}
 }
 
+// AddEnvFile adds an environment file to the secret.
 func (s *Secret) AddEnvFile(file string) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -96,6 +103,8 @@ func (s *Secret) AddEnvFile(file string) error {
 	return nil
 
 }
+
+// Metadata returns the metadata of the secret.
 func (s *Secret) Metadata() *Metadata {
 	return s.K8sBase.Metadata
 }

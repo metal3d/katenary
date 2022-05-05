@@ -2,9 +2,6 @@ package helm
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"text/template"
@@ -58,65 +55,28 @@ var (
 	Version = "1.0" // should be set from main.Version
 )
 
+// Kinded represent an object with a kind.
 type Kinded interface {
+
+	// Get must resturn the kind name.
 	Get() string
 }
 
+// Signable represents an object with a signature.
 type Signable interface {
+
+	// BuildSHA must return the signature.
 	BuildSHA(filename string)
 }
 
+// Named represents an object with a name.
 type Named interface {
+
+	// Name must return the name of the object (from metadata).
 	Name() string
 }
 
-type Metadata struct {
-	Name        string            `yaml:"name,omitempty"`
-	Labels      map[string]string `yaml:"labels"`
-	Annotations map[string]string `yaml:"annotations,omitempty"`
-}
-
-func NewMetadata() *Metadata {
-	return &Metadata{
-		Name:        "",
-		Labels:      make(map[string]string),
-		Annotations: make(map[string]string),
-	}
-}
-
-type K8sBase struct {
-	ApiVersion string    `yaml:"apiVersion"`
-	Kind       string    `yaml:"kind"`
-	Metadata   *Metadata `yaml:"metadata"`
-}
-
-func NewBase() *K8sBase {
-
-	b := &K8sBase{
-		Metadata: NewMetadata(),
-	}
-	// add some information of the build
-	b.Metadata.Labels[K+"/project"] = GetProjectName()
-	b.Metadata.Labels[K+"/release"] = RELEASE_NAME
-	b.Metadata.Annotations[K+"/version"] = Version
-	return b
-}
-
-func (k *K8sBase) BuildSHA(filename string) {
-	c, _ := ioutil.ReadFile(filename)
-	//sum := sha256.Sum256(c)
-	sum := sha1.Sum(c)
-	k.Metadata.Annotations[K+"/docker-compose-sha1"] = fmt.Sprintf("%x", string(sum[:]))
-}
-
-func (k *K8sBase) Get() string {
-	return k.Kind
-}
-
-func (k *K8sBase) Name() string {
-	return k.Metadata.Name
-}
-
+// GetProjectName returns the name of the project.
 func GetProjectName() string {
 	if len(Appname) > 0 {
 		return Appname
