@@ -15,6 +15,7 @@ import (
 	"sync"
 
 	"github.com/compose-spec/compose-go/types"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -52,6 +53,7 @@ echo "Done"
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
 func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig) chan interface{} {
 	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+2)
+	rebuildEnvMap(&s)
 	go parseService(name, s, linked, ret)
 	return ret
 }
@@ -658,4 +660,32 @@ func readEnvFile(envfilename string) map[string]string {
 		}
 	}
 	return env
+}
+
+// rebuildEnvMap will get all LABEL_MAP_ENV to rebuild the env map with tpl.
+func rebuildEnvMap(s *types.ServiceConfig) {
+	mapenv, ok := s.Labels[helm.LABEL_MAP_ENV]
+	if !ok {
+		return
+	}
+
+	// the mapenv is a YAML string
+	var envmap map[string]string
+	err := yaml.Unmarshal([]byte(mapenv), &envmap)
+	if err != nil {
+		logger.ActivateColors = true
+		logger.Red(err.Error())
+		logger.ActivateColors = false
+		return
+	}
+
+	// rebuild the env map
+	for k, v := range envmap {
+		_, ok := s.Environment[k]
+		if !ok {
+			continue
+		}
+		s.Environment[k] = &v
+	}
+
 }

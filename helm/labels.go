@@ -7,15 +7,18 @@ import (
 
 const ReleaseNameTpl = "{{ .Release.Name }}"
 const (
+	LABEL_MAP_ENV     = K + "/mapenv"
 	LABEL_ENV_SECRET  = K + "/secret-envfiles"
 	LABEL_PORT        = K + "/ports"
 	LABEL_INGRESS     = K + "/ingress"
-	LABEL_ENV_SERVICE = K + "/env-to-service"
 	LABEL_VOL_CM      = K + "/configmap-volumes"
 	LABEL_HEALTHCHECK = K + "/healthcheck"
 	LABEL_SAMEPOD     = K + "/same-pod"
 	LABEL_EMPTYDIRS   = K + "/empty-dirs"
 	LABEL_IGNORE      = K + "/ignore"
+
+	//deprecated: use LABEL_MAP_ENV instead
+	LABEL_ENV_SERVICE = K + "/env-to-service"
 )
 
 // GetLabelsDocumentation returns the documentation for the labels.
@@ -24,9 +27,10 @@ func GetLabelsDocumentation() string {
 # Labels
 {{.LABEL_IGNORE      | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart
 {{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap
+{{.LABEL_MAP_ENV     | printf "%-33s"}}: map environment variable to a template string (yaml style)
 {{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
-{{.LABEL_ENV_SERVICE | printf "%-33s"}}: specifies that the environment variable points on a service name (coma separated)
+{{.LABEL_ENV_SERVICE | printf "%-33s"}}: DEPRECATED use {{ .LABEL_MAP_ENV }} instead - specifies that the environment variable points on a service name (coma separated) 
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
 {{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
@@ -47,6 +51,7 @@ func GetLabelsDocumentation() string {
 		"LABEL_SAMEPOD":     LABEL_SAMEPOD,
 		"LABEL_EMPTYDIRS":   LABEL_EMPTYDIRS,
 		"LABEL_IGNORE":      LABEL_IGNORE,
+		"LABEL_MAP_ENV":     LABEL_MAP_ENV,
 	})
 	return buff.String()
 }

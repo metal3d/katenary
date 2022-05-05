@@ -1,6 +1,7 @@
 package helm
 
 import (
+	"katenary/logger"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
@@ -43,6 +44,17 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 	toServices := make([]string, 0)
 	if bound, ok := labels[LABEL_ENV_SERVICE]; ok {
 		toServices = strings.Split(bound, ",")
+	}
+	if len(toServices) > 0 {
+		// warn, it's deprecated now
+		logger.ActivateColors = true
+		logger.Yellowf(
+			"[deprecated] in \"%s\" service: label %s is deprecated, please use %s instead\n",
+			name,
+			LABEL_ENV_SERVICE,
+			LABEL_MAP_ENV,
+		)
+		logger.ActivateColors = false
 	}
 
 	idx := 0
