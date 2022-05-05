@@ -468,7 +468,7 @@ func prepareInitContainers(name string, s types.ServiceConfig, container *helm.C
 
 // prepareProbes generate http/tcp/command probes for a service.
 func prepareProbes(name string, s types.ServiceConfig, container *helm.Container) {
-	// first, check if there is no label for the probe
+	// first, check if there a label for the probe
 	if check, ok := s.Labels[helm.LABEL_HEALTHCHECK]; ok {
 		check = strings.TrimSpace(check)
 		p := helm.NewProbeFromService(&s)
@@ -490,6 +490,7 @@ func prepareProbes(name string, s types.ServiceConfig, container *helm.Container
 		}
 		return // label overrides everything
 	}
+
 	// if not, we will use the default one
 	if s.HealthCheck != nil {
 		container.LivenessProbe = buildCommandProbe(s)
