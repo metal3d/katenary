@@ -88,7 +88,6 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 				if portExists(target, service.Ports) {
 					continue
 				}
-				log.Println("Add port to service:", n, target)
 				service.Ports = append(service.Ports, types.ServicePortConfig{
 					Target: uint32(target),
 				})
