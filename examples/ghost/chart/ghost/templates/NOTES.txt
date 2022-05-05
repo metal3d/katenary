@@ -1,0 +1,8 @@
+
+Congratulations,
+
+Your application is now deployed. This may take a while to be up and responding.
+
+{{ if .Values.blog.ingress.enabled -}}
+- blog is accessible on : http://{{ .Values.blog.ingress.host }}
+{{- end }}

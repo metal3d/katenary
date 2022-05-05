@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  blog:
+    image: ghost
+    environment:
+      # this is OK for local test, but not with Helm
+      # because the URL depends on Ingress
+      url: http://ghost.example.localhost
+    labels:
+      katenary.io/ports: 2368
+      katenary.io/ingress: 2368
+      # ... so we declare that "url" is actually
+      # the ingress host
+      katenary.io/mapenv: |
+        url: http://{{ .Values.blog.ingress.host }}
+
+  proxy:
+    # A simple proxy for localhost
+    image: quay.io/pathwae/proxy
+    environment:
+      CONFIG: |
+        ghost.example.localhost:
+          to: http://blog:2368
+    ports:
+      - 80:80
+    labels:
+      # we don't want this in Helm because we will use
+      # an ingress
+      katenary.io/ignore: true
