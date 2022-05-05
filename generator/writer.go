@@ -45,6 +45,8 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 
 	// Manage services, avoid linked pods and store all services port in servicesMap
 	avoids := make(map[string]bool)
+
+	// Manage services to not export
 	skips := make(map[string]bool)
 
 	for _, s := range p.Data.Services {
@@ -190,17 +192,24 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		}
 	}
 	// Create the values.yaml file
-	fp, _ := os.Create(filepath.Join(dirName, "values.yaml"))
-	enc := yaml.NewEncoder(fp)
-	enc.SetIndent(2)
+	valueFile, err := os.Create(filepath.Join(dirName, "values.yaml"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer valueFile.Close()
+	enc := yaml.NewEncoder(valueFile)
+	enc.SetIndent(writers.IndentSize)
 	enc.Encode(Values)
-	fp.Close()
 
 	// Create tht Chart.yaml file
-	fp, _ = os.Create(filepath.Join(dirName, "Chart.yaml"))
-	fp.WriteString(`# Create on ` + time.Now().Format(time.RFC3339) + "\n")
-	fp.WriteString(`# Katenary command line: ` + strings.Join(os.Args, " ") + "\n")
-	enc = yaml.NewEncoder(fp)
+	chartFile, err := os.Create(filepath.Join(dirName, "Chart.yaml"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer chartFile.Close()
+	chartFile.WriteString(`# Create on ` + time.Now().Format(time.RFC3339) + "\n")
+	chartFile.WriteString(`# Katenary command line: ` + strings.Join(os.Args, " ") + "\n")
+	enc = yaml.NewEncoder(chartFile)
 	enc.SetIndent(writers.IndentSize)
 	enc.Encode(map[string]interface{}{
 		"apiVersion":  "v2",
@@ -210,10 +219,12 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		"version":     "0.1.0",
 		"appVersion":  appVersion,
 	})
-	fp.Close()
 
 	// And finally, create a NOTE.txt file
-	fp, _ = os.Create(filepath.Join(templatesDir, "NOTES.txt"))
-	fp.WriteString(helm.GenerateNotesFile(ingresses))
-	fp.Close()
+	noteFile, err := os.Create(filepath.Join(templatesDir, "NOTES.txt"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer noteFile.Close()
+	noteFile.WriteString(helm.GenerateNotesFile(ingresses))
 }
