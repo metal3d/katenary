@@ -42,7 +42,12 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 	enc.Encode(ingress)
 	buffer.WriteString("{{- end -}}")
 
-	fp, _ := os.Create(fname)
+	fp, err := os.Create(fname)
+	if err != nil {
+		panic(err)
+	}
+	defer fp.Close()
+
 	content := string(buffer.Bytes())
 	lines := strings.Split(content, "\n")
 
@@ -67,7 +72,7 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 			l = `  ` + cond + l + "\n" + `  {{- end }}`
 		}
 
-		// manage the backend format following the Kubernetes 1.18-0 version or higher
+		// manage the backend format following the Kubernetes 1.19-0 version or higher
 		if strings.Contains(l, "service:") {
 			n := CountSpaces(l)
 			l = strings.Repeat(" ", n) + versionCondition119 + l
@@ -81,9 +86,6 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 			}
 			backendHit = true
 		}
-
 		fp.WriteString(l + "\n")
 	}
-
-	fp.Close()
 }
