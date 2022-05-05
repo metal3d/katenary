@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// BuildService writes the service (external or not).
 func BuildService(service *helm.Service, name, templatesDir string) {
 	kind := "service"
 	suffix := ""

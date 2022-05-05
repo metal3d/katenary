@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// BuildStorage writes the persistentVolumeClaim.
 func BuildStorage(storage *helm.Storage, name, templatesDir string) {
 	kind := "pvc"
 	name = storage.Metadata.Labels[helm.K+"/component"]

@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// BuildDeployment builds a deployment.
 func BuildDeployment(deployment *helm.Deployment, name, templatesDir string) {
 	kind := "deployment"
 	fname := filepath.Join(templatesDir, name+"."+kind+".yaml")

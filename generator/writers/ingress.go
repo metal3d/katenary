@@ -23,6 +23,7 @@ apiVersion: extensions/v1beta1
 {{- end }}`
 )
 
+// BuildIngress generates the ingress yaml file with conditions.
 func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 	// Set the backend for 1.18
 	for _, b := range ingress.Spec.Rules {
@@ -63,7 +64,7 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 			n := CountSpaces(l)
 			l = strings.Repeat(" ", n) + versionCondition118 +
 				l + "\n" +
-				strings.Repeat(" ", n) + "{{- end -}}"
+				strings.Repeat(" ", n) + "{{- end }}"
 		}
 
 		if strings.Contains(l, "ingressClassName") {
@@ -82,7 +83,7 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 			if !backendHit {
 				l = strings.Repeat(" ", n) + "{{- else }}\n" + l
 			} else {
-				l = l + "\n" + strings.Repeat(" ", n) + "{{- end }}"
+				l = l + "\n" + strings.Repeat(" ", n) + "{{- end }}\n"
 			}
 			backendHit = true
 		}
