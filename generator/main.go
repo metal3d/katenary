@@ -53,7 +53,6 @@ echo "Done"
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
 func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig) chan interface{} {
 	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+2)
-	applyEnvMapLabel(&s)
 	go parseService(name, s, linked, ret)
 	return ret
 }
@@ -62,8 +61,11 @@ func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]t
 func parseService(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig, ret chan interface{}) {
 	logger.Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 
-	deployment := helm.NewDeployment(name)
+	// adapt env
+	applyEnvMapLabel(&s)
+	setEnvToValues(name, &s)
 
+	deployment := helm.NewDeployment(name)
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
 	prepareContainer(container, s, name)
 	prepareEnvFromFiles(name, s, container, ret)
@@ -87,6 +89,8 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 
 	// Now, the linked services
 	for lname, link := range linked {
+		applyEnvMapLabel(&link)
+		setEnvToValues(lname, &link)
 		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
 		prepareContainer(container, link, lname)
 		prepareEnvFromFiles(lname, link, container, ret)
@@ -683,5 +687,19 @@ func applyEnvMapLabel(s *types.ServiceConfig) {
 	for k, v := range envmap {
 		s.Environment[k] = &v
 	}
+}
 
+// setEnvToValues will set the environment variables to the values.yaml map.
+func setEnvToValues(name string, s *types.ServiceConfig) {
+	// crete the "environment" key
+	env := make(map[string]interface{})
+	for k, v := range s.Environment {
+		env[k] = v
+	}
+
+	AddValues(name, map[string]interface{}{"environment": env})
+	for k := range s.Environment {
+		v := "{{ .Values." + name + ".environment." + k + " }}"
+		s.Environment[k] = &v
+	}
 }
