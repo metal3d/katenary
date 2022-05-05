@@ -77,13 +77,27 @@ type Probe struct {
 	InitialDelay int      `yaml:"initialDelaySeconds"`
 }
 
+// Create a new Probe object that can be apply to HttpProbe or TCPProbe.
 func NewProbe(period, initialDelaySeconds, success, failure int) *Probe {
-	return &Probe{
+	probe := &Probe{
 		Period:       period,
 		Success:      success,
 		Failure:      failure,
 		InitialDelay: initialDelaySeconds,
 	}
+
+	// fix default values from
+	// https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+	if period == 0 {
+		probe.Period = 10
+	}
+	if success == 0 {
+		probe.Success = 1
+	}
+	if failure == 0 {
+		probe.Failure = 3
+	}
+	return probe
 }
 
 func NewContainer(name, image string, environment types.MappingWithEquals, labels map[string]string) *Container {
