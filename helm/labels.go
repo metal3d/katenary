@@ -22,7 +22,7 @@ const (
 func GetLabelsDocumentation() string {
 	t, _ := template.New("labels").Parse(`
 # Labels
-{{ .LABEL_IGNORE     | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart
+{{.LABEL_IGNORE      | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart
 {{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap
 {{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
