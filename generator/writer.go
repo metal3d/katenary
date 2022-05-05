@@ -45,9 +45,35 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 
 	// Manage services, avoid linked pods and store all services port in servicesMap
 	avoids := make(map[string]bool)
+	skips := make(map[string]bool)
+
+	for _, s := range p.Data.Services {
+		if s.Labels[helm.LABEL_IGNORE] == "true" {
+			skips[s.Name] = true
+		}
+	}
+
+	// remove skipped services
+	for s := range skips {
+		for i, service := range p.Data.Services {
+			if service.Name == s {
+				p.Data.Services = append(p.Data.Services[:i], p.Data.Services[i+1:]...)
+				break
+			}
+		}
+	}
+
 	for i, service := range p.Data.Services {
 		n := service.Name
 
+		// if the service depends on a skipped service, remove the link
+		for dep := range service.DependsOn {
+			if skips[dep] {
+				delete(service.DependsOn, dep)
+			}
+		}
+
+		// if the service port is declared in labels, add it to the service.
 		if ports, ok := service.Labels[helm.LABEL_PORT]; ok {
 			if service.Ports == nil {
 				service.Ports = make([]types.ServicePortConfig, 0)

@@ -166,6 +166,7 @@ services:
 These labels could be found by `katenary show-labels`, and can be placed as "labels" inside your docker-compose file:
 
 ```
+katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart
 katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap
 katenary.io/ports                : set the ports to expose as a service (coma separated)
 katenary.io/ingress              : set the port to expose in an ingress (coma separated)
