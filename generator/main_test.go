@@ -227,8 +227,8 @@ func TestEnvs(t *testing.T) {
 				}
 				if next {
 					matched = true
-					if !strings.Contains(line, helm.RELEASE_NAME+"-database") {
-						t.Error("DB_HOST variable should be set to " + helm.RELEASE_NAME + "-database")
+					if !strings.Contains(line, helm.ReleaseNameTpl+"-database") {
+						t.Error("DB_HOST variable should be set to " + helm.ReleaseNameTpl + "-database")
 					}
 					break
 				}

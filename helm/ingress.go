@@ -9,7 +9,7 @@ type Ingress struct {
 func NewIngress(name string) *Ingress {
 	i := &Ingress{}
 	i.K8sBase = NewBase()
-	i.K8sBase.Metadata.Name = RELEASE_NAME + "-" + name
+	i.K8sBase.Metadata.Name = ReleaseNameTpl + "-" + name
 	i.K8sBase.Kind = "Ingress"
 	i.ApiVersion = "networking.k8s.io/v1"
 	i.K8sBase.Metadata.Labels[K+"/component"] = name

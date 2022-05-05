@@ -5,7 +5,7 @@ import (
 	"html/template"
 )
 
-const RELEASE_NAME = "{{ .Release.Name }}"
+const ReleaseNameTpl = "{{ .Release.Name }}"
 const (
 	LABEL_ENV_SECRET  = K + "/secret-envfiles"
 	LABEL_PORT        = K + "/ports"

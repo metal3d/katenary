@@ -23,7 +23,7 @@ type Container struct {
 	Name          string                         `yaml:"name,omitempty"`
 	Image         string                         `yaml:"image"`
 	Ports         []*ContainerPort               `yaml:"ports,omitempty"`
-	Env           []Value                        `yaml:"env,omitempty"`
+	Env           []*Value                       `yaml:"env,omitempty"`
 	EnvFrom       []map[string]map[string]string `yaml:"envFrom,omitempty"`
 	Command       []string                       `yaml:"command,omitempty"`
 	VolumeMounts  []interface{}                  `yaml:"volumeMounts,omitempty"`
@@ -35,7 +35,7 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 	container := &Container{
 		Image:   image,
 		Name:    name,
-		Env:     make([]Value, len(environment)),
+		Env:     make([]*Value, len(environment)),
 		EnvFrom: make([]map[string]map[string]string, 0),
 	}
 
@@ -49,10 +49,10 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 	for n, v := range environment {
 		for _, name := range toServices {
 			if name == n {
-				*v = RELEASE_NAME + "-" + *v
+				*v = ReleaseNameTpl + "-" + *v
 			}
 		}
-		container.Env[idx] = Value{Name: n, Value: v}
+		container.Env[idx] = &Value{Name: n, Value: v}
 		idx++
 	}
 	return container

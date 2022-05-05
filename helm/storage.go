@@ -13,7 +13,7 @@ func NewPVC(name, storageName string) *Storage {
 	pvc.K8sBase.Kind = "PersistentVolumeClaim"
 	pvc.K8sBase.Metadata.Labels[K+"/pvc-name"] = storageName
 	pvc.K8sBase.ApiVersion = "v1"
-	pvc.K8sBase.Metadata.Name = RELEASE_NAME + "-" + storageName
+	pvc.K8sBase.Metadata.Name = ReleaseNameTpl + "-" + storageName
 	pvc.K8sBase.Metadata.Labels[K+"/component"] = name
 	pvc.Spec = &PVCSpec{
 		Resouces: map[string]interface{}{

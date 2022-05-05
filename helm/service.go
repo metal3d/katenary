@@ -12,7 +12,7 @@ func NewService(name string) *Service {
 		K8sBase: NewBase(),
 		Spec:    NewServiceSpec(),
 	}
-	s.K8sBase.Metadata.Name = RELEASE_NAME + "-" + name
+	s.K8sBase.Metadata.Name = ReleaseNameTpl + "-" + name
 	s.K8sBase.Kind = "Service"
 	s.K8sBase.ApiVersion = "v1"
 	s.K8sBase.Metadata.Labels[K+"/component"] = name

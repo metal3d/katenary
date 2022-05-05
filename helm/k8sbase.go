@@ -35,7 +35,7 @@ func NewBase() *K8sBase {
 	}
 	// add some information of the build
 	b.Metadata.Labels[K+"/project"] = GetProjectName()
-	b.Metadata.Labels[K+"/release"] = RELEASE_NAME
+	b.Metadata.Labels[K+"/release"] = ReleaseNameTpl
 	b.Metadata.Annotations[K+"/version"] = Version
 	return b
 }

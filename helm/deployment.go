@@ -8,7 +8,7 @@ type Deployment struct {
 
 func NewDeployment(name string) *Deployment {
 	d := &Deployment{K8sBase: NewBase(), Spec: NewDepSpec()}
-	d.K8sBase.Metadata.Name = RELEASE_NAME + "-" + name
+	d.K8sBase.Metadata.Name = ReleaseNameTpl + "-" + name
 	d.K8sBase.ApiVersion = "apps/v1"
 	d.K8sBase.Kind = "Deployment"
 	d.K8sBase.Metadata.Labels[K+"/component"] = name

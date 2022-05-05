@@ -26,10 +26,6 @@ const (
 	ICON_INGRESS = "🌐"
 )
 
-const (
-	RELEASE_NAME = helm.RELEASE_NAME
-)
-
 // Values is kept in memory to create a values.yaml file.
 var (
 	Values         = make(map[string]map[string]interface{})
@@ -44,7 +40,7 @@ OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
     echo -n "."
-    nc -z ` + RELEASE_NAME + `-__service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
+    nc -z ` + helm.ReleaseNameTpl + `-__service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
 done
 echo
 echo "Done"
@@ -70,7 +66,7 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 	prepareContainer(container, s, name)
 	prepareEnvFromFiles(name, s, container, ret)
 
-	// Set the container to the deployment
+	// Set the containers to the deployment
 	deployment.Spec.Template.Spec.Containers = []*helm.Container{container}
 
 	// Prepare volumes
@@ -208,7 +204,7 @@ func createIngress(name string, port int, s types.ServiceConfig) *helm.Ingress {
 					PathType: "Prefix",
 					Backend: &helm.IngressBackend{
 						Service: helm.IngressService{
-							Name: RELEASE_NAME + "-" + name,
+							Name: helm.ReleaseNameTpl + "-" + name,
 							Port: map[string]interface{}{
 								"number": port,
 							},
@@ -227,7 +223,7 @@ func createIngress(name string, port int, s types.ServiceConfig) *helm.Ingress {
 func buildSelector(name string, s types.ServiceConfig) map[string]string {
 	return map[string]string{
 		"katenary.io/component": name,
-		"katenary.io/release":   RELEASE_NAME,
+		"katenary.io/release":   helm.ReleaseNameTpl,
 	}
 }
 
@@ -355,7 +351,7 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 			volname = strings.Replace(volname, "./", "", 1)
 			volname = strings.ReplaceAll(volname, "/", "-")
 			volname = strings.ReplaceAll(volname, ".", "-")
-			cm.K8sBase.Metadata.Name = RELEASE_NAME + "-" + volname + "-" + name
+			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + volname + "-" + name
 
 			// build a configmap from the volume path
 			volumes = append(volumes, map[string]interface{}{
@@ -405,7 +401,7 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"persistentVolumeClaim": map[string]string{
-					"claimName": RELEASE_NAME + "-" + volname,
+					"claimName": helm.ReleaseNameTpl + "-" + volname,
 				},
 			})
 			mountPoints = append(mountPoints, map[string]interface{}{
@@ -499,6 +495,7 @@ func prepareProbes(name string, s types.ServiceConfig, container *helm.Container
 	}
 }
 
+// buildProtoProbe builds a probe from a url that can be http or tcp.
 func buildProtoProbe(u *url.URL) *helm.Probe {
 	probe := helm.NewProbe(0, 0, 0, 0)
 	port, err := strconv.Atoi(u.Port())
@@ -616,6 +613,7 @@ func prepareEnvFromFiles(name string, s types.ServiceConfig, container *helm.Con
 	}
 }
 
+// AddValues adds values to the values.yaml map.
 func AddValues(servicename string, values map[string]interface{}) {
 	locker.Lock()
 	defer locker.Unlock()
@@ -630,6 +628,7 @@ func AddValues(servicename string, values map[string]interface{}) {
 
 }
 
+// AddVolumeValues add a volume to the values.yaml map for the given deployment name.
 func AddVolumeValues(deployment string, volname string, values map[string]interface{}) {
 	locker.Lock()
 	defer locker.Unlock()
