@@ -30,7 +30,6 @@ func GetLabelsDocumentation() string {
 {{.LABEL_MAP_ENV     | printf "%-33s"}}: map environment variable to a template string (yaml style)
 {{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
-{{.LABEL_ENV_SERVICE | printf "%-33s"}}: DEPRECATED use {{ .LABEL_MAP_ENV }} instead - specifies that the environment variable points on a service name (coma separated) 
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
 {{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
@@ -39,6 +38,7 @@ func GetLabelsDocumentation() string {
 {{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
 {{ printf "%-35s" ""}}- "tcp://[not used address]:port" to specify a tcp healthcheck
 {{ printf "%-35s" ""}}- other string is condidered as a "command" healthcheck
+{{.LABEL_ENV_SERVICE | printf "%-33s"}}: DEPRECATED use {{ .LABEL_MAP_ENV }} instead - specifies that the environment variable points on a service name (coma separated) 
     `)
 	buff := bytes.NewBuffer(nil)
 	t.Execute(buff, map[string]string{

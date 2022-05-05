@@ -16,6 +16,7 @@ This project is partially made at [Smile](https://www.smile.eu)
 
 You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
 
+You can of course get the binary with `go install -u github.com/metal3d/katenary/cmd/katenary/...` but the `main` branch is continuously updated. It's preferable to use releases.
 
 You can use this commands on Linux:
 
@@ -125,7 +126,7 @@ What can be interpreted by Katenary:
 - `env_file` list will create a configMap object per environemnt file (⚠ todo: the "to-service" label doesn't work with configMap for now)
 - some labels can help to bind values, for example:
     - `katenary.io/ingress: 80` will expose the port 80 in a ingress
-    - `katenary.io/env-to-service: VARNAME` will convert the value to a variable `{{ .Release.Name }}-VARNAME` - it's usefull when you want to pass the name of a service as a variable (think about the service name for mysql to pass to a container that wants to connect to this)
+    - `katenary.io/mapenv: |`: allow to map environment to something else than the given value in the compose file 
 
 Exemple of a possible `docker-compose.yaml` file:
 
@@ -144,10 +145,12 @@ services:
             # because it's the "exposed" port
             - database
         labels:
-            # explain to katenary that "DB_HOST" value is variable (using release name)
-            katenary.io/env-to-service: DB_HOST
             # expose the port 80 as an ingress
             katenary.io/ingress: 80
+            # make adaptations, DB_HOST environment is actually the service name
+            # to hit (note the yaml style, start with "|")
+            katenary.io/mapenv: |
+              DB_HOST: {{ .Release.Name }}-database
     database:
         image: mariadb:10
         env_file:
@@ -168,9 +171,9 @@ These labels could be found by `katenary show-labels`, and can be placed as "lab
 ```
 katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart
 katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap
+katenary.io/mapenv               : map environment variable to a template string (yaml style)
 katenary.io/ports                : set the ports to expose as a service (coma separated)
 katenary.io/ingress              : set the port to expose in an ingress (coma separated)
-katenary.io/env-to-service       : specifies that the environment variable points on a service name (coma separated)
 katenary.io/configmap-volumes    : specifies that the volumes points on a configmap (coma separated)
 katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the given service name
 katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
@@ -179,6 +182,7 @@ katenary.io/healthcheck          : specifies that the container should be monito
                                    - "http://[not used address][:port][/path]" to specify an http healthcheck
                                    - "tcp://[not used address]:port" to specify a tcp healthcheck
                                    - other string is condidered as a "command" healthcheck
+katenary.io/env-to-service       : DEPRECATED use katenary.io/mapenv instead - specifies that the environment variable points on a service name (coma separated) 
 ```
 
 # What a name...

@@ -53,7 +53,7 @@ echo "Done"
 // Create a Deployment for a given compose.Service. It returns a list of objects: a Deployment and a possible Service (kubernetes represnetation as maps).
 func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig) chan interface{} {
 	ret := make(chan interface{}, len(s.Ports)+len(s.Expose)+2)
-	rebuildEnvMap(&s)
+	applyEnvMapLabel(&s)
 	go parseService(name, s, linked, ret)
 	return ret
 }
@@ -662,8 +662,8 @@ func readEnvFile(envfilename string) map[string]string {
 	return env
 }
 
-// rebuildEnvMap will get all LABEL_MAP_ENV to rebuild the env map with tpl.
-func rebuildEnvMap(s *types.ServiceConfig) {
+// applyEnvMapLabel will get all LABEL_MAP_ENV to rebuild the env map with tpl.
+func applyEnvMapLabel(s *types.ServiceConfig) {
 	mapenv, ok := s.Labels[helm.LABEL_MAP_ENV]
 	if !ok {
 		return
@@ -679,12 +679,8 @@ func rebuildEnvMap(s *types.ServiceConfig) {
 		return
 	}
 
-	// rebuild the env map
+	// add in envmap
 	for k, v := range envmap {
-		_, ok := s.Environment[k]
-		if !ok {
-			continue
-		}
 		s.Environment[k] = &v
 	}
 
