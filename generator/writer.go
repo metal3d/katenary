@@ -189,7 +189,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 				}
 				defer fp.Close()
 				enc := yaml.NewEncoder(fp)
-				enc.SetIndent(2)
+				enc.SetIndent(writers.IndentSize)
 				enc.Encode(c)
 			}
 		}
