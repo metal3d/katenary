@@ -6,7 +6,7 @@ PREFIX=~/.local
 
 GO=container
 OUT=katenary
-BLD_CMD=go build -ldflags="-X 'main.Version=$(VERSION)'" -o $(OUT) ./cmd/*.go
+BLD_CMD=go build -ldflags="-X 'main.Version=$(VERSION)'" -o $(OUT) ./cmd/katenary/*.go
 GOOS=linux
 GOARCH=amd64
 

@@ -2,7 +2,7 @@ dist/*
 .cache/*
 chart/*
 docker-compose.yaml
-katenary
+./katenary
 *.env
 docker-compose*
 !examples/**/docker-compose*
