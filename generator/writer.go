@@ -183,11 +183,14 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 
 			default:
 				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
-				fp, _ := os.Create(fname)
+				fp, err := os.Create(fname)
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer fp.Close()
 				enc := yaml.NewEncoder(fp)
 				enc.SetIndent(2)
 				enc.Encode(c)
-				fp.Close()
 			}
 		}
 	}
