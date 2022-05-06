@@ -49,6 +49,8 @@ github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8
 github.com/distribution/distribution/v3 v3.0.0-20210316161203-a01c71e2477e/go.mod h1:xpWTC2KnJMiDLkoawhsPQcXjvwATEBcbq0xevG2YR9M=
 github.com/distribution/distribution/v3 v3.0.0-20220504180456-7a6b9e3042bd h1:KRoLSsR7wZ4H2dueR/O6BGBIXDxfOxUVmaMiu1QiQPw=
 github.com/distribution/distribution/v3 v3.0.0-20220504180456-7a6b9e3042bd/go.mod h1:qLi7jGj1b5TUaYTB3ekkHiocxHJi8+3CFhXM54MGKBs=
+github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414 h1:KfVB1Z5fm10trO24Rn5Zzocd8sTm5k/gS24ijxQ1aJU=
+github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414/go.mod h1:2oyLKljQFnsI1tzJxjUg4GI+HEpDfzFP3LrGM04rKg0=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/go-connections v0.4.0 h1:El9xVISelRB7BuFusrZozjnkIM5YnzCViNKohAFqRJQ=
 github.com/docker/go-connections v0.4.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=

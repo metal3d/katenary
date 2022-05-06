@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/compose-spec/compose-go v1.2.4
-	github.com/distribution/distribution/v3 v3.0.0-20220504180456-7a6b9e3042bd // indirect
+	github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/spf13/cobra v1.4.0
