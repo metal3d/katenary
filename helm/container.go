@@ -51,7 +51,10 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 		// warn, it's deprecated now
 		logger.ActivateColors = true
 		logger.Yellowf(
-			"[deprecated] in \"%s\" service: label %s is deprecated, please use %s instead\n",
+			"[deprecated] in \"%s\" service: label %s is deprecated and **ignored**, please use %s instead\n"+
+				"e.g.\n"+
+				"  labels:\n"+
+				"    FOO: {{ .Release.Name }}-fooservice\n",
 			name,
 			LABEL_ENV_SERVICE,
 			LABEL_MAP_ENV,
@@ -59,15 +62,5 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 		logger.ActivateColors = false
 	}
 
-	idx := 0
-	for n, v := range environment {
-		for _, name := range toServices {
-			if name == n {
-				*v = ReleaseNameTpl + "-" + *v
-			}
-		}
-		container.Env[idx] = &Value{Name: n, Value: v}
-		idx++
-	}
 	return container
 }

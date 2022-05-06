@@ -40,12 +40,10 @@ func GetLabelsDocumentation() string {
 {{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
 {{ printf "%-35s" ""}}- "tcp://[not used address]:port" to specify a tcp healthcheck
 {{ printf "%-35s" ""}}- other string is condidered as a "command" healthcheck
-{{.LABEL_ENV_SERVICE | printf "%-33s"}}: DEPRECATED use {{ .LABEL_MAP_ENV }} instead - specifies that the environment variable points on a service name (coma separated) 
     `)
 	buff := bytes.NewBuffer(nil)
 	t.Execute(buff, map[string]string{
 		"LABEL_ENV_SECRET":  LABEL_ENV_SECRET,
-		"LABEL_ENV_SERVICE": LABEL_ENV_SERVICE,
 		"LABEL_PORT":        LABEL_PORT,
 		"LABEL_INGRESS":     LABEL_INGRESS,
 		"LABEL_VOL_CM":      LABEL_VOL_CM,
