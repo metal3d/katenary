@@ -47,10 +47,12 @@ func (k *K8sBase) BuildSHA(filename string) {
 	k.Metadata.Annotations[K+"/docker-compose-sha1"] = fmt.Sprintf("%x", string(sum[:]))
 }
 
+// Get returns the Kind.
 func (k *K8sBase) Get() string {
 	return k.Kind
 }
 
+// Name returns the name of the object from Metadata.
 func (k *K8sBase) Name() string {
 	return k.Metadata.Name
 }

@@ -98,7 +98,6 @@ services:
 
 volumes:
     data:
-        driver: local
 `
 
 var defaultCliFiles = cli.DefaultFileNames
@@ -110,6 +109,10 @@ func init() {
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
+
+	// cleanup "made" files
+	helm.ResetMadePVC()
+
 	cli.DefaultFileNames = defaultCliFiles
 
 	// create a temporary directory
@@ -145,7 +148,7 @@ func setUp(t *testing.T) (string, *compose.Parser) {
 
 	p.Parse("testapp")
 
-	Generate(p, "test-0", "testapp", "1.2.3", DOCKER_COMPOSE_YML, tmp)
+	Generate(p, "test-0", "testapp", "1.2.3", "4.5.6", DOCKER_COMPOSE_YML, tmp)
 
 	return tmp, p
 }
@@ -310,6 +313,8 @@ func TestPVC(t *testing.T) {
 			t.Log("Checking ", name, " pvc file")
 			_, err := os.Stat(path)
 			if err != nil {
+				list, _ := filepath.Glob(tmp + "/templates/*")
+				t.Log(list)
 				t.Fatal(err)
 			}
 		}

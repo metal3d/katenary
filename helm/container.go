@@ -7,6 +7,8 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
+type EnvValue interface{}
+
 // ContainerPort represent a port mapping.
 type ContainerPort struct {
 	Name          string
@@ -15,8 +17,8 @@ type ContainerPort struct {
 
 // Value represent a environment variable with name and value.
 type Value struct {
-	Name  string      `yaml:"name"`
-	Value interface{} `yaml:"value"`
+	Name  string   `yaml:"name"`
+	Value EnvValue `yaml:"value"`
 }
 
 // Container represent a container with name, image, and environment variables. It is used in Deployment.

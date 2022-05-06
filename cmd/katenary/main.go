@@ -65,18 +65,21 @@ func main() {
 			appversion := c.Flag("app-version").Value.String()
 			composeFile := c.Flag("compose-file").Value.String()
 			appName := c.Flag("app-name").Value.String()
+			chartVersion := c.Flag("chart-version").Value.String()
 			chartDir := c.Flag("output-dir").Value.String()
 			indentation, err := strconv.Atoi(c.Flag("indent-size").Value.String())
 			if err != nil {
 				writers.IndentSize = indentation
 			}
-			Convert(composeFile, appversion, appName, chartDir, force)
+			Convert(composeFile, appversion, appName, chartDir, chartVersion, force)
 		},
 	}
 	convertCmd.Flags().BoolP(
 		"force", "f", false, "force overwrite of existing output files")
 	convertCmd.Flags().StringP(
 		"app-version", "a", AppVersion, "app version")
+	convertCmd.Flags().StringP(
+		"chart-version", "v", ChartVersion, "chart version")
 	convertCmd.Flags().StringP(
 		"compose-file", "c", ComposeFile, "docker compose file")
 	convertCmd.Flags().StringP(

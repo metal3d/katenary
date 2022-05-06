@@ -16,6 +16,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type HelmFile interface{}
+type HelmFileGenerator chan HelmFile
+
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
 
 func portExists(port int, ports []types.ServicePortConfig) bool {
@@ -28,7 +31,7 @@ func portExists(port int, ports []types.ServicePortConfig) bool {
 	return false
 }
 
-func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFile, dirName string) {
+func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVersion, composeFile, dirName string) {
 
 	// make the appname global (yes... ugly but easy)
 	helm.Appname = appName
@@ -41,7 +44,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		log.Fatal(err)
 	}
 
-	files := make(map[string]chan interface{})
+	files := make(map[string]HelmFileGenerator)
 
 	// Manage services, avoid linked pods and store all services port in servicesMap
 	avoids := make(map[string]bool)
@@ -140,21 +143,21 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)
 
-	for n, f := range files {
-		for c := range f {
-			if c == nil {
+	for n, generator := range files {
+		for helmFile := range generator {
+			if helmFile == nil {
 				break
 			}
-			kind := c.(helm.Kinded).Get()
+			kind := helmFile.(helm.Kinded).Get()
 			kind = strings.ToLower(kind)
 
 			// Add a SHA inside the generated file, it's only
 			// to make it easy to check it the compose file corresponds to the
 			// generated helm chart
-			c.(helm.Signable).BuildSHA(composeFile)
+			helmFile.(helm.Signable).BuildSHA(composeFile)
 
 			// Some types need special fixes in yaml generation
-			switch c := c.(type) {
+			switch c := helmFile.(type) {
 			case *helm.Storage:
 				// For storage, we need to add a "condition" to activate it
 				writers.BuildStorage(c, n, templatesDir)
@@ -218,7 +221,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, composeFi
 		"name":        appName,
 		"description": "A helm chart for " + appName,
 		"type":        "application",
-		"version":     "0.1.0",
+		"version":     chartVersion,
 		"appVersion":  appVersion,
 	})
 

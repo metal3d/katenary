@@ -1,5 +1,20 @@
 package helm
 
+import "sync"
+
+var (
+	made   = make(map[string]bool)
+	locker = sync.Mutex{}
+)
+
+// ResetMadePVC resets the cache of made PVCs.
+// Useful in tests only.
+func ResetMadePVC() {
+	locker.Lock()
+	defer locker.Unlock()
+	made = make(map[string]bool)
+}
+
 // Storage is a struct for a PersistentVolumeClaim.
 type Storage struct {
 	*K8sBase `yaml:",inline"`
@@ -8,6 +23,12 @@ type Storage struct {
 
 // NewPVC creates a new PersistentVolumeClaim object.
 func NewPVC(name, storageName string) *Storage {
+	locker.Lock()
+	defer locker.Unlock()
+	if _, ok := made[name+storageName]; ok {
+		return nil
+	}
+	made[name+storageName] = true
 	pvc := &Storage{}
 	pvc.K8sBase = NewBase()
 	pvc.K8sBase.Kind = "PersistentVolumeClaim"
