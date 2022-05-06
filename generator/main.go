@@ -573,6 +573,7 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		cf := f + "-" + name
 		isSecret := false
 		for _, s := range secretsFiles {
+			s = strings.TrimSpace(s)
 			if s == envfile {
 				isSecret = true
 			}
@@ -746,6 +747,7 @@ func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.
 
 	store := helm.NewSecret(name + "-secrets")
 	for _, secretvar := range strings.Split(secretvars, ",") {
+		secretvar = strings.TrimSpace(secretvar)
 		// get the value from env
 		_, ok := s.Environment[secretvar]
 		if !ok {
