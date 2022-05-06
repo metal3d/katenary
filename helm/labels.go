@@ -16,6 +16,7 @@ const (
 	LABEL_SAMEPOD     = K + "/same-pod"
 	LABEL_EMPTYDIRS   = K + "/empty-dirs"
 	LABEL_IGNORE      = K + "/ignore"
+	LABEL_SECRETVARS  = K + "/secret-vars"
 
 	//deprecated: use LABEL_MAP_ENV instead
 	LABEL_ENV_SERVICE = K + "/env-to-service"
@@ -26,6 +27,7 @@ func GetLabelsDocumentation() string {
 	t, _ := template.New("labels").Parse(`
 # Labels
 {{.LABEL_IGNORE      | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart
+{{.LABEL_SECRETVARS  | printf "%-33s"}}: secret variables to push on a secret file
 {{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap
 {{.LABEL_MAP_ENV     | printf "%-33s"}}: map environment variable to a template string (yaml style)
 {{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
@@ -52,6 +54,7 @@ func GetLabelsDocumentation() string {
 		"LABEL_EMPTYDIRS":   LABEL_EMPTYDIRS,
 		"LABEL_IGNORE":      LABEL_IGNORE,
 		"LABEL_MAP_ENV":     LABEL_MAP_ENV,
+		"LABEL_SECRETVARS":  LABEL_SECRETVARS,
 	})
 	return buff.String()
 }

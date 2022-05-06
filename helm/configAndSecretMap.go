@@ -10,6 +10,7 @@ import (
 // InlineConfig is made to represent a configMap or a secret
 type InlineConfig interface {
 	AddEnvFile(filename string) error
+	AddEnv(key, val string) error
 	Metadata() *Metadata
 }
 
@@ -56,9 +57,12 @@ func (c *ConfigMap) AddEnvFile(file string) error {
 		}
 		c.Data[parts[0]] = parts[1]
 	}
-
 	return nil
+}
 
+func (c *ConfigMap) AddEnv(key, val string) error {
+	c.Data[key] = val
+	return nil
 }
 
 // Secret is made to represent a secret with data.
@@ -107,4 +111,10 @@ func (s *Secret) AddEnvFile(file string) error {
 // Metadata returns the metadata of the secret.
 func (s *Secret) Metadata() *Metadata {
 	return s.K8sBase.Metadata
+}
+
+// AddEnv adds an environment variable to the secret.
+func (s *Secret) AddEnv(key, val string) error {
+	s.Data[key] = fmt.Sprintf(`{{ %s | b64enc }}`, val)
+	return nil
 }

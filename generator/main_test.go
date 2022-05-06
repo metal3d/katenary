@@ -50,7 +50,8 @@ services:
             ANOTHER_ENV_VAR: another_value
             DB_HOST: database
         labels:
-            katenary.io/env-to-service: DB_HOST
+          katenary.io/mapenv: |
+            DB_HOST: {{ .Release.Name }}-database
 
     database:
         image: mysql:5.7
@@ -221,20 +222,20 @@ func TestEnvs(t *testing.T) {
 			lines, _ := ioutil.ReadAll(fp)
 			next := false
 			for _, line := range strings.Split(string(lines), "\n") {
-				if strings.Contains(line, "DB_HOST") {
+				if !next && strings.Contains(line, "name: DB_HOST") {
 					next = true
 					continue
-				}
-				if next {
+				} else if next && strings.Contains(line, "value:") {
 					matched = true
-					if !strings.Contains(line, helm.ReleaseNameTpl+"-database") {
-						t.Error("DB_HOST variable should be set to " + helm.ReleaseNameTpl + "-database")
+					if !strings.Contains(line, "{{ tpl .Values.php.environment.DB_HOST . }}") {
+						t.Error("DB_HOST variable should be set to {{ tpl .Values.php.environment.DB_HOST . }}", line, string(lines))
 					}
 					break
 				}
 			}
 			if !matched {
 				t.Error("DB_HOST variable not found in ", path)
+				t.Log(string(lines))
 			}
 		}
 	}
@@ -382,8 +383,9 @@ func TestEqualSignOnEnv(t *testing.T) {
 					match++
 				}
 			}
-			if match != 2 {
+			if match != 4 { // because the value points on .Values...
 				t.Error("eqenv service should have 2 environment variables")
+				t.Log(string(lines))
 			}
 		}
 	}

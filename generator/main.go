@@ -59,14 +59,27 @@ func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]t
 
 // This function will try to yied deployment and services based on a service from the compose file structure.
 func parseService(name string, s types.ServiceConfig, linked map[string]types.ServiceConfig, ret chan interface{}) {
+	// TODO: this function is a mess, need a complete refactorisation
+
 	logger.Magenta(ICON_PACKAGE+" Generating deployment for ", name)
+	deployment := helm.NewDeployment(name)
 
 	// adapt env
 	applyEnvMapLabel(&s)
-	setEnvToValues(name, &s)
 
-	deployment := helm.NewDeployment(name)
+	// create a container for the deployment.
 	container := helm.NewContainer(name, s.Image, s.Environment, s.Labels)
+
+	// If some variables are secrets, set them now !
+	if secretFile := setSecretVar(name, &s, container); secretFile != nil {
+		ret <- secretFile
+		container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
+			"secretRef": {
+				"name": secretFile.Metadata().Name,
+			},
+		})
+	}
+	setEnvToValues(name, &s, container)
 	prepareContainer(container, s, name)
 	prepareEnvFromFiles(name, s, container, ret)
 
@@ -90,8 +103,18 @@ func parseService(name string, s types.ServiceConfig, linked map[string]types.Se
 	// Now, the linked services
 	for lname, link := range linked {
 		applyEnvMapLabel(&link)
-		setEnvToValues(lname, &link)
 		container := helm.NewContainer(lname, link.Image, link.Environment, link.Labels)
+
+		// If some variables are secrets, set them now !
+		if secretFile := setSecretVar(lname, &link, container); secretFile != nil {
+			ret <- secretFile
+			container.EnvFrom = append(container.EnvFrom, map[string]map[string]string{
+				"secretRef": {
+					"name": secretFile.Metadata().Name,
+				},
+			})
+		}
+		setEnvToValues(lname, &link, container)
 		prepareContainer(container, link, lname)
 		prepareEnvFromFiles(lname, link, container, ret)
 		deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, container)
@@ -321,23 +344,23 @@ func prepareVolumes(deployment, name string, s types.ServiceConfig, container *h
 			continue
 		}
 
-		isCM := false
+		isConfigMap := false
 		for _, cmVol := range configMapsVolumes {
 			cmVol = strings.TrimSpace(cmVol)
 			if volname == cmVol {
-				isCM = true
+				isConfigMap = true
 				break
 			}
 		}
 
-		if !isCM && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
+		if !isConfigMap && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
 			// local volume cannt be mounted
 			logger.ActivateColors = true
 			logger.Redf("You cannot, at this time, have local volume in %s deployment\n", name)
 			logger.ActivateColors = false
 			continue
 		}
-		if isCM {
+		if isConfigMap {
 			// check if the volname path points on a file, if so, we need to add subvolume to the interface
 			stat, err := os.Stat(volname)
 			if err != nil {
@@ -690,16 +713,52 @@ func applyEnvMapLabel(s *types.ServiceConfig) {
 }
 
 // setEnvToValues will set the environment variables to the values.yaml map.
-func setEnvToValues(name string, s *types.ServiceConfig) {
+func setEnvToValues(name string, s *types.ServiceConfig, c *helm.Container) {
 	// crete the "environment" key
+
 	env := make(map[string]interface{})
 	for k, v := range s.Environment {
 		env[k] = v
 	}
+	if len(env) == 0 {
+		return
+	}
 
 	AddValues(name, map[string]interface{}{"environment": env})
-	for k := range s.Environment {
-		v := "{{ .Values." + name + ".environment." + k + " }}"
+	for k := range env {
+		v := "{{ tpl .Values." + name + ".environment." + k + " . }}"
 		s.Environment[k] = &v
+		for _, c := range c.Env {
+			if c.Name == k {
+				c.Value = v
+			}
+		}
 	}
+}
+
+func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.Secret {
+	// get the list of secret vars
+	secretvars, ok := s.Labels[helm.LABEL_SECRETVARS]
+	if !ok {
+		return nil
+	}
+
+	store := helm.NewSecret(name + "-secrets")
+	for _, secretvar := range strings.Split(secretvars, ",") {
+		// get the value from env
+		_, ok := s.Environment[secretvar]
+		if !ok {
+			continue
+		}
+		// add the secret
+		store.AddEnv(secretvar, ".Values."+name+".environment."+secretvar)
+		envs := c.Env
+		for i, env := range envs {
+			if env.Name == secretvar {
+				envs = append(envs[:i], envs[i+1:]...)
+			}
+		}
+		c.Env = envs
+	}
+	return store
 }
