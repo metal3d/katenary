@@ -69,7 +69,7 @@ func (p *Parser) Parse(appname string) {
 		cli.WithDefaultConfigPath,
 		cli.WithNormalization(true),
 		cli.WithInterpolation(true),
-		cli.WithResolvedPaths(true),
+		//cli.WithResolvedPaths(true),
 	)
 	if err != nil {
 		log.Fatal(err)

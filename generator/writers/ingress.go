@@ -59,6 +59,15 @@ func BuildIngress(ingress *helm.Ingress, name, templatesDir string) {
 			l = apiVersion
 		}
 
+		// add annotations linked to the Values
+		if strings.Contains(l, "annotations:") {
+			n := CountSpaces(l) + IndentSize
+			l += "\n" + strings.Repeat(" ", n) + "{{- range $k, $v := .Values.__name__.ingress.annotations }}\n"
+			l += strings.Repeat(" ", n) + "{{ $k }}: {{ $v }}\n"
+			l += strings.Repeat(" ", n) + "{{- end }}"
+			l = strings.ReplaceAll(l, "__name__", name)
+		}
+
 		// pathTyype is ony for 1.19+
 		if strings.Contains(l, "pathType:") {
 			n := CountSpaces(l)

@@ -38,7 +38,6 @@ func NewContainer(name, image string, environment types.MappingWithEquals, label
 	container := &Container{
 		Image:   image,
 		Name:    name,
-		Env:     make([]*Value, len(environment)),
 		EnvFrom: make([]map[string]map[string]string, 0),
 	}
 

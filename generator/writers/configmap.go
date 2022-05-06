@@ -9,7 +9,7 @@ import (
 
 // BuildConfigMap writes the configMap.
 func BuildConfigMap(c interface{}, kind, servicename, name, templatesDir string) {
-	fname := filepath.Join(templatesDir, servicename+"."+name+"."+kind+".yaml")
+	fname := filepath.Join(templatesDir, name+"."+kind+".yaml")
 	fp, _ := os.Create(fname)
 	enc := yaml.NewEncoder(fp)
 	enc.SetIndent(IndentSize)

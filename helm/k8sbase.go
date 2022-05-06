@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"io/ioutil"
+	"strings"
 )
 
 // Metadata is the metadata for a kubernetes object.
@@ -34,7 +35,7 @@ func NewBase() *K8sBase {
 		Metadata: NewMetadata(),
 	}
 	// add some information of the build
-	b.Metadata.Labels[K+"/project"] = GetProjectName()
+	b.Metadata.Labels[K+"/project"] = "{{ .Chart.Name }}"
 	b.Metadata.Labels[K+"/release"] = ReleaseNameTpl
 	b.Metadata.Annotations[K+"/version"] = Version
 	return b
@@ -55,4 +56,18 @@ func (k *K8sBase) Get() string {
 // Name returns the name of the object from Metadata.
 func (k *K8sBase) Name() string {
 	return k.Metadata.Name
+}
+
+func (k *K8sBase) GetType() string {
+	if n, ok := k.Metadata.Labels[K+"/type"]; ok {
+		return n
+	}
+	return strings.ToLower(k.Kind)
+}
+
+func (k *K8sBase) GetPathRessource() string {
+	if p, ok := k.Metadata.Labels[K+"/path"]; ok {
+		return p
+	}
+	return ""
 }

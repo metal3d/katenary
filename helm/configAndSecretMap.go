@@ -21,12 +21,15 @@ type ConfigMap struct {
 }
 
 // NewConfigMap returns a new initialzed ConfigMap.
-func NewConfigMap(name string) *ConfigMap {
+func NewConfigMap(name, path string) *ConfigMap {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "ConfigMap"
 	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
+	if path != "" {
+		base.Metadata.Labels[K+"/path"] = path
+	}
 	return &ConfigMap{
 		K8sBase: base,
 		Data:    make(map[string]string),
@@ -72,12 +75,15 @@ type Secret struct {
 }
 
 // NewSecret returns a new initialzed Secret.
-func NewSecret(name string) *Secret {
+func NewSecret(name, path string) *Secret {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "Secret"
 	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
+	if path != "" {
+		base.Metadata.Labels[K+"/path"] = path
+	}
 	return &Secret{
 		K8sBase: base,
 		Data:    make(map[string]string),

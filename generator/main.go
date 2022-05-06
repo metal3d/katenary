@@ -195,11 +195,15 @@ func generateServicesAndIngresses(name string, s *types.ServiceConfig) []HelmFil
 func createIngress(name string, port int, s *types.ServiceConfig) *helm.Ingress {
 	ingress := helm.NewIngress(name)
 
+	annotations := map[string]string{}
 	ingressVal := map[string]interface{}{
-		"class":   "nginx",
-		"host":    name + "." + helm.Appname + ".tld",
-		"enabled": false,
+		"class":       "nginx",
+		"host":        name + "." + helm.Appname + ".tld",
+		"enabled":     false,
+		"annotations": annotations,
 	}
+
+	// add Annotations in values
 	AddValues(name, map[string]EnvVal{"ingress": ingressVal})
 
 	ingress.Spec.Rules = []helm.IngressRule{
@@ -235,7 +239,7 @@ func buildSelector(name string, s *types.ServiceConfig) map[string]string {
 }
 
 // buildCMFromPath generates a ConfigMap from a path.
-func buildCMFromPath(path string) *helm.ConfigMap {
+func buildCMFromPath(name, path string) *helm.ConfigMap {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return nil
@@ -262,7 +266,7 @@ func buildCMFromPath(path string) *helm.ConfigMap {
 		}
 	}
 
-	cm := helm.NewConfigMap("")
+	cm := helm.NewConfigMap(name, path)
 	cm.Data = files
 	return cm
 }
@@ -354,11 +358,11 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			}
 
 			// the volume is a path and it's explicitally asked to be a configmap in labels
-			cm := buildCMFromPath(volname)
+			cm := buildCMFromPath(name, volname)
 			volname = strings.Replace(volname, "./", "", 1)
 			volname = strings.ReplaceAll(volname, "/", "-")
 			volname = strings.ReplaceAll(volname, ".", "-")
-			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + volname + "-" + name
+			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + volname
 
 			// build a configmap from the volume path
 			volumes = append(volumes, map[string]interface{}{
@@ -570,7 +574,6 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		f = strings.ReplaceAll(f, ".env", "")
 		f = strings.ReplaceAll(f, ".", "")
 		f = strings.ReplaceAll(f, "/", "")
-		cf := f + "-" + name
 		isSecret := false
 		for _, s := range secretsFiles {
 			s = strings.TrimSpace(s)
@@ -580,11 +583,11 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		}
 		var store helm.InlineConfig
 		if !isSecret {
-			logger.Bluef(ICON_CONF+" Generating configMap %s\n", cf)
-			store = helm.NewConfigMap(cf)
+			logger.Bluef(ICON_CONF+" Generating configMap from %s\n", envfile)
+			store = helm.NewConfigMap(name, envfile)
 		} else {
-			logger.Bluef(ICON_SECRET+" Generating secret %s\n", cf)
-			store = helm.NewSecret(cf)
+			logger.Bluef(ICON_SECRET+" Generating secret from %s\n", envfile)
+			store = helm.NewSecret(name, envfile)
 		}
 
 		envfile = filepath.Join(compose.GetCurrentDir(), envfile)
@@ -620,7 +623,7 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		}
 
 		if store != nil {
-			fileGeneratorChan <- store
+			fileGeneratorChan <- store.(HelmFile)
 		}
 	}
 }
@@ -695,6 +698,9 @@ func applyEnvMapLabel(s *types.ServiceConfig, c *helm.Container) {
 		vstring := fmt.Sprintf("%v", v)
 		s.Environment[k] = &vstring
 		touched := false
+		if c.Env != nil {
+			c.Env = make([]*helm.Value, 0)
+		}
 		for _, env := range c.Env {
 			if env.Name == k {
 				env.Value = v
@@ -745,7 +751,7 @@ func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.
 		return nil
 	}
 
-	store := helm.NewSecret(name + "-secrets")
+	store := helm.NewSecret(name, "")
 	for _, secretvar := range strings.Split(secretvars, ",") {
 		secretvar = strings.TrimSpace(secretvar)
 		// get the value from env

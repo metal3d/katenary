@@ -16,7 +16,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type HelmFile interface{}
+type HelmFile interface {
+	GetType() string
+	GetPathRessource() string
+}
 type HelmFileGenerator chan HelmFile
 
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
@@ -179,7 +182,15 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 			case *helm.ConfigMap, *helm.Secret:
 				// there could be several files, so let's force the filename
-				name := c.(helm.Named).Name()
+				name := c.(helm.Named).Name() + "-" + c.GetType()
+				suffix := c.GetPathRessource()
+				if suffix != "" {
+					charToRemove := []string{"/", ".", " "}
+					for _, char := range charToRemove {
+						suffix = strings.Replace(suffix, char, "-", -1)
+					}
+				}
+				name += suffix
 				name = PrefixRE.ReplaceAllString(name, "")
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)
 
