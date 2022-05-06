@@ -157,11 +157,15 @@ services:
             # this will create a configMap
             - my_env.env
         environment:
+            MARIADB_USER: foo
             MARIADB_ROOT_PASSWORD: foobar
+            MARIADB_PASSWORD: bar
         labels:
             # no need to declare this port in docker-compose
             # but katenary will need it
             katenary.io/ports: 3306
+            # these variables are secrets
+            katenary.io/secret-vars: MARIADB_ROOT_PASSWORD, MARIADB_PASSWORD
 ```
 
 # Labels
@@ -170,6 +174,7 @@ These labels could be found by `katenary show-labels`, and can be placed as "lab
 
 ```
 katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart
+katenary.io/secret-vars          : secret variables to push on a secret file
 katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap
 katenary.io/mapenv               : map environment variable to a template string (yaml style)
 katenary.io/ports                : set the ports to expose as a service (coma separated)
@@ -182,7 +187,6 @@ katenary.io/healthcheck          : specifies that the container should be monito
                                    - "http://[not used address][:port][/path]" to specify an http healthcheck
                                    - "tcp://[not used address]:port" to specify a tcp healthcheck
                                    - other string is condidered as a "command" healthcheck
-katenary.io/env-to-service       : DEPRECATED use katenary.io/mapenv instead - specifies that the environment variable points on a service name (coma separated) 
 ```
 
 # What a name...
