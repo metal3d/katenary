@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
+	composeFiles = []string{"compose.yml", "compose.yaml", "docker-compose.yaml", "docker-compose.yml"}
 	ComposeFile  = ""
 	AppName      = "MyApp"
 	ChartsDir    = "chart"
