@@ -359,9 +359,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 
 			// the volume is a path and it's explicitally asked to be a configmap in labels
 			cm := buildCMFromPath(name, volname)
-			volname = strings.Replace(volname, "./", "", 1)
-			volname = strings.ReplaceAll(volname, "/", "-")
-			volname = strings.ReplaceAll(volname, ".", "-")
+			volname = PathToName(volname)
 			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + volname
 
 			// build a configmap from the volume path
@@ -402,7 +400,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 						"name":      volname,
 						"mountPath": volepath,
 					})
-					container.VolumeMounts = mountPoints
+					container.VolumeMounts = append(container.VolumeMounts, mountPoints...)
 					isEmptyDir = true
 					break
 				}
@@ -433,7 +431,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			}
 		}
 	}
-	container.VolumeMounts = mountPoints
+	container.VolumeMounts = append(container.VolumeMounts, mountPoints...)
 	return volumes
 }
 
@@ -570,10 +568,8 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 
 	// manage environment files (env_file in compose)
 	for _, envfile := range s.EnvFile {
-		f := strings.ReplaceAll(envfile, "_", "-")
+		f := PathToName(envfile)
 		f = strings.ReplaceAll(f, ".env", "")
-		f = strings.ReplaceAll(f, ".", "")
-		f = strings.ReplaceAll(f, "/", "")
 		isSecret := false
 		for _, s := range secretsFiles {
 			s = strings.TrimSpace(s)
@@ -787,7 +783,7 @@ func newContainerForDeployment(deployName, containerName string, deployment *hel
 		})
 	}
 	setEnvToValues(containerName, s, container)
-	prepareContainer(container, s, deployName)
+	prepareContainer(container, s, containerName)
 	prepareEnvFromFiles(deployName, s, container, fileGeneratorChan)
 
 	// add the container in deployment
@@ -803,6 +799,9 @@ func newContainerForDeployment(deployName, containerName string, deployment *hel
 	if deployment.Spec.Template.Spec.Volumes == nil {
 		deployment.Spec.Template.Spec.Volumes = make([]map[string]interface{}, 0)
 	}
+	// manage LABEL_VOLUMEFROM
+	addVolumeFrom(deployment, container, s)
+	// and then we can add other volumes
 	deployment.Spec.Template.Spec.Volumes = append(
 		deployment.Spec.Template.Spec.Volumes,
 		prepareVolumes(deployName, containerName, s, container, fileGeneratorChan)...,
@@ -818,4 +817,80 @@ func newContainerForDeployment(deployName, containerName string, deployment *hel
 	)
 
 	return container
+}
+
+// addVolumeFrom takes the LABEL_VOLUMEFROM to get volumes from another container. This can only work with
+// container that has got LABEL_SAMEPOD as we need to get the volumes from another container in the same deployment.
+func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *types.ServiceConfig) {
+	labelfrom, ok := s.Labels[helm.LABEL_VOLUMEFROM]
+	if !ok {
+		return
+	}
+
+	// decode Yaml from the label
+	var volumesFrom map[string]map[string]string
+	err := yaml.Unmarshal([]byte(labelfrom), &volumesFrom)
+	if err != nil {
+		logger.ActivateColors = true
+		logger.Red(err.Error())
+		logger.ActivateColors = false
+		return
+	}
+
+	// for each declared volume "from", we will find it from the deployment volumes and add it to the container.
+	// Then, to avoid duplicates, we will remove it from the ServiceConfig object.
+	for name, volumes := range volumesFrom {
+		for volumeName := range volumes {
+			initianame := volumeName
+			volumeName = PathToName(volumeName)
+			// get the volume from the deployment container "name"
+			var ctn *helm.Container
+			for _, c := range deployment.Spec.Template.Spec.Containers {
+				if c.Name == name {
+					ctn = c
+					break
+				}
+			}
+			if ctn == nil {
+				logger.ActivateColors = true
+				logger.Red("VolumeFrom: container %s not found", name)
+				logger.ActivateColors = false
+				continue
+			}
+			// get the volume from the container
+			for _, v := range ctn.VolumeMounts {
+				switch v := v.(type) {
+				case map[string]interface{}:
+					if v["name"] == volumeName {
+						if container.VolumeMounts == nil {
+							container.VolumeMounts = make([]interface{}, 0)
+						}
+						// make a copy of the volume mount and then add it to the VolumeMounts
+						var mountpoint = make(map[string]interface{})
+						for k, v := range v {
+							mountpoint[k] = v
+						}
+						container.VolumeMounts = append(container.VolumeMounts, mountpoint)
+
+						// remove the volume from the ServiceConfig
+						volumes := s.Volumes
+						for i, vol := range volumes {
+							if vol.Source == initianame {
+								volumes = append(volumes[:i], volumes[i+1:]...)
+								break
+							}
+						}
+						s.Volumes = volumes
+					}
+				}
+			}
+		}
+	}
+}
+
+func PathToName(path string) string {
+	path = strings.TrimPrefix(path, "./")
+	path = strings.ReplaceAll(path, ".", "-")
+	path = strings.ReplaceAll(path, "/", "-")
+	return path
 }

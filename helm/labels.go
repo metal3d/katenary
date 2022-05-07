@@ -14,6 +14,7 @@ const (
 	LABEL_VOL_CM      = K + "/configmap-volumes"
 	LABEL_HEALTHCHECK = K + "/healthcheck"
 	LABEL_SAMEPOD     = K + "/same-pod"
+	LABEL_VOLUMEFROM  = K + "/volume-from"
 	LABEL_EMPTYDIRS   = K + "/empty-dirs"
 	LABEL_IGNORE      = K + "/ignore"
 	LABEL_SECRETVARS  = K + "/secret-vars"
@@ -34,6 +35,7 @@ func GetLabelsDocumentation() string {
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
 {{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
+{{.LABEL_VOLUMEFROM  | printf "%-33s"}}: specifies that the volumes to be mounted from the given service (yaml style)
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
@@ -49,6 +51,7 @@ func GetLabelsDocumentation() string {
 		"LABEL_VOL_CM":      LABEL_VOL_CM,
 		"LABEL_HEALTHCHECK": LABEL_HEALTHCHECK,
 		"LABEL_SAMEPOD":     LABEL_SAMEPOD,
+		"LABEL_VOLUMEFROM":  LABEL_VOLUMEFROM,
 		"LABEL_EMPTYDIRS":   LABEL_EMPTYDIRS,
 		"LABEL_IGNORE":      LABEL_IGNORE,
 		"LABEL_MAP_ENV":     LABEL_MAP_ENV,
