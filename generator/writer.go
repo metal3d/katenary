@@ -61,11 +61,12 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		}
 	}
 
-	// remove skipped services
+	// remove skipped services from the parsed data
 	for s := range skips {
 		for i, service := range p.Data.Services {
 			if service.Name == s {
 				p.Data.Services = append(p.Data.Services[:i], p.Data.Services[i+1:]...)
+				i--
 				break
 			}
 		}

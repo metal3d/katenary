@@ -613,6 +613,7 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 				for i, s := range container.Env {
 					if s.Name == varname {
 						container.Env = append(container.Env[:i], container.Env[i+1:]...)
+						i--
 					}
 				}
 			}
@@ -757,13 +758,14 @@ func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.
 		}
 		// add the secret
 		store.AddEnv(secretvar, ".Values."+name+".environment."+secretvar)
-		envs := c.Env
-		for i, env := range envs {
+		for i, env := range c.Env {
 			if env.Name == secretvar {
-				envs = append(envs[:i], envs[i+1:]...)
+				c.Env = append(c.Env[:i], c.Env[i+1:]...)
+				i--
 			}
 		}
-		c.Env = envs
+		// remove env from ServiceConfig
+		delete(s.Environment, secretvar)
 	}
 	return store
 }
@@ -873,14 +875,13 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 						container.VolumeMounts = append(container.VolumeMounts, mountpoint)
 
 						// remove the volume from the ServiceConfig
-						volumes := s.Volumes
-						for i, vol := range volumes {
+						for i, vol := range s.Volumes {
 							if vol.Source == initianame {
-								volumes = append(volumes[:i], volumes[i+1:]...)
+								s.Volumes = append(s.Volumes[:i], s.Volumes[i+1:]...)
+								i--
 								break
 							}
 						}
-						s.Volumes = volumes
 					}
 				}
 			}
