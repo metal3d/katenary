@@ -853,7 +853,7 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 			}
 			if ctn == nil {
 				logger.ActivateColors = true
-				logger.Red("VolumeFrom: container %s not found", name)
+				logger.Redf("VolumeFrom: container %s not found", name)
 				logger.ActivateColors = false
 				continue
 			}
