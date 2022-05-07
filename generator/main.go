@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -889,9 +890,12 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 	}
 }
 
+// replaceChars replaces some chars in a string.
+const replaceChars = `[^a-zA-Z0-9._-]`
+
+// PathToName transform a path to a yaml name.
 func PathToName(path string) string {
 	path = strings.TrimPrefix(path, "./")
-	path = strings.ReplaceAll(path, ".", "-")
-	path = strings.ReplaceAll(path, "/", "-")
+	path = regexp.MustCompile(replaceChars).ReplaceAllString(path, "-")
 	return path
 }

@@ -16,10 +16,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// HelmFile represents a helm file from helm package that has got some necessary methods
+// to generate a helm file.
 type HelmFile interface {
 	GetType() string
 	GetPathRessource() string
 }
+
+// HelmFileGenerator is a chanel of HelmFile.
 type HelmFileGenerator chan HelmFile
 
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
@@ -34,6 +38,7 @@ func portExists(port int, ports []types.ServicePortConfig) bool {
 	return false
 }
 
+// Generate get a parsed compose file, and generate the helm files.
 func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVersion, composeFile, dirName string) {
 
 	// make the appname global (yes... ugly but easy)
@@ -55,6 +60,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 	// Manage services to not export
 	skips := make(map[string]bool)
 
+	// remove ignored services
 	for _, s := range p.Data.Services {
 		if s.Labels[helm.LABEL_IGNORE] == "true" {
 			skips[s.Name] = true
@@ -185,12 +191,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				// there could be several files, so let's force the filename
 				name := c.(helm.Named).Name() + "-" + c.GetType()
 				suffix := c.GetPathRessource()
-				if suffix != "" {
-					charToRemove := []string{"/", ".", " "}
-					for _, char := range charToRemove {
-						suffix = strings.Replace(suffix, char, "-", -1)
-					}
-				}
+				suffix = PathToName(suffix)
 				name += suffix
 				name = PrefixRE.ReplaceAllString(name, "")
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)
