@@ -52,41 +52,24 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		log.Fatal(err)
 	}
 
-	files := make(map[string]HelmFileGenerator)
-
-	// Manage services, avoid linked pods and store all services port in servicesMap
-	avoids := make(map[string]bool)
-
-	// Manage services to not export
-	skips := make(map[string]bool)
-
-	// remove ignored services
-	for _, s := range p.Data.Services {
-		if s.Labels[helm.LABEL_IGNORE] == "true" {
-			skips[s.Name] = true
-		}
-	}
+	generators := make(map[string]HelmFileGenerator)
 
 	// remove skipped services from the parsed data
-	for s := range skips {
-		for i, service := range p.Data.Services {
-			if service.Name == s {
-				p.Data.Services = append(p.Data.Services[:i], p.Data.Services[i+1:]...)
-				i--
-				break
-			}
+	for i, service := range p.Data.Services {
+		if v, ok := service.Labels[helm.LABEL_IGNORE]; !ok || v != "true" {
+			continue
+		}
+		p.Data.Services = append(p.Data.Services[:i], p.Data.Services[i+1:]...)
+		i--
+
+		// find this service in others as "depends_on" and remove it
+		for _, service2 := range p.Data.Services {
+			delete(service2.DependsOn, service.Name)
 		}
 	}
 
 	for i, service := range p.Data.Services {
 		n := service.Name
-
-		// if the service depends on a skipped service, remove the link
-		for dep := range service.DependsOn {
-			if skips[dep] {
-				delete(service.DependsOn, dep)
-			}
-		}
 
 		// if the service port is declared in labels, add it to the service.
 		if ports, ok := service.Labels[helm.LABEL_PORT]; ok {
@@ -115,15 +98,13 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			}
 		}
 
-		// avoid linked pods
-		if _, ok := service.Labels[helm.LABEL_SAMEPOD]; ok {
-			avoids[n] = true
-		}
-
 		// manage emptyDir volumes
 		if empty, ok := service.Labels[helm.LABEL_EMPTYDIRS]; ok {
 			//split empty list by coma
 			emptyDirs := strings.Split(empty, ",")
+			for i, emptyDir := range emptyDirs {
+				emptyDirs[i] = strings.TrimSpace(emptyDir)
+			}
 			//append them in EmptyDirs
 			EmptyDirs = append(EmptyDirs, emptyDirs...)
 		}
@@ -131,15 +112,17 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 	}
 
-	// for all services in linked map, and not in avoids map, generate the service
+	// for all services in linked map, and not in samePods map, generate the service
 	for _, s := range p.Data.Services {
 		name := s.Name
 
-		if _, found := avoids[name]; found {
+		// do not make a deployment for services declared to be in the same pod than another
+		if _, ok := s.Labels[helm.LABEL_SAMEPOD]; ok {
 			continue
 		}
+
+		// find services that is in the same pod
 		linked := make(map[string]types.ServiceConfig, 0)
-		// find service
 		for _, service := range p.Data.Services {
 			n := service.Name
 			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == name {
@@ -147,15 +130,15 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			}
 		}
 
-		files[name] = CreateReplicaObject(name, s, linked)
+		generators[name] = CreateReplicaObject(name, s, linked)
 	}
 
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)
 
-	for n, generator := range files {
-		for helmFile := range generator {
-			if helmFile == nil {
+	for n, generator := range generators { // generators is a map : name -> generator
+		for helmFile := range generator { // generator is a chan
+			if helmFile == nil { // generator finished
 				break
 			}
 			kind := helmFile.(helm.Kinded).Get()
