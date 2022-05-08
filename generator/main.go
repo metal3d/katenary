@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -239,8 +238,8 @@ func buildSelector(name string, s *types.ServiceConfig) map[string]string {
 	}
 }
 
-// buildCMFromPath generates a ConfigMap from a path.
-func buildCMFromPath(name, path string) *helm.ConfigMap {
+// buildConfigMapFromPath generates a ConfigMap from a path.
+func buildConfigMapFromPath(name, path string) *helm.ConfigMap {
 	stat, err := os.Stat(path)
 	if err != nil {
 		return nil
@@ -267,7 +266,7 @@ func buildCMFromPath(name, path string) *helm.ConfigMap {
 		}
 	}
 
-	cm := helm.NewConfigMap(name, path)
+	cm := helm.NewConfigMap(name, GetRelPath(path))
 	cm.Data = files
 	return cm
 }
@@ -313,6 +312,9 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 	configMapsVolumes := make([]string, 0)
 	if v, ok := s.Labels[helm.LABEL_VOL_CM]; ok {
 		configMapsVolumes = strings.Split(v, ",")
+		for i, cm := range configMapsVolumes {
+			configMapsVolumes[i] = strings.TrimSpace(cm)
+		}
 	}
 
 	for _, vol := range s.Volumes {
@@ -329,15 +331,14 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 
 		isConfigMap := false
 		for _, cmVol := range configMapsVolumes {
-			cmVol = strings.TrimSpace(cmVol)
-			if volname == cmVol {
+			if GetRelPath(volname) == cmVol {
 				isConfigMap = true
 				break
 			}
 		}
 
+		// local volume cannt be mounted
 		if !isConfigMap && (strings.HasPrefix(volname, ".") || strings.HasPrefix(volname, "/")) {
-			// local volume cannt be mounted
 			logger.ActivateColors = true
 			logger.Redf("You cannot, at this time, have local volume in %s deployment\n", name)
 			logger.ActivateColors = false
@@ -359,11 +360,10 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			}
 
 			// the volume is a path and it's explicitally asked to be a configmap in labels
-			cm := buildCMFromPath(name, volname)
-			volname = PathToName(volname)
-			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + volname
+			cm := buildConfigMapFromPath(name, volname)
+			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + PathToName(volname)
 
-			// build a configmap from the volume path
+			// build a configmapRef for this volume
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"configMap": map[string]string{
@@ -432,6 +432,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			}
 		}
 	}
+	// add the volume in the container and return the volume definition to add in Deployment
 	container.VolumeMounts = append(container.VolumeMounts, mountPoints...)
 	return volumes
 }
@@ -888,14 +889,4 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 			}
 		}
 	}
-}
-
-// replaceChars replaces some chars in a string.
-const replaceChars = `[^a-zA-Z0-9._-]`
-
-// PathToName transform a path to a yaml name.
-func PathToName(path string) string {
-	path = strings.TrimPrefix(path, "./")
-	path = regexp.MustCompile(replaceChars).ReplaceAllString(path, "-")
-	return path
 }
