@@ -1,0 +1,6 @@
+blog:
+  image: ghost
+  ingress:
+    class: nginx
+    enabled: false
+    host: blog.ghost.tld

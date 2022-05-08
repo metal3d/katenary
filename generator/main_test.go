@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/compose-spec/compose-go/cli"
 )
 
 const DOCKER_COMPOSE_YML = `version: '3'
@@ -48,7 +50,8 @@ services:
             ANOTHER_ENV_VAR: another_value
             DB_HOST: database
         labels:
-            katenary.io/env-to-service: DB_HOST
+          katenary.io/mapenv: |
+            DB_HOST: {{ .Release.Name }}-database
 
     database:
         image: mysql:5.7
@@ -87,37 +90,85 @@ services:
           - SOME_ENV_VAR=some_value
           - ANOTHER_ENV_VAR=another_value
 
+    # use environment file
+    useenvfile:
+        image: nginx
+        env_file:
+          - config/env
+
 volumes:
     data:
-        driver: local
 `
 
+var defaultCliFiles = cli.DefaultFileNames
+var TMP_DIR = ""
+var TMPWORK_DIR = ""
+
 func init() {
-	logger.NOLOG = true
+	logger.NOLOG = len(os.Getenv("NOLOG")) < 1
 }
 
 func setUp(t *testing.T) (string, *compose.Parser) {
-	p := compose.NewParser("", DOCKER_COMPOSE_YML)
-	p.Parse("testapp")
+
+	// cleanup "made" files
+	helm.ResetMadePVC()
+
+	cli.DefaultFileNames = defaultCliFiles
 
 	// create a temporary directory
-	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test")
-	t.Log("Generated ", tmp, "directory")
+	tmp, err := os.MkdirTemp(os.TempDir(), "katenary-test-")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	Generate(p, "test-0", "testapp", "1.2.3", DOCKER_COMPOSE_YML, tmp)
+	tmpwork, err := os.MkdirTemp(os.TempDir(), "katenary-test-work-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	composefile := filepath.Join(tmpwork, "docker-compose.yaml")
+	p := compose.NewParser(composefile, DOCKER_COMPOSE_YML)
+
+	// create envfile for "useenvfile" service
+	err = os.Mkdir(filepath.Join(tmpwork, "config"), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+	envfile := filepath.Join(tmpwork, "config", "env")
+	fp, err := os.Create(envfile)
+	if err != nil {
+		t.Fatal("MKFILE", err)
+	}
+	fp.WriteString("FILEENV1=some_value\n")
+	fp.WriteString("FILEENV2=another_value\n")
+	fp.Close()
+
+	TMP_DIR = tmp
+	TMPWORK_DIR = tmpwork
+
+	p.Parse("testapp")
+
+	Generate(p, "test-0", "testapp", "1.2.3", "4.5.6", DOCKER_COMPOSE_YML, tmp)
 
 	return tmp, p
+}
+
+func tearDown() {
+	if len(TMP_DIR) > 0 {
+		os.RemoveAll(TMP_DIR)
+	}
+	if len(TMPWORK_DIR) > 0 {
+		os.RemoveAll(TMPWORK_DIR)
+	}
 }
 
 // Check if the web2 service has got a command.
 func TestCommand(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "web2" {
 			// Ensure that the command is correctly set
 			// The command should be a string array
@@ -159,9 +210,10 @@ func TestCommand(t *testing.T) {
 // Check if environment is correctly set.
 func TestEnvs(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 
 		if name == "php" {
 			// the "DB_HOST" environment variable inside the template must be set to '{{ .Release.Name }}-database'
@@ -173,20 +225,20 @@ func TestEnvs(t *testing.T) {
 			lines, _ := ioutil.ReadAll(fp)
 			next := false
 			for _, line := range strings.Split(string(lines), "\n") {
-				if strings.Contains(line, "DB_HOST") {
+				if !next && strings.Contains(line, "name: DB_HOST") {
 					next = true
 					continue
-				}
-				if next {
+				} else if next && strings.Contains(line, "value:") {
 					matched = true
-					if !strings.Contains(line, helm.RELEASE_NAME+"-database") {
-						t.Error("DB_HOST variable should be set to " + helm.RELEASE_NAME + "-database")
+					if !strings.Contains(line, "{{ tpl .Values.php.environment.DB_HOST . }}") {
+						t.Error("DB_HOST variable should be set to {{ tpl .Values.php.environment.DB_HOST . }}", line, string(lines))
 					}
 					break
 				}
 			}
 			if !matched {
 				t.Error("DB_HOST variable not found in ", path)
+				t.Log(string(lines))
 			}
 		}
 	}
@@ -195,9 +247,10 @@ func TestEnvs(t *testing.T) {
 // Check if the same pod is not deployed twice.
 func TestSamePod(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name, service := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 
 		if _, found := service.Labels[helm.LABEL_SAMEPOD]; found {
@@ -220,9 +273,10 @@ func TestSamePod(t *testing.T) {
 // Check if the ports are correctly set.
 func TestPorts(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name, service := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := ""
 
 		// if the service has a port found in helm.LABEL_PORT or ports, so the service file should exist
@@ -238,7 +292,7 @@ func TestPorts(t *testing.T) {
 			t.Log("Checking ", name, " service file")
 			_, err := os.Stat(path)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 		}
 	}
@@ -247,9 +301,10 @@ func TestPorts(t *testing.T) {
 // Check if the volumes are correctly set.
 func TestPVC(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+"-data.pvc.yaml")
 
 		// the "database" service should have a pvc file in templates (name-data.pvc.yaml)
@@ -258,6 +313,8 @@ func TestPVC(t *testing.T) {
 			t.Log("Checking ", name, " pvc file")
 			_, err := os.Stat(path)
 			if err != nil {
+				list, _ := filepath.Glob(tmp + "/templates/*")
+				t.Log(list)
 				t.Fatal(err)
 			}
 		}
@@ -267,9 +324,10 @@ func TestPVC(t *testing.T) {
 //Check if web service has got a ingress.
 func TestIngress(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		path := filepath.Join(tmp, "templates", name+".ingress.yaml")
 
 		// the "web" service should have a ingress file in templates (name.ingress.yaml)
@@ -287,9 +345,10 @@ func TestIngress(t *testing.T) {
 // Check unmapped volumes
 func TestUnmappedVolumes(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
-	for name := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "novol" {
 			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 			fp, _ := os.Open(path)
@@ -307,10 +366,11 @@ func TestUnmappedVolumes(t *testing.T) {
 // Check if service using equal sign for environment works
 func TestEqualSignOnEnv(t *testing.T) {
 	tmp, p := setUp(t)
-	defer os.RemoveAll(tmp)
+	defer tearDown()
 
 	// if the name is eqenv, the service should habe environment
-	for name, _ := range p.Data.Services {
+	for _, service := range p.Data.Services {
+		name := service.Name
 		if name == "eqenv" {
 			path := filepath.Join(tmp, "templates", name+".deployment.yaml")
 			fp, _ := os.Open(path)
@@ -328,8 +388,9 @@ func TestEqualSignOnEnv(t *testing.T) {
 					match++
 				}
 			}
-			if match != 2 {
+			if match != 4 { // because the value points on .Values...
 				t.Error("eqenv service should have 2 environment variables")
+				t.Log(string(lines))
 			}
 		}
 	}

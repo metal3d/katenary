@@ -1,0 +1,42 @@
+{{- if .Values.blog.ingress.enabled -}}
+{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1
+{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: '{{ .Release.Name }}-blog'
+  labels:
+    katenary.io/component: blog
+    katenary.io/project: ghost
+    katenary.io/release: '{{ .Release.Name }}'
+  annotations:
+    katenary.io/docker-compose-sha1: 0c2bbf548ff569c3dc5d77dc158e98bbe86fb5d4
+    katenary.io/version: master
+spec:
+  {{- if and .Values.blog.ingress.class (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: '{{ .Values.blog.ingress.class }}'
+  {{- end }}
+  rules:
+    - host: '{{ .Values.blog.ingress.host }}'
+      http:
+        paths:
+          - path: /
+            {{- if semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion }}
+              service:
+                name: '{{ .Release.Name }}-blog'
+                port:
+                  number: 2368
+              {{- else }}
+              serviceName: '{{ .Release.Name }}-blog'
+              servicePort: 2368
+              {{- end }}
+
+{{- end -}}

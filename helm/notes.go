@@ -10,6 +10,7 @@ Your application is now deployed. This may take a while to be up and responding.
 __list__
 `
 
+// GenerateNotesFile generates the notes file for the helm chart.
 func GenerateNotesFile(ingressess map[string]*Ingress) string {
 
 	list := make([]string, 0)

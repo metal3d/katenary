@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	composeFiles = []string{"docker-compose.yaml", "docker-compose.yml"}
+	composeFiles = []string{"compose.yml", "compose.yaml", "docker-compose.yaml", "docker-compose.yml"}
 	ComposeFile  = ""
 	AppName      = "MyApp"
 	ChartsDir    = "chart"
 	AppVersion   = "0.0.1"
+	ChartVersion = "0.1.0"
 )
 
 func init() {
@@ -92,12 +93,12 @@ func detectGitVersion() (string, error) {
 	return defaulVersion, errors.New("git log failed")
 }
 
-func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
+func Convert(composeFile, appVersion, appName, chartDir, chartVersion string, force bool) {
 	if len(composeFile) == 0 {
 		fmt.Println("No compose file given")
 		return
 	}
-	_, err := os.Stat(ComposeFile)
+	_, err := os.Stat(composeFile)
 	if err != nil {
 		fmt.Println("No compose file found")
 		os.Exit(1)
@@ -138,6 +139,6 @@ func Convert(composeFile, appVersion, appName, chartDir string, force bool) {
 	}
 
 	// start generator
-	generator.Generate(p, Version, appName, appVersion, ComposeFile, dirname)
+	generator.Generate(p, Version, appName, appVersion, chartVersion, ComposeFile, dirname)
 
 }

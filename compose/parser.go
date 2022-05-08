@@ -1,14 +1,13 @@
 package compose
 
 import (
-	"fmt"
-	"katenary/helm"
+	"io/ioutil"
 	"log"
 	"os"
-	"strings"
+	"path/filepath"
 
-	"github.com/google/shlex"
-	"gopkg.in/yaml.v3"
+	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/types"
 )
 
 const (
@@ -17,232 +16,76 @@ const (
 
 // Parser is a docker-compose parser.
 type Parser struct {
-	Data *Compose
+	Data      *types.Project
+	temporary *string
 }
 
-var Appname = ""
+var (
+	Appname        = ""
+	CURRENT_DIR, _ = os.Getwd()
+)
 
 // NewParser create a Parser and parse the file given in filename. If filename is empty, we try to parse the content[0] argument that should be a valid YAML content.
 func NewParser(filename string, content ...string) *Parser {
 
-	c := NewCompose()
-	if filename != "" {
-		f, err := os.Open(filename)
+	p := &Parser{}
+
+	if len(content) > 0 { // mainly for the tests...
+		dir := filepath.Dir(filename)
+		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
-		dec := yaml.NewDecoder(f)
-		err = dec.Decode(c)
-		if err != nil {
-			log.Fatal(err)
+		p.temporary = &dir
+		ioutil.WriteFile(filename, []byte(content[0]), 0644)
+		cli.DefaultFileNames = []string{filename}
+	}
+	// if filename is not in cli Default files, add it
+	if len(filename) > 0 {
+		found := false
+		for _, f := range cli.DefaultFileNames {
+			if f == filename {
+				found = true
+				break
+			}
 		}
-	} else {
-		dec := yaml.NewDecoder(strings.NewReader(content[0]))
-		err := dec.Decode(c)
-		if err != nil {
-			log.Fatal(err)
+		// add the file at first position
+		if !found {
+			cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
 		}
 	}
-
-	p := &Parser{Data: c}
 
 	return p
 }
 
+// Parse using compose-go parser, adapt a bit the Project and set Appname.
 func (p *Parser) Parse(appname string) {
-	Appname = appname
 
-	services := make(map[string][]string)
-	// get the service list, to be sure that everything is ok
+	// Reminder:
+	// - set Appname
+	// - loas services
 
-	// fix ugly types
-	for _, s := range p.Data.Services {
-		parseEnv(s)
-		parseCommand(s)
-		parseEnvFiles(s)
-		parseHealthCheck(s)
+	options, err := cli.NewProjectOptions(nil,
+		cli.WithDefaultConfigPath,
+		cli.WithNormalization(true),
+		cli.WithInterpolation(true),
+		cli.WithResolvedPaths(true),
+	)
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	c := p.Data
-	for name, s := range c.Services {
-		if portlabel, ok := s.Labels[helm.LABEL_PORT]; ok {
-			services := strings.Split(portlabel, ",")
-			for _, serviceport := range services {
-				portexists := false
-				for _, found := range s.Ports {
-					if found == serviceport {
-						portexists = true
-					}
-				}
-				if !portexists {
-					s.Ports = append(s.Ports, serviceport)
-				}
-			}
-		}
-		if len(s.Ports) > 0 {
-			services[name] = s.Ports
-		}
+	proj, err := cli.ProjectFromOptions(options)
+	if err != nil {
+		log.Fatal("Failed to create project", err)
 	}
 
-	// check if dependencies are resolved
-	missing := []string{}
-	for name, s := range c.Services {
-		for _, dep := range s.DependsOn {
-			if _, ok := services[dep]; !ok {
-				missing = append(missing, fmt.Sprintf(
-					"The service \"%s\" hasn't got "+
-						"declared port for dependency from \"%s\" - please "+
-						"append a %s label or a \"ports\" section in the docker-compose file",
-					dep, name, helm.LABEL_PORT),
-				)
-			}
-		}
-	}
-
-	if len(missing) > 0 {
-		log.Fatal(strings.Join(missing, "\n"))
-	}
-
-	// check if all "image" properties are set
-	missing = []string{}
-	for name, s := range c.Services {
-		if s.Image == "" {
-			missing = append(missing, fmt.Sprintf(
-				"The service \"%s\" hasn't got "+
-					"an image property - please "+
-					"append an image property in the docker-compose file",
-				name,
-			))
-		}
-	}
-	if len(missing) > 0 {
-		log.Fatal(strings.Join(missing, "\n"))
-	}
-
-	// check the build element
-	for name, s := range c.Services {
-		if s.RawBuild == nil {
-			continue
-		}
-
-		fmt.Println(ICON_EXCLAMATION +
-			" \x1b[33myou will need to build and push your image named \"" + s.Image + "\"" +
-			" for the \"" + name + "\" service \x1b[0m")
-
-	}
-
+	Appname = proj.Name
+	p.Data = proj
+	CURRENT_DIR = p.Data.WorkingDir
 }
 
-// manage environment variables, if the type is map[string]string so we can use it, else we need to split "=" sign
-// and apply this in env variable
-func parseEnv(s *Service) {
-	env := make(map[string]string)
-	if s.RawEnvironment == nil {
-		return
-	}
-	switch s.RawEnvironment.(type) {
-	case map[string]string:
-		env = s.RawEnvironment.(map[string]string)
-	case map[string]interface{}:
-		for k, v := range s.RawEnvironment.(map[string]interface{}) {
-			// force to string
-			env[k] = fmt.Sprintf("%v", v)
-		}
-	case []interface{}:
-		for _, v := range s.RawEnvironment.([]interface{}) {
-			// Splot the value of the env variable with "="
-			parts := strings.Split(v.(string), "=")
-			env[parts[0]] = parts[1]
-		}
-	case string:
-		parts := strings.Split(s.RawEnvironment.(string), "=")
-		env[parts[0]] = parts[1]
-	default:
-		log.Printf("%+v, %T", s.RawEnvironment, s.RawEnvironment)
-		log.Fatal("Environment type not supported")
-	}
-	s.Environment = env
-}
-
-func parseCommand(s *Service) {
-
-	if s.RawCommand == nil {
-		return
-	}
-
-	// following the command type, it can be a "slice" or a simple sting, so we need to check it
-	switch v := s.RawCommand.(type) {
-	case string:
-		// use shlex to parse the command
-		command, err := shlex.Split(v)
-		if err != nil {
-			log.Fatal(err)
-		}
-		s.Command = command
-	case []string:
-		s.Command = v
-	case []interface{}:
-		for _, v := range v {
-			s.Command = append(s.Command, v.(string))
-		}
-	default:
-		log.Printf("%+v %T", s.RawCommand, s.RawCommand)
-		log.Fatal("Command type not supported")
-	}
-}
-
-func parseEnvFiles(s *Service) {
-	// Same than parseEnv, but for env files
-	if s.RawEnvFiles == nil {
-		return
-	}
-	envfiles := make([]string, 0)
-	switch v := s.RawEnvFiles.(type) {
-	case []string:
-		envfiles = v
-	case []interface{}:
-		for _, v := range v {
-			envfiles = append(envfiles, v.(string))
-		}
-	case string:
-		envfiles = append(envfiles, v)
-	default:
-		log.Printf("%+v %T", s.RawEnvFiles, s.RawEnvFiles)
-		log.Fatal("EnvFile type not supported")
-	}
-	s.EnvFiles = envfiles
-}
-
-func parseHealthCheck(s *Service) {
-	// HealthCheck command can be a string or slice of strings
-	if s.HealthCheck == nil {
-		return
-	}
-	if s.HealthCheck.RawTest == nil {
-		return
-	}
-
-	switch v := s.HealthCheck.RawTest.(type) {
-	case string:
-		c, err := shlex.Split(v)
-		if err != nil {
-			log.Fatal(err)
-		}
-		s.HealthCheck = &HealthCheck{
-			Test: c,
-		}
-
-	case []string:
-		s.HealthCheck = &HealthCheck{
-			Test: v,
-		}
-
-	case []interface{}:
-		for _, v := range v {
-			s.HealthCheck.Test = append(s.HealthCheck.Test, v.(string))
-		}
-	default:
-		log.Printf("%+v %T", s.HealthCheck.RawTest, s.HealthCheck.RawTest)
-		log.Fatal("HealthCheck type not supported")
-	}
+func GetCurrentDir() string {
+	return CURRENT_DIR
 }

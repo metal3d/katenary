@@ -1,7 +1,8 @@
 version: "3"
 
+# this example is absolutely not working, it's an example to see how it is converted
+# by Katenary
 services:
-
   webapp:
     image: php:7-apache
     environment:
@@ -12,7 +13,8 @@ services:
       # expose an ingress
       katenary.io/ingress: 80
       # DB_HOST is actually a service name
-      katenary.io/env-to-service: DB_HOST
+      katenary.io/mapenv: |
+        DB_HOST: {{ .Release.Name }}-database
     depends_on:
       - database
 

@@ -10,30 +10,38 @@ import (
 // InlineConfig is made to represent a configMap or a secret
 type InlineConfig interface {
 	AddEnvFile(filename string) error
+	AddEnv(key, val string) error
 	Metadata() *Metadata
 }
 
+// ConfigMap is made to represent a configMap with data.
 type ConfigMap struct {
 	*K8sBase `yaml:",inline"`
 	Data     map[string]string `yaml:"data"`
 }
 
-func NewConfigMap(name string) *ConfigMap {
+// NewConfigMap returns a new initialzed ConfigMap.
+func NewConfigMap(name, path string) *ConfigMap {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "ConfigMap"
-	base.Metadata.Name = RELEASE_NAME + "-" + name
+	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
+	if path != "" {
+		base.Metadata.Labels[K+"/path"] = path
+	}
 	return &ConfigMap{
 		K8sBase: base,
 		Data:    make(map[string]string),
 	}
 }
 
+// Metadata returns the metadata of the configMap.
 func (c *ConfigMap) Metadata() *Metadata {
 	return c.K8sBase.Metadata
 }
 
+// AddEnvFile adds an environment file to the configMap.
 func (c *ConfigMap) AddEnvFile(file string) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -52,28 +60,37 @@ func (c *ConfigMap) AddEnvFile(file string) error {
 		}
 		c.Data[parts[0]] = parts[1]
 	}
-
 	return nil
-
 }
 
+func (c *ConfigMap) AddEnv(key, val string) error {
+	c.Data[key] = val
+	return nil
+}
+
+// Secret is made to represent a secret with data.
 type Secret struct {
 	*K8sBase `yaml:",inline"`
 	Data     map[string]string `yaml:"data"`
 }
 
-func NewSecret(name string) *Secret {
+// NewSecret returns a new initialzed Secret.
+func NewSecret(name, path string) *Secret {
 	base := NewBase()
 	base.ApiVersion = "v1"
 	base.Kind = "Secret"
-	base.Metadata.Name = RELEASE_NAME + "-" + name
+	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
+	if path != "" {
+		base.Metadata.Labels[K+"/path"] = path
+	}
 	return &Secret{
 		K8sBase: base,
 		Data:    make(map[string]string),
 	}
 }
 
+// AddEnvFile adds an environment file to the secret.
 func (s *Secret) AddEnvFile(file string) error {
 	content, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -96,6 +113,14 @@ func (s *Secret) AddEnvFile(file string) error {
 	return nil
 
 }
+
+// Metadata returns the metadata of the secret.
 func (s *Secret) Metadata() *Metadata {
 	return s.K8sBase.Metadata
+}
+
+// AddEnv adds an environment variable to the secret.
+func (s *Secret) AddEnv(key, val string) error {
+	s.Data[key] = fmt.Sprintf(`{{ %s | b64enc }}`, val)
+	return nil
 }
