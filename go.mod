@@ -3,10 +3,9 @@ module katenary
 go 1.16
 
 require (
-	github.com/compose-spec/compose-go v1.2.4
+	github.com/compose-spec/compose-go v1.2.5
 	github.com/distribution/distribution/v3 v3.0.0-20220505155552-985711c1f414 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
-	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/spf13/cobra v1.4.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	golang.org/x/mod v0.5.1
