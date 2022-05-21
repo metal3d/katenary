@@ -50,8 +50,10 @@ func (c *ConfigMap) AddEnvFile(file string) error {
 
 	lines := strings.Split(string(content), "\n")
 	for _, l := range lines {
+		//Check if the line is a comment
+		isComment := strings.HasPrefix(l, "#")
 		l = strings.TrimSpace(l)
-		if len(l) == 0 {
+		if len(l) == 0 || isComment {
 			continue
 		}
 		parts := strings.SplitN(l, "=", 2)
