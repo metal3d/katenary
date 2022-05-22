@@ -77,6 +77,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				service.Ports = make([]types.ServicePortConfig, 0)
 			}
 			for _, port := range strings.Split(ports, ",") {
+				port = strings.TrimSpace(port)
 				target, err := strconv.Atoi(port)
 				if err != nil {
 					log.Fatal(err)
