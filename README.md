@@ -1,5 +1,5 @@
-<div style="text-align:center;margin: auto">
-    <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" />
+<div style="text-align:center; margin: auto" align="center">
+    <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
 Katenary is a tool to help transforming `docker-compose` files to a working Helm Chart for Kubernetes.
