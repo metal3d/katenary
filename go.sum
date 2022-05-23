@@ -30,8 +30,8 @@ github.com/bugsnag/osext v0.0.0-20130617224835-0dd3f918b21b/go.mod h1:obH5gd0Bsq
 github.com/bugsnag/panicwrap v0.0.0-20151223152923-e2c28503fcd0/go.mod h1:D/8v3kj0zr8ZAKg1AQ6crr+5VwKN5eIywRkfhyM/+dE=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
-github.com/compose-spec/compose-go v1.2.5 h1:yGaACRJrWTQMFW89/ck2o1qd3gIxAji4EQkgewH3hqc=
-github.com/compose-spec/compose-go v1.2.5/go.mod h1:a/H2RY5UejNRhzbNXHygSAxBARTpLmLlaCkh58xfStM=
+github.com/compose-spec/compose-go v1.2.6 h1:9l2Y/yNn/OSngnkUBP8h8CchTmMcf1MW4BeUEaZXy8k=
+github.com/compose-spec/compose-go v1.2.6/go.mod h1:cg8yTeI+7rfQsEW9XHOLx0sNVjGKEXr6XwVB4fxmG3A=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=
 github.com/coreos/etcd v3.3.10+incompatible/go.mod h1:uF7uidLiAD3TWHmW31ZFd/JWoc32PjwdhPthX9715RE=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
