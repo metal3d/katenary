@@ -573,6 +573,15 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		secretsFiles = strings.Split(v, ",")
 	}
 
+	var secretVars []string
+	if v, ok := s.Labels[helm.LABEL_SECRETVARS]; ok {
+		secretVars = strings.Split(v, ",")
+	}
+
+	for i, s := range secretVars {
+		secretVars[i] = strings.TrimSpace(s)
+	}
+
 	// manage environment files (env_file in compose)
 	for _, envfile := range s.EnvFile {
 		f := PathToName(envfile)
@@ -594,7 +603,7 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 		}
 
 		envfile = filepath.Join(compose.GetCurrentDir(), envfile)
-		if err := store.AddEnvFile(envfile); err != nil {
+		if err := store.AddEnvFile(envfile, secretVars); err != nil {
 			logger.ActivateColors = true
 			logger.Red(err.Error())
 			logger.ActivateColors = false
