@@ -7,7 +7,7 @@ import (
 )
 
 // replaceChars replaces some chars in a string.
-const replaceChars = `[^a-zA-Z0-9._]`
+const replaceChars = `[^a-zA-Z0-9_]+`
 
 // GetRelPath return the relative path from the root of the project.
 func GetRelPath(path string) string {

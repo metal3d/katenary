@@ -264,6 +264,10 @@ func buildConfigMapFromPath(name, path string) *helm.ConfigMap {
 			c, _ := ioutil.ReadFile(f)
 			files[filename] = string(c)
 		}
+	} else {
+		c, _ := ioutil.ReadFile(path)
+		_, filename := filepath.Split(path)
+		files[filename] = string(c)
 	}
 
 	cm := helm.NewConfigMap(name, GetRelPath(path))
@@ -356,7 +360,6 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			pointToFile := ""
 			if !stat.IsDir() {
 				pointToFile = filepath.Base(volname)
-				volname = filepath.Dir(volname)
 			}
 
 			// the volume is a path and it's explicitally asked to be a configmap in labels
@@ -364,6 +367,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + PathToName(volname)
 
 			// build a configmapRef for this volume
+			volname := PathToName(volname)
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"configMap": map[string]string{
@@ -386,7 +390,8 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 				fileGeneratorChan <- cm
 			}
 		} else {
-			// rmove minus sign from volume name
+			// It's a Volume. Mount this from PVC to declare.
+
 			volname = strings.ReplaceAll(volname, "-", "")
 
 			isEmptyDir := false
