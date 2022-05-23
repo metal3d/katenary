@@ -8,7 +8,7 @@ Katenary is a tool to help transforming `docker-compose` files to a working Helm
 
 This project is partially made at [Smile](https://www.smile.eu) 
 
-<div style="text-align:center">
+<div style="text-align:center" align="center">
 <a href="https://www.smile.eu"><img src="./misc/Logo_Smile.png" alt="Smile Logo" width="250" /></a>
 </div>
 
