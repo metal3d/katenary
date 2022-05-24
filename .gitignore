@@ -8,3 +8,4 @@ docker-compose*
 !examples/**/docker-compose*
 .credentials
 release.id
+configs/
