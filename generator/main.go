@@ -788,7 +788,14 @@ func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.
 
 // Generate a container in deployment with all needed objects (volumes, secrets, env, ...).
 // The deployName shoud be the name of the deployment, we cannot get it from Metadata as this is a variable name.
-func newContainerForDeployment(deployName, containerName string, deployment *helm.Deployment, s *types.ServiceConfig, fileGeneratorChan HelmFileGenerator) *helm.Container {
+func newContainerForDeployment(
+	deployName, containerName string,
+	deployment *helm.Deployment,
+	s *types.ServiceConfig,
+	fileGeneratorChan HelmFileGenerator) *helm.Container {
+
+	buildCrontab(deployName, deployment, s, fileGeneratorChan)
+
 	container := helm.NewContainer(containerName, s.Image, s.Environment, s.Labels)
 
 	applyEnvMapLabel(s, container)

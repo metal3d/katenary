@@ -12,6 +12,7 @@ func NewDeployment(name string) *Deployment {
 	d.K8sBase.ApiVersion = "apps/v1"
 	d.K8sBase.Kind = "Deployment"
 	d.K8sBase.Metadata.Labels[K+"/component"] = name
+	d.K8sBase.Metadata.Labels[K+"/resource"] = "deployment"
 	return d
 }
 

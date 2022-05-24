@@ -18,6 +18,7 @@ const (
 	LABEL_EMPTYDIRS   = K + "/empty-dirs"
 	LABEL_IGNORE      = K + "/ignore"
 	LABEL_SECRETVARS  = K + "/secret-vars"
+	LABEL_CRON        = K + "/crontabs"
 
 	//deprecated: use LABEL_MAP_ENV instead
 	LABEL_ENV_SERVICE = K + "/env-to-service"
@@ -37,6 +38,7 @@ func GetLabelsDocumentation() string {
 {{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
 {{.LABEL_VOLUMEFROM  | printf "%-33s"}}: specifies that the volumes to be mounted from the given service (yaml style)
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
+{{.LABEL_CRON        | printf "%-33s"}}: specifies that the given cronjobs should be deployed (yaml style, array)
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
 {{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
@@ -56,6 +58,7 @@ func GetLabelsDocumentation() string {
 		"LABEL_IGNORE":      LABEL_IGNORE,
 		"LABEL_MAP_ENV":     LABEL_MAP_ENV,
 		"LABEL_SECRETVARS":  LABEL_SECRETVARS,
+		"LABEL_CRON":        LABEL_CRON,
 	})
 	return buff.String()
 }
