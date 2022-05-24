@@ -28,6 +28,8 @@ const (
 	ICON_CONF    = "📝"
 	ICON_STORE   = "⚡"
 	ICON_INGRESS = "🌐"
+	ICON_RBAC    = "🔑"
+	ICON_CRON    = "🕒"
 )
 
 // Values is kept in memory to create a values.yaml file.

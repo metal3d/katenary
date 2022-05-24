@@ -28,22 +28,27 @@ const (
 func GetLabelsDocumentation() string {
 	t, _ := template.New("labels").Parse(`
 # Labels
-{{.LABEL_IGNORE      | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart
-{{.LABEL_SECRETVARS  | printf "%-33s"}}: secret variables to push on a secret file
-{{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap
-{{.LABEL_MAP_ENV     | printf "%-33s"}}: map environment variable to a template string (yaml style)
+{{.LABEL_IGNORE      | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart (bool)
+{{.LABEL_SECRETVARS  | printf "%-33s"}}: secret variables to push on a secret file (coma separated)
+{{.LABEL_ENV_SECRET  | printf "%-33s"}}: set the given file names as a secret instead of configmap (coma separated)
+{{.LABEL_MAP_ENV     | printf "%-33s"}}: map environment variable to a template string (yaml style, object)
 {{.LABEL_PORT        | printf "%-33s"}}: set the ports to expose as a service (coma separated)
 {{.LABEL_INGRESS     | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
 {{.LABEL_VOL_CM      | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
-{{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name
+{{.LABEL_SAMEPOD     | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the given service name (string)
 {{.LABEL_VOLUMEFROM  | printf "%-33s"}}: specifies that the volumes to be mounted from the given service (yaml style)
 {{.LABEL_EMPTYDIRS   | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
 {{.LABEL_CRON        | printf "%-33s"}}: specifies that the given cronjobs should be deployed (yaml style, array)
+{{ printf "%-34s" ""}} The form is the following:
+{{ printf "%-34s" ""}} - command: the command to run
+{{ printf "%-34s" ""}}   schedule: the schedule to run the command (e.g. "@daily" or "*/1 * * * *")
+{{ printf "%-34s" ""}}   image: the image to use for the command (default to "bitnami/kubectl")
+{{ printf "%-34s" ""}}   allPods: true if you want to run the command on all pods (default to false)
 {{.LABEL_HEALTHCHECK | printf "%-33s"}}: specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
 {{ printf "%-34s" ""}} You can use these form of label values:
-{{ printf "%-35s" ""}}- "http://[not used address][:port][/path]" to specify an http healthcheck
-{{ printf "%-35s" ""}}- "tcp://[not used address]:port" to specify a tcp healthcheck
-{{ printf "%-35s" ""}}- other string is condidered as a "command" healthcheck
+{{ printf "%-35s" ""}} "http://[not used address][:port][/path]" to specify an http healthcheck
+{{ printf "%-35s" ""}} "tcp://[not used address]:port" to specify a tcp healthcheck
+{{ printf "%-35s" ""}} other string is condidered as a "command" healthcheck
     `)
 	buff := bytes.NewBuffer(nil)
 	t.Execute(buff, map[string]string{

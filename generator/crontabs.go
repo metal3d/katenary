@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"katenary/helm"
+	"katenary/logger"
 	"log"
 
 	"github.com/compose-spec/compose-go/types"
@@ -23,6 +24,7 @@ kubectl exec -i $pod -c %s -- sh -c '%s'`
 type CronDef struct {
 	Command  string `yaml:"command"`
 	Schedule string `yaml:"schedule"`
+	Image    string `yaml:"image"`
 	Multi    bool   `yaml:"allPods,omitempty"`
 }
 
@@ -40,7 +42,6 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
-	log.Println(crons)
 
 	// create a serviceAccount
 	sa := helm.NewServiceAccount(deployName)
@@ -51,9 +52,12 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 	roleBinding := helm.NewRoleBinding(deployName, sa, role)
 
 	// make generation
+	logger.Magenta(ICON_RBAC, "Generating ServiceAccount, Role and RoleBinding for cron jobs", deployName)
 	fileGeneratorChan <- sa
 	fileGeneratorChan <- role
 	fileGeneratorChan <- roleBinding
+
+	index := len(crons) - 1 // will be 0 when there is only one cron - made to name crons
 
 	// create crontabs
 	for _, cron := range crons {
@@ -69,14 +73,29 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		cmd = fmt.Sprintf(cmd, s.Name, cron.Command)
 		cmd = podget + cmd
 
+		if cron.Image == "" {
+			cron.Image = "bitnami/kubectl"
+		}
+
+		name := deployName
+		if index > 0 {
+			name = fmt.Sprintf("%s-%d", deployName, index)
+			index++
+		}
+
 		cronTab := helm.NewCrontab(
-			deployName,
-			"bitnami/kubectl",
+			name,
+			cron.Image,
 			cmd,
 			cron.Schedule,
 			sa,
 		)
 		// add crontab
+		suffix := ""
+		if index > 0 {
+			suffix = fmt.Sprintf("%d", index)
+		}
+		logger.Magenta(ICON_CRON, "Generating crontab", deployName, suffix)
 		fileGeneratorChan <- cronTab
 	}
 
