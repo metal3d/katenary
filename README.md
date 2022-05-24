@@ -173,20 +173,32 @@ services:
 These labels could be found by `katenary show-labels`, and can be placed as "labels" inside your docker-compose file:
 
 ```
-katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart
-katenary.io/secret-vars          : secret variables to push on a secret file
-katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap
-katenary.io/mapenv               : map environment variable to a template string (yaml style)
+# Labels
+katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart (bool)
+katenary.io/secret-vars          : secret variables to push on a secret file (coma separated)
+katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap (coma separated)
+katenary.io/mapenv               : map environment variable to a template string (yaml style, object)
 katenary.io/ports                : set the ports to expose as a service (coma separated)
 katenary.io/ingress              : set the port to expose in an ingress (coma separated)
 katenary.io/configmap-volumes    : specifies that the volumes points on a configmap (coma separated)
-katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the given service name
-katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of persistentVolumeClaim (coma separated)
-katenary.io/healthcheck          : specifies that the container should be monitored by a healthcheck, **it overrides the docker-compose healthcheck**. 
+katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the
+                                   given service name (string)
+katenary.io/volume-from          : specifies that the volumes to be mounted from the given service (yaml style)
+katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of
+                                   persistentVolumeClaim (coma separated)
+katenary.io/crontabs             : specifies a cronjobs to create (yaml style, array) - this will create a
+                                   cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
+                                   The form is the following:
+                                   - command: the command to run
+                                     schedule: the schedule to run the command (e.g. "@daily" or "*/1 * * * *")
+                                     image: the image to use for the command (default to "bitnami/kubectl")
+                                     allPods: true if you want to run the command on all pods (default to false)
+katenary.io/healthcheck          : specifies that the container should be monitored by a healthcheck,
+                                   **it overrides the docker-compose healthcheck**. 
                                    You can use these form of label values:
-                                   - "http://[not used address][:port][/path]" to specify an http healthcheck
-                                   - "tcp://[not used address]:port" to specify a tcp healthcheck
-                                   - other string is condidered as a "command" healthcheck
+                                     -> http://[ignored][:port][/path] to specify an http healthcheck
+                                     -> tcp://[ignored]:port to specify a tcp healthcheck
+                                     -> other string is condidered as a "command" healthcheck
 ```
 
 # What a name...
