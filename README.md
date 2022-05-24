@@ -2,9 +2,9 @@
     <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
-Katenary is a tool to help transforming `docker-compose` files to a working Helm Chart for Kubernetes.
+Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
 
-> **Important Note:** Katenary is a tool to help building Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
+> **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
 
 This project is partially made at [Smile](https://www.smile.eu) 
 
@@ -59,7 +59,7 @@ Then place the `katenary` binary file inside your PATH.
 
 We strongly recommand to add the "completion" call to you SHELL using the common bashrc, or whatever the profile file you use.
 
-E.g. :
+E.g.:
 
 ```bash
 # bash in ~/.bashrc file
@@ -122,11 +122,11 @@ What can be interpreted by Katenary:
 - Services with "image" section (cannot work with "build" section)
 - **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation to Helm Chart because there is (for now) no way to make it working (see below for resolution)
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
-- `depends_on` will add init containers to wait for the depending service (using the first port)
-- `env_file` list will create a configMap object per environemnt file (⚠ todo: the "to-service" label doesn't work with configMap for now)
+- `depends_on` will add init containers to wait for the depending on service (using the first port)
+- `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with configMap for now)
 - some labels can help to bind values, for example:
-    - `katenary.io/ingress: 80` will expose the port 80 in a ingress
-    - `katenary.io/mapenv: |`: allow to map environment to something else than the given value in the compose file 
+    - `katenary.io/ingress: 80` will expose the port 80 in an ingress
+    - `katenary.io/mapenv: |`: allow mapping environment to something else than the given value in the compose file 
 
 Exemple of a possible `docker-compose.yaml` file:
 
