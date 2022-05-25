@@ -43,6 +43,10 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		log.Fatalf("error: %v", err)
 	}
 
+	if len(crons) == 0 {
+		return
+	}
+
 	// create a serviceAccount
 	sa := helm.NewServiceAccount(deployName)
 	// create a role
