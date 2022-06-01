@@ -35,7 +35,7 @@ func NewServicePort(port, target int) *ServicePort {
 		Protocol:   "TCP",
 		Port:       port,
 		TargetPort: port,
-		Name:       "port-" + strconv.Itoa(port),
+		Name:       "port-" + strconv.Itoa(target),
 	}
 }
 
