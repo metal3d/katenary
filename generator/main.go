@@ -740,9 +740,16 @@ func setEnvToValues(name string, s *types.ServiceConfig, c *helm.Container) {
 		return
 	}
 
-	AddValues(name, map[string]EnvVal{"environment": env})
+	valuesEnv := make(map[string]interface{})
+	for k, v := range env {
+		k = strings.ReplaceAll(k, ".", "_")
+		valuesEnv[k] = v
+	}
+
+	AddValues(name, map[string]EnvVal{"environment": valuesEnv})
 	for k := range env {
-		v := "{{ tpl .Values." + name + ".environment." + k + " . }}"
+		fixedK := strings.ReplaceAll(k, ".", "_")
+		v := "{{ tpl .Values." + name + ".environment." + fixedK + " . }}"
 		s.Environment[k] = &v
 		touched := false
 		for _, c := range c.Env {
