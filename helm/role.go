@@ -1,8 +1,8 @@
 package helm
 
 type Rule struct {
-	ApiGroup  []string `yaml:"apiGroup,omitempty"`
-	Resources []string `yaml:"resource,omitempty"`
+	ApiGroup  []string `yaml:"apiGroups,omitempty"`
+	Resources []string `yaml:"resources,omitempty"`
 	Verbs     []string `yaml:"verbs,omitempty"`
 }
 
