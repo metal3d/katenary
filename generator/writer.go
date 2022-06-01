@@ -4,6 +4,7 @@ import (
 	"katenary/compose"
 	"katenary/generator/writers"
 	"katenary/helm"
+	"katenary/tools"
 	"log"
 	"os"
 	"path/filepath"
@@ -175,7 +176,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				// there could be several files, so let's force the filename
 				name := c.(helm.Named).Name() + "-" + c.GetType()
 				suffix := c.GetPathRessource()
-				suffix = PathToName(suffix)
+				suffix = tools.PathToName(suffix)
 				name += suffix
 				name = PrefixRE.ReplaceAllString(name, "")
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)

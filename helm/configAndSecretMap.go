@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"katenary/tools"
 	"strings"
 )
 
@@ -31,8 +32,7 @@ func NewConfigMap(name, path string) *ConfigMap {
 	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
 	if path != "" {
-		//base.Metadata.Labels[K+"/path"] = path
-		base.Metadata.Labels[K+"/path"] = `{{ "` + path + `" | quote }}`
+		base.Metadata.Labels[K+"/path"] = tools.PathToName(path)
 	}
 	return &ConfigMap{
 		K8sBase: base,
@@ -97,7 +97,7 @@ func NewSecret(name, path string) *Secret {
 	base.Metadata.Name = ReleaseNameTpl + "-" + name
 	base.Metadata.Labels[K+"/component"] = name
 	if path != "" {
-		base.Metadata.Labels[K+"/path"] = `{{ "` + path + `" | quote }}`
+		base.Metadata.Labels[K+"/path"] = tools.PathToName(path)
 	}
 	return &Secret{
 		K8sBase: base,

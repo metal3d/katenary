@@ -6,6 +6,7 @@ import (
 	"katenary/compose"
 	"katenary/helm"
 	"katenary/logger"
+	"katenary/tools"
 	"log"
 	"net/url"
 	"os"
@@ -272,7 +273,7 @@ func buildConfigMapFromPath(name, path string) *helm.ConfigMap {
 		files[filename] = string(c)
 	}
 
-	cm := helm.NewConfigMap(name, GetRelPath(path))
+	cm := helm.NewConfigMap(name, tools.GetRelPath(path))
 	cm.Data = files
 	return cm
 }
@@ -337,7 +338,7 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 
 		isConfigMap := false
 		for _, cmVol := range configMapsVolumes {
-			if GetRelPath(volname) == cmVol {
+			if tools.GetRelPath(volname) == cmVol {
 				isConfigMap = true
 				break
 			}
@@ -366,10 +367,10 @@ func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *
 
 			// the volume is a path and it's explicitally asked to be a configmap in labels
 			cm := buildConfigMapFromPath(name, volname)
-			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + PathToName(volname)
+			cm.K8sBase.Metadata.Name = helm.ReleaseNameTpl + "-" + name + "-" + tools.PathToName(volname)
 
 			// build a configmapRef for this volume
-			volname := PathToName(volname)
+			volname := tools.PathToName(volname)
 			volumes = append(volumes, map[string]interface{}{
 				"name": volname,
 				"configMap": map[string]string{
@@ -586,7 +587,7 @@ func prepareEnvFromFiles(name string, s *types.ServiceConfig, container *helm.Co
 
 	// manage environment files (env_file in compose)
 	for _, envfile := range s.EnvFile {
-		f := PathToName(envfile)
+		f := tools.PathToName(envfile)
 		f = strings.ReplaceAll(f, ".env", "")
 		isSecret := false
 		for _, s := range secretsFiles {
@@ -876,7 +877,7 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 	for name, volumes := range volumesFrom {
 		for volumeName := range volumes {
 			initianame := volumeName
-			volumeName = PathToName(volumeName)
+			volumeName = tools.PathToName(volumeName)
 			// get the volume from the deployment container "name"
 			var ctn *helm.Container
 			for _, c := range deployment.Spec.Template.Spec.Containers {
