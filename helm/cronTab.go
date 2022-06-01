@@ -35,11 +35,6 @@ func NewCrontab(name, image, command, schedule string, serviceAccount *ServiceAc
 	cron.K8sBase.ApiVersion = "batch/v1"
 	cron.K8sBase.Kind = "CronJob"
 
-	//cmd, err := shlex.Split(command)
-	//if err != nil {
-	//	panic(err)
-	//}
-
 	cron.K8sBase.Metadata.Name = ReleaseNameTpl + "-" + name
 	cron.K8sBase.Metadata.Labels[K+"/component"] = name
 	cron.Spec.Schedule = schedule
