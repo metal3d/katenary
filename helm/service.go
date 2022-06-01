@@ -1,5 +1,7 @@
 package helm
 
+import "strconv"
+
 // Service is a Kubernetes service.
 type Service struct {
 	*K8sBase `yaml:",inline"`
@@ -24,6 +26,7 @@ type ServicePort struct {
 	Protocol   string `yaml:"protocol"`
 	Port       int    `yaml:"port"`
 	TargetPort int    `yaml:"targetPort"`
+	Name       string `yaml:"name"`
 }
 
 // NewServicePort creates a new initialized service port.
@@ -32,6 +35,7 @@ func NewServicePort(port, target int) *ServicePort {
 		Protocol:   "TCP",
 		Port:       port,
 		TargetPort: port,
+		Name:       "port-" + strconv.Itoa(port),
 	}
 }
 
