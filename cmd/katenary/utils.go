@@ -98,14 +98,22 @@ func Convert(composeFile, appVersion, appName, chartDir, chartVersion string, fo
 		fmt.Println("No compose file given")
 		return
 	}
-	_, err := os.Stat(composeFile)
-	if err != nil {
-		fmt.Println("No compose file found")
-		os.Exit(1)
+
+	composeFiles := strings.Split(composeFile, ",")
+	for i, c := range composeFiles {
+		composeFiles[i] = strings.TrimSpace(c)
+	}
+
+	for _, composeFile := range composeFiles {
+		_, err := os.Stat(composeFile)
+		if err != nil {
+			fmt.Println("Error reading file:", composeFile)
+			os.Exit(1)
+		}
 	}
 
 	// Parse the compose file now
-	p := compose.NewParser(composeFile)
+	p := compose.NewParser(composeFiles)
 	p.Parse(appName)
 
 	dirname := filepath.Join(chartDir, appName)
