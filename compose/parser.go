@@ -53,7 +53,10 @@ func NewParser(filename []string, content ...string) *Parser {
 		}
 		// add the file at first position
 		if !found {
-			cli.DefaultFileNames = append(filename, cli.DefaultFileNames...)
+			cli.DefaultFileNames = append([]string{filename[0]}, cli.DefaultFileNames...)
+		}
+		if len(filename) > 1 {
+			cli.DefaultOverrideFileNames = append(filename[1:], cli.DefaultOverrideFileNames...)
 		}
 	}
 
