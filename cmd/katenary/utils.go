@@ -93,15 +93,14 @@ func detectGitVersion() (string, error) {
 	return defaulVersion, errors.New("git log failed")
 }
 
-func Convert(composeFile, appVersion, appName, chartDir, chartVersion string, force bool) {
+func Convert(composeFile []string, appVersion, appName, chartDir, chartVersion string, force bool) {
 	if len(composeFile) == 0 {
 		fmt.Println("No compose file given")
 		return
 	}
 
-	composeFiles := strings.Split(composeFile, ",")
-	for i, c := range composeFiles {
-		composeFiles[i] = strings.TrimSpace(c)
+	for i, c := range composeFile {
+		composeFile[i] = strings.TrimSpace(c)
 	}
 
 	for _, composeFile := range composeFiles {

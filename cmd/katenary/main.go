@@ -61,9 +61,9 @@ func main() {
 			"- if it's not defined, so the 0.0.1 version is used",
 		Run: func(c *cobra.Command, args []string) {
 			force := c.Flag("force").Changed
+			composeFile := c.Flags().StringArrayP("compose-file", "c", []string{}, "compose file to convert, can be use several times to override previous file (default: docker-compose.yml)")
 			// TODO: is there a way to get typed values from cobra?
 			appversion := c.Flag("app-version").Value.String()
-			composeFile := c.Flag("compose-file").Value.String()
 			appName := c.Flag("app-name").Value.String()
 			chartVersion := c.Flag("chart-version").Value.String()
 			chartDir := c.Flag("output-dir").Value.String()
@@ -71,7 +71,7 @@ func main() {
 			if err != nil {
 				writers.IndentSize = indentation
 			}
-			Convert(composeFile, appversion, appName, chartDir, chartVersion, force)
+			Convert(*composeFile, appversion, appName, chartDir, chartVersion, force)
 		},
 	}
 	convertCmd.Flags().BoolP(
