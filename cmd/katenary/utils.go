@@ -93,19 +93,24 @@ func detectGitVersion() (string, error) {
 	return defaulVersion, errors.New("git log failed")
 }
 
-func Convert(composeFile, appVersion, appName, chartDir, chartVersion string, force bool) {
+func Convert(composeFile []string, appVersion, appName, chartDir, chartVersion string, force bool) {
 	if len(composeFile) == 0 {
 		fmt.Println("No compose file given")
 		return
 	}
-	_, err := os.Stat(composeFile)
-	if err != nil {
-		fmt.Println("No compose file found")
-		os.Exit(1)
+
+	composeFiles := composeFile
+	ComposeFile = composeFiles[0]
+
+	for _, cf := range composeFiles {
+		if _, err := os.Stat(cf); err != nil {
+			fmt.Printf("Compose file %s not found\n", cf)
+			return
+		}
 	}
 
 	// Parse the compose file now
-	p := compose.NewParser(composeFile)
+	p := compose.NewParser(composeFiles)
 	p.Parse(appName)
 
 	dirname := filepath.Join(chartDir, appName)

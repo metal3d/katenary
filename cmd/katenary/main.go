@@ -50,6 +50,7 @@ func main() {
 	}
 
 	// convert command, need some flags
+	var composeFiles *[]string
 	convertCmd := &cobra.Command{
 		Use:   "convert",
 		Short: "Convert docker-compose to helm chart",
@@ -61,9 +62,7 @@ func main() {
 			"- if it's not defined, so the 0.0.1 version is used",
 		Run: func(c *cobra.Command, args []string) {
 			force := c.Flag("force").Changed
-			// TODO: is there a way to get typed values from cobra?
 			appversion := c.Flag("app-version").Value.String()
-			composeFile := c.Flag("compose-file").Value.String()
 			appName := c.Flag("app-name").Value.String()
 			chartVersion := c.Flag("chart-version").Value.String()
 			chartDir := c.Flag("output-dir").Value.String()
@@ -71,17 +70,17 @@ func main() {
 			if err != nil {
 				writers.IndentSize = indentation
 			}
-			Convert(composeFile, appversion, appName, chartDir, chartVersion, force)
+			Convert(*composeFiles, appversion, appName, chartDir, chartVersion, force)
 		},
 	}
+	composeFiles = convertCmd.Flags().StringArrayP(
+		"compose-file", "c", []string{ComposeFile}, "compose file to convert, can be use several times to override previous file. Order is important!")
 	convertCmd.Flags().BoolP(
 		"force", "f", false, "force overwrite of existing output files")
 	convertCmd.Flags().StringP(
 		"app-version", "a", AppVersion, "app version")
 	convertCmd.Flags().StringP(
 		"chart-version", "v", ChartVersion, "chart version")
-	convertCmd.Flags().StringP(
-		"compose-file", "c", ComposeFile, "docker compose file")
 	convertCmd.Flags().StringP(
 		"app-name", "n", AppName, "application name")
 	convertCmd.Flags().StringP(

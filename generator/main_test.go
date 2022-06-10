@@ -127,7 +127,7 @@ func setUp(t *testing.T) (string, *compose.Parser) {
 	}
 
 	composefile := filepath.Join(tmpwork, "docker-compose.yaml")
-	p := compose.NewParser(composefile, DOCKER_COMPOSE_YML)
+	p := compose.NewParser([]string{composefile}, DOCKER_COMPOSE_YML)
 
 	// create envfile for "useenvfile" service
 	err = os.Mkdir(filepath.Join(tmpwork, "config"), 0777)
