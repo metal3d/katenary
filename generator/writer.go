@@ -174,7 +174,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 			case *helm.ConfigMap, *helm.Secret:
 				// there could be several files, so let's force the filename
-				name := c.(helm.Named).Name() + "-" + c.GetType()
+				name := c.(helm.Named).Name() + "." + c.GetType()
 				suffix := c.GetPathRessource()
 				suffix = tools.PathToName(suffix)
 				name += suffix
@@ -182,7 +182,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)
 
 			default:
-				name := c.(helm.Named).Name() + "-" + c.GetType()
+				name := c.(helm.Named).Name() + "." + c.GetType()
 				name = PrefixRE.ReplaceAllString(name, "")
 				fname := filepath.Join(templatesDir, name+".yaml")
 				fp, err := os.Create(fname)
