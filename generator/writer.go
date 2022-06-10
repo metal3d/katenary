@@ -242,26 +242,27 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 	enc = yaml.NewEncoder(buff)
 	enc.SetIndent(writers.IndentSize)
 	chart := map[string]interface{}{
-		"0apiVersion":  "v2",
-		"1name":        appName,
-		"2description": "A helm chart for " + appName,
-		"3type":        "application",
-		"4version":     chartVersion,
-		"5appVersion":  appVersion,
+		"0-apiVersion":  "v2",
+		"1-name":        appName,
+		"2-description": "A helm chart for " + appName,
+		"3-type":        "application",
+		"4-version":     chartVersion,
+		"5-appVersion":  appVersion,
 	}
 	if len(helmDependencies) > 0 {
-		chart["6dependencies"] = helmDependencies
+		chart["6-dependencies"] = helmDependencies
 	}
 	enc.Encode(chart)
 
 	// and now that the yaml is written in right order, remove each number
 	// of lines to write them in chart file...
+	lineNumRegExp := regexp.MustCompile(`^(\d+)-`)
+	lines := []string{}
 	for _, line := range strings.Split(buff.String(), "\n") {
-		if line == "" {
-			continue
-		}
-		chartFile.WriteString(line[1:] + "\n")
+		line = lineNumRegExp.ReplaceAllString(line, "")
+		lines = append(lines, line)
 	}
+	chartFile.WriteString(strings.Join(lines, "\n"))
 
 	// And finally, create a NOTE.txt file
 	noteFile, err := os.Create(filepath.Join(templatesDir, "NOTES.txt"))
