@@ -182,7 +182,9 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)
 
 			default:
-				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				name := c.(helm.Named).Name() + "-" + c.GetType()
+				name = PrefixRE.ReplaceAllString(name, "")
+				fname := filepath.Join(templatesDir, name+".yaml")
 				fp, err := os.Create(fname)
 				if err != nil {
 					log.Fatal(err)

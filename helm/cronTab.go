@@ -50,15 +50,21 @@ func NewCrontab(name, image, command, schedule string, serviceAccount *ServiceAc
 	cron.Spec.JobTemplate.Spec.Template.Spec = Job{
 		ServiceAccount:     serviceAccount.Name(),
 		ServiceAccountName: serviceAccount.Name(),
-		Containers: []Container{
-			{
-				Name:    name,
-				Image:   image,
-				Command: []string{"sh", "-c", command},
-			},
-		},
-		RestartPolicy: "OnFailure",
+		RestartPolicy:      "OnFailure",
+	}
+	if command != "" {
+		cron.AddCommand(command, image, name)
 	}
 
 	return cron
+}
+
+// AddCommand adds a command to the cron job
+func (c *CronTab) AddCommand(command, image, name string) {
+	container := Container{
+		Name:    name,
+		Image:   image,
+		Command: []string{"sh", "-c", command},
+	}
+	c.Spec.JobTemplate.Spec.Template.Spec.Containers = append(c.Spec.JobTemplate.Spec.Template.Spec.Containers, container)
 }

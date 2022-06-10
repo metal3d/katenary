@@ -78,7 +78,7 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		cmd = podget + cmd
 
 		if cron.Image == "" {
-			cron.Image = "bitnami/kubectl:1.20"
+			cron.Image = `bitnami/kubectl:{{ printf "%s.%s" .Capabilities.KubeVersion.Major .Capabilities.KubeVersion.Minor }}`
 		}
 
 		name := deployName
@@ -87,6 +87,11 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 			index++
 		}
 
+		// add crontab
+		suffix := ""
+		if index > 0 {
+			suffix = fmt.Sprintf("%d", index)
+		}
 		cronTab := helm.NewCrontab(
 			name,
 			cron.Image,
@@ -94,11 +99,6 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 			cron.Schedule,
 			sa,
 		)
-		// add crontab
-		suffix := ""
-		if index > 0 {
-			suffix = fmt.Sprintf("%d", index)
-		}
 		logger.Magenta(ICON_CRON, "Generating crontab", deployName, suffix)
 		fileGeneratorChan <- cronTab
 	}
