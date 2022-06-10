@@ -852,6 +852,33 @@ func newContainerForDeployment(
 		prepareInitContainers(containerName, s, container)...,
 	)
 
+	// check if there is containerPort assigned in label, add it, and do
+	// not create service for this.
+	if ports, ok := s.Labels[helm.LABEL_CONTAINER_PORT]; ok {
+		for _, port := range strings.Split(ports, ",") {
+			func(port string, container *helm.Container, s *types.ServiceConfig) {
+				port = strings.TrimSpace(port)
+				if port == "" {
+					return
+				}
+				portNumber, err := strconv.Atoi(port)
+				if err != nil {
+					return
+				}
+				// avoid already declared ports
+				for _, p := range s.Ports {
+					if int(p.Target) == portNumber {
+						return
+					}
+				}
+				container.Ports = append(container.Ports, &helm.ContainerPort{
+					Name:          deployName + "-" + port,
+					ContainerPort: portNumber,
+				})
+			}(port, container, s)
+		}
+	}
+
 	return container
 }
 
