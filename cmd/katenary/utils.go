@@ -99,15 +99,13 @@ func Convert(composeFile []string, appVersion, appName, chartDir, chartVersion s
 		return
 	}
 
-	for i, c := range composeFile {
-		composeFile[i] = strings.TrimSpace(c)
-	}
+	composeFiles := composeFile
+	ComposeFile = composeFiles[0]
 
-	for _, composeFile := range composeFiles {
-		_, err := os.Stat(composeFile)
-		if err != nil {
-			fmt.Println("Error reading file:", composeFile)
-			os.Exit(1)
+	for _, cf := range composeFiles {
+		if _, err := os.Stat(cf); err != nil {
+			fmt.Printf("Compose file %s not found\n", cf)
+			return
 		}
 	}
 

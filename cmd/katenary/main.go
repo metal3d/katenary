@@ -5,7 +5,6 @@ import (
 	"katenary/generator/writers"
 	"katenary/helm"
 	"katenary/update"
-	"log"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -71,7 +70,6 @@ func main() {
 			if err != nil {
 				writers.IndentSize = indentation
 			}
-			log.Println(composeFiles)
 			Convert(*composeFiles, appversion, appName, chartDir, chartVersion, force)
 		},
 	}
