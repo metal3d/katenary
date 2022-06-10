@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"bytes"
 	"katenary/compose"
 	"katenary/generator/writers"
 	"katenary/helm"
@@ -28,6 +29,7 @@ type HelmFile interface {
 type HelmFileGenerator chan HelmFile
 
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
+var helmDependencies = []*helm.Dependency{}
 
 func portExists(port int, ports []types.ServicePortConfig) bool {
 	for _, p := range ports {
@@ -55,7 +57,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 	generators := make(map[string]HelmFileGenerator)
 
-	// remove skipped services from the parsed data
+	// Remove skipped services from the parsed data.
 	for i, service := range p.Data.Services {
 		if v, ok := service.Labels[helm.LABEL_IGNORE]; !ok || v != "true" {
 			continue
@@ -70,7 +72,25 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 	}
 
 	for i, service := range p.Data.Services {
-		n := service.Name
+		if _, ok := service.Labels[helm.LABEL_DEPENDENCIES]; ok {
+			if v, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && v != "" {
+				log.Fatal("You cannot set a service in a same pod and have dependencies:", service.Name)
+			}
+			d := manageDependencies(service)
+			for j, service2 := range p.Data.Services {
+				for name, dep := range service2.DependsOn {
+					if name == service.Name {
+						p.Data.Services[j].DependsOn[d.Name] = dep
+						delete(p.Data.Services[j].DependsOn, name)
+					}
+				}
+			}
+			p.Data.Services[i].Name = d.Name
+			service.Name = d.Name
+			AddValues(d.Name, *d.Environment)
+			d.Environment = nil
+			helmDependencies = append(helmDependencies, d)
+		}
 
 		// if the service port is declared in labels, add it to the service.
 		if ports, ok := service.Labels[helm.LABEL_PORT]; ok {
@@ -95,7 +115,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		for _, port := range service.Ports {
 			target := int(port.Target)
 			if target != 0 {
-				servicesMap[n] = target
+				servicesMap[service.Name] = target
 				break
 			}
 		}
@@ -213,18 +233,35 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		log.Fatal(err)
 	}
 	defer chartFile.Close()
+
 	chartFile.WriteString(`# Create on ` + time.Now().Format(time.RFC3339) + "\n")
 	chartFile.WriteString(`# Katenary command line: ` + strings.Join(os.Args, " ") + "\n")
-	enc = yaml.NewEncoder(chartFile)
+
+	// Create a buffer to write lines with a number (damned yaml order)
+	buff := bytes.NewBuffer(nil)
+	enc = yaml.NewEncoder(buff)
 	enc.SetIndent(writers.IndentSize)
-	enc.Encode(map[string]interface{}{
-		"apiVersion":  "v2",
-		"name":        appName,
-		"description": "A helm chart for " + appName,
-		"type":        "application",
-		"version":     chartVersion,
-		"appVersion":  appVersion,
-	})
+	chart := map[string]interface{}{
+		"0apiVersion":  "v2",
+		"1name":        appName,
+		"2description": "A helm chart for " + appName,
+		"3type":        "application",
+		"4version":     chartVersion,
+		"5appVersion":  appVersion,
+	}
+	if len(helmDependencies) > 0 {
+		chart["6dependencies"] = helmDependencies
+	}
+	enc.Encode(chart)
+
+	// and now that the yaml is written in right order, remove each number
+	// of lines to write them in chart file...
+	for _, line := range strings.Split(buff.String(), "\n") {
+		if line == "" {
+			continue
+		}
+		chartFile.WriteString(line[1:] + "\n")
+	}
 
 	// And finally, create a NOTE.txt file
 	noteFile, err := os.Create(filepath.Join(templatesDir, "NOTES.txt"))
@@ -233,4 +270,17 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 	}
 	defer noteFile.Close()
 	noteFile.WriteString(helm.GenerateNotesFile(ingresses))
+}
+
+func manageDependencies(s types.ServiceConfig) *helm.Dependency {
+	dep, ok := s.Labels[helm.LABEL_DEPENDENCIES]
+	if !ok {
+		return nil
+	}
+
+	var dependencies *helm.Dependency
+	if err := yaml.Unmarshal([]byte(dep), &dependencies); err != nil {
+		log.Fatal(err)
+	}
+	return dependencies
 }

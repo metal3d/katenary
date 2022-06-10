@@ -20,6 +20,7 @@ const (
 	LABEL_IGNORE         = K + "/ignore"
 	LABEL_SECRETVARS     = K + "/secret-vars"
 	LABEL_CRON           = K + "/crontabs"
+	LABEL_DEPENDENCIES   = K + "/dependency"
 
 	//deprecated: use LABEL_MAP_ENV instead
 	LABEL_ENV_SERVICE = K + "/env-to-service"

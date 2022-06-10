@@ -67,6 +67,12 @@ func CreateReplicaObject(name string, s types.ServiceConfig, linked map[string]t
 // This function will try to yied deployment and services based on a service from the compose file structure.
 func buildDeployment(name string, s *types.ServiceConfig, linked map[string]types.ServiceConfig, fileGeneratorChan HelmFileGenerator) {
 
+	if _, ok := s.Labels[helm.LABEL_DEPENDENCIES]; ok {
+		// do not create a deployment for this service
+		fileGeneratorChan <- nil
+		return
+	}
+
 	logger.Magenta(ICON_PACKAGE+" Generating deployment for ", name)
 	deployment := helm.NewDeployment(name)
 
