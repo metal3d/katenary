@@ -129,6 +129,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			n := service.Name
 			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == name {
 				linked[n] = service
+				delete(s.DependsOn, n)
 			}
 		}
 
