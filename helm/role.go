@@ -24,8 +24,13 @@ func NewCronRole(name string) *Role {
 	role.Rules = []Rule{
 		{
 			ApiGroup:  []string{""},
-			Resources: []string{"pods", "pods/exec"},
-			Verbs:     []string{"get", "list", "create"},
+			Resources: []string{"pods", "pods/log"},
+			Verbs:     []string{"get", "list", "watch", "create", "update", "patch", "delete"},
+		},
+		{
+			ApiGroup:  []string{""},
+			Resources: []string{"pods/exec"},
+			Verbs:     []string{"create"},
 		},
 	}
 

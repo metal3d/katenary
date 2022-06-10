@@ -78,7 +78,7 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		cmd = podget + cmd
 
 		if cron.Image == "" {
-			cron.Image = "bitnami/kubectl"
+			cron.Image = "bitnami/kubectl:1.20"
 		}
 
 		name := deployName

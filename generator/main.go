@@ -74,6 +74,7 @@ func buildDeployment(name string, s *types.ServiceConfig, linked map[string]type
 
 	// Add selectors
 	selectors := buildSelector(name, s)
+	selectors[helm.K+"/resource"] = "deployment"
 	deployment.Spec.Selector = map[string]interface{}{
 		"matchLabels": selectors,
 	}

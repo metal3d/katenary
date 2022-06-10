@@ -25,6 +25,13 @@ type DepSpec struct {
 func NewDepSpec() *DepSpec {
 	return &DepSpec{
 		Replicas: 1,
+		Template: PodTemplate{
+			Metadata: Metadata{
+				Labels: map[string]string{
+					K + "/resource": "deployment",
+				},
+			},
+		},
 	}
 }
 
