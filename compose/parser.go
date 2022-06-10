@@ -26,32 +26,37 @@ var (
 )
 
 // NewParser create a Parser and parse the file given in filename. If filename is empty, we try to parse the content[0] argument that should be a valid YAML content.
-func NewParser(filename string, content ...string) *Parser {
+func NewParser(filename []string, content ...string) *Parser {
 
 	p := &Parser{}
 
 	if len(content) > 0 { // mainly for the tests...
-		dir := filepath.Dir(filename)
+		dir := filepath.Dir(filename[0])
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			log.Fatal(err)
 		}
 		p.temporary = &dir
-		ioutil.WriteFile(filename, []byte(content[0]), 0644)
-		cli.DefaultFileNames = []string{filename}
+		ioutil.WriteFile(filename[0], []byte(content[0]), 0644)
+		cli.DefaultFileNames = filename
 	}
 	// if filename is not in cli Default files, add it
 	if len(filename) > 0 {
 		found := false
-		for _, f := range cli.DefaultFileNames {
-			if f == filename {
-				found = true
-				break
+		for _, defaultFileName := range cli.DefaultFileNames {
+			for _, givenFileName := range filename {
+				if defaultFileName == givenFileName {
+					found = true
+					break
+				}
 			}
 		}
 		// add the file at first position
 		if !found {
-			cli.DefaultFileNames = append([]string{filename}, cli.DefaultFileNames...)
+			cli.DefaultFileNames = append([]string{filename[0]}, cli.DefaultFileNames...)
+		}
+		if len(filename) > 1 {
+			cli.DefaultOverrideFileNames = append(filename[1:], cli.DefaultOverrideFileNames...)
 		}
 	}
 

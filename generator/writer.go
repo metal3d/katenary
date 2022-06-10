@@ -4,6 +4,7 @@ import (
 	"katenary/compose"
 	"katenary/generator/writers"
 	"katenary/helm"
+	"katenary/tools"
 	"log"
 	"os"
 	"path/filepath"
@@ -128,6 +129,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			n := service.Name
 			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == name {
 				linked[n] = service
+				delete(s.DependsOn, n)
 			}
 		}
 
@@ -173,15 +175,17 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 			case *helm.ConfigMap, *helm.Secret:
 				// there could be several files, so let's force the filename
-				name := c.(helm.Named).Name() + "-" + c.GetType()
+				name := c.(helm.Named).Name() + "." + c.GetType()
 				suffix := c.GetPathRessource()
-				suffix = PathToName(suffix)
+				suffix = tools.PathToName(suffix)
 				name += suffix
 				name = PrefixRE.ReplaceAllString(name, "")
 				writers.BuildConfigMap(c, kind, n, name, templatesDir)
 
 			default:
-				fname := filepath.Join(templatesDir, n+"."+kind+".yaml")
+				name := c.(helm.Named).Name() + "." + c.GetType()
+				name = PrefixRE.ReplaceAllString(name, "")
+				fname := filepath.Join(templatesDir, name+".yaml")
 				fp, err := os.Create(fname)
 				if err != nil {
 					log.Fatal(err)

@@ -1,4 +1,4 @@
-package generator
+package tools
 
 import (
 	"katenary/compose"
