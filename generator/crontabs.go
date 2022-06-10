@@ -62,7 +62,8 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 	fileGeneratorChan <- role
 	fileGeneratorChan <- roleBinding
 
-	index := len(crons) - 1 // will be 0 when there is only one cron - made to name crons
+	numcron := len(crons) - 1
+	index := 1
 
 	// create crontabs
 	for _, cron := range crons {
@@ -84,14 +85,13 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		}
 
 		name := deployName
-		if index > 0 {
+		if numcron > 0 {
 			name = fmt.Sprintf("%s-%d", deployName, index)
-			index++
 		}
 
 		// add crontab
 		suffix := ""
-		if index > 0 {
+		if numcron > 0 {
 			suffix = fmt.Sprintf("%d", index)
 		}
 		cronTab := helm.NewCrontab(
@@ -103,6 +103,7 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 		)
 		logger.Magenta(ICON_CRON, "Generating crontab", deployName, suffix)
 		fileGeneratorChan <- cronTab
+		index++
 	}
 
 	return
