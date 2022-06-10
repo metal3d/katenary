@@ -6,6 +6,7 @@ import (
 	"katenary/logger"
 	"log"
 
+	"github.com/alessio/shellescape"
 	"github.com/compose-spec/compose-go/types"
 	"gopkg.in/yaml.v3"
 )
@@ -14,11 +15,11 @@ const (
 	cronMulti    = `pods=$(kubectl get pods --selector=%s/component=%s,%s/resource=deployment -o jsonpath='{.items[*].metadata.name}')`
 	cronMultiCmd = `
 for pod in $pods; do
-    kubectl exec -i $pod -c %s -- sh -c '%s'
+    kubectl exec -i $pod -c %s -- sh -c %s
 done`
 	cronSingle = `pod=$(kubectl get pods --selector=%s/component=%s,%s/resource=deployment -o jsonpath='{.items[0].metadata.name}')`
 	cronCmd    = `
-kubectl exec -i $pod -c %s -- sh -c '%s'`
+kubectl exec -i $pod -c %s -- sh -c %s`
 )
 
 type CronDef struct {
@@ -65,6 +66,7 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 
 	// create crontabs
 	for _, cron := range crons {
+		escaped := shellescape.Quote(cron.Command)
 		var cmd, podget string
 		if cron.Multi {
 			podget = cronMulti
@@ -74,7 +76,7 @@ func buildCrontab(deployName string, deployment *helm.Deployment, s *types.Servi
 			cmd = cronCmd
 		}
 		podget = fmt.Sprintf(podget, helm.K, deployName, helm.K)
-		cmd = fmt.Sprintf(cmd, s.Name, cron.Command)
+		cmd = fmt.Sprintf(cmd, s.Name, escaped)
 		cmd = podget + cmd
 
 		if cron.Image == "" {
