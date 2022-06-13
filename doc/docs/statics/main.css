@@ -6,6 +6,11 @@
   margin-top: 1em;
   background-color: #333333;
 }
+
 img.logo {
   max-width: 70% !important;
+}
+
+.wy-nav-top {
+  background-color: #333333;
 }
