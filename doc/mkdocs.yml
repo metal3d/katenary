@@ -1,0 +1,12 @@
+site_name: Katenary documentation
+docs_dir: ./docs
+theme:
+  name: readthedocs
+  logo: /statics/logo.png
+extra_css:
+  - statics/main.css
+extra_javascript:
+  - statics/addons.js
+nav:
+  - index.md
+  - usage.md
