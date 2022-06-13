@@ -77,18 +77,28 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				log.Fatal("You cannot set a service in a same pod and have dependencies:", service.Name)
 			}
 			d := manageDependencies(service)
+			// the service name is sometimes different from the dependency name.
+			var servicename string
+			if d.Config.ServiceName == "" {
+				servicename = d.Name
+			} else {
+				servicename = d.Config.ServiceName
+			}
 			for j, service2 := range p.Data.Services {
 				for name, dep := range service2.DependsOn {
 					if name == service.Name {
-						p.Data.Services[j].DependsOn[d.Name] = dep
+						p.Data.Services[j].DependsOn[servicename] = dep
 						delete(p.Data.Services[j].DependsOn, name)
 					}
 				}
 			}
-			p.Data.Services[i].Name = d.Name
-			service.Name = d.Name
-			AddValues(d.Name, *d.Environment)
-			d.Environment = nil
+			// force the service name to the dependency name
+			p.Data.Services[i].Name = servicename
+			service.Name = servicename
+			// add environment to the values
+			AddValues(d.Name, *d.Config.Environment)
+			// to no export this in Chart.yaml file
+			d.Config = nil
 			helmDependencies = append(helmDependencies, d)
 		}
 

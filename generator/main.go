@@ -46,7 +46,7 @@ OK=0
 echo "Checking __service__ port"
 while [ $OK != 1 ]; do
     echo -n "."
-    nc -z ` + helm.ReleaseNameTpl + `-__service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
+    nc -z __service__ __port__ 2>&1 >/dev/null && OK=1 || sleep 1
 done
 echo
 echo "Done"
@@ -460,7 +460,7 @@ func prepareInitContainers(name string, s *types.ServiceConfig, container *helm.
 	initContainers := make([]*helm.Container, 0)
 	for dp := range s.DependsOn {
 		c := helm.NewContainer("check-"+dp, "busybox", nil, s.Labels)
-		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", dp)
+		command := strings.ReplaceAll(strings.TrimSpace(dependScript), "__service__", helm.ReleaseNameTpl+"-"+dp)
 
 		foundPort := -1
 		locker.Lock()
