@@ -3,6 +3,8 @@ dist/*
 chart/*
 *.yaml
 *.yml
+!mkdocs.yaml
+!.readthedocs.yaml
 ./katenary
 *.env
 docker-compose*
