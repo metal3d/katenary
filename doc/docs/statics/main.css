@@ -1,19 +1,11 @@
 .wy-nav-side {
   background-color: #333333;
 }
-.wy-nav-side img.logo {
-  width: 50%;
-  margin-left: 25%;
-  text-align: center;
-}
 
 .wy-side-nav-search {
   margin-top: 1em;
-  background-color: #555555;
+  background-color: #333333;
 }
-
-.smile-logo {
-  width: 80%;
-  margin-top: 2em;
-  margin-left: 10%;
+img.logo {
+  max-width: 70% !important;
 }

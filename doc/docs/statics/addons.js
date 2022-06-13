@@ -36,6 +36,6 @@ function addKatenaryLogo() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  addKatenaryLogo();
-  addSmileLogo();
+  //addKatenaryLogo();
+  //addSmileLogo();
 });
