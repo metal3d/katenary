@@ -3,7 +3,7 @@ dist/*
 chart/*
 *.yaml
 *.yml
-!mkdocs.yaml
+!doc/mkdocs.yaml
 !.readthedocs.yaml
 ./katenary
 *.env
