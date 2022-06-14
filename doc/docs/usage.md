@@ -15,7 +15,7 @@ Katenary transforms compose services this way:
 
 Katenary can also configure containers grouping in pods, declare dependencies, ignore some services, force variables as secrets, mount files as `configMap`, and many others things. To adapt the helm chart generation, you will need to use some specific labels.
 
-For more complete label usage, see [the labels page](/labels).
+For more complete label usage, see [the labels page](labels.md).
 
 ## Make convertion
 
@@ -42,7 +42,7 @@ katenary convert -c file1.yaml -c file2.yaml
 Katenary proposes a lot of labels to configure the helm chart generation, but some are very important.
 
 !!! Info
-    For more complete label usage, see [the labels page](/labels).
+    For more complete label usage, see [the labels page](labels.md).
 
 
 ### Work with Depends On?
