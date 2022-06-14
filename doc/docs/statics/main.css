@@ -1,16 +1,20 @@
 :root {
-  --md-primary-fg-color: #333333;
+  --code-bg-color: var(--lt-color-gray-800);
+  --code-fg-color: var(--lt-color-gray-300);
+  --md-primary-fg-color: var(--lt-color-gray-900);
 }
+
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--md-code-fg-color);
+}
+
 div.smile-logo {
   display: flex;
   font-size: 0.7rem;
 }
-img.smile-logo {
+
+div.smile-logo img {
   width: 100px;
-}
-pre code.hljs {
-  background-color: var(--md-primary-fg-color);
-  color: var(--md-primary-bg-color);
 }
 
 button.md-clipboard::after {
@@ -37,4 +41,10 @@ article a:visited {
 
 .go-logo {
   font-size: 4em;
+}
+
+/* HLJS */
+pre code.hljs {
+  background-color: var(--code-bg-color);
+  color: var(--code-fg-color);
 }

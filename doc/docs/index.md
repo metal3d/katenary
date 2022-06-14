@@ -20,7 +20,7 @@ You'll be able to deploy your project in [:material-kubernetes: Kubernetes](http
 
 It uses your current file and optionnaly labels to configure the result.
 
-It's an opensource project, under MIT licence, partially developped at [Smile](https://smile.eu). The project source code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/metal3d/katenary).
+It's an opensource project, under MIT licence, partially developped at [Smile](https://www.smile.eu). The project source code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/metal3d/katenary).
 
 
 ## Install Katenary
