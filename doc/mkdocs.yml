@@ -1,12 +1,23 @@
 site_name: Katenary documentation
 docs_dir: ./docs
 theme:
-  name: readthedocs
+  name: material
   logo: statics/logo.png
+markdown_extensions:
+  - admonition
+  - attr_list
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:materialx.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      use_pygments: false
+  - pymdownx.superfences
 extra_css:
   - statics/main.css
 extra_javascript:
   - statics/addons.js
 nav:
-  - index.md
+  - "Home": index.md
   - usage.md
+  - labels.md

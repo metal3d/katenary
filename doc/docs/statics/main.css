@@ -1,16 +1,40 @@
-.wy-nav-side {
-  background-color: #333333;
+:root {
+  --md-primary-fg-color: #333333;
+}
+div.smile-logo {
+  display: flex;
+  font-size: 0.7rem;
+}
+img.smile-logo {
+  width: 100px;
+}
+pre code.hljs {
+  background-color: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
 }
 
-.wy-side-nav-search {
-  margin-top: 1em;
-  background-color: #333333;
+button.md-clipboard::after {
+  transition: all 0.5s ease;
+  color: var(--lt-color-gray-500);
+}
+button.md-clipboard:hover::after {
+  color: var(--md-primary-bg-color);
 }
 
-img.logo {
-  max-width: 70% !important;
+article a,
+article a:visited {
+  color: var(--md-code-hl-number-color);
 }
 
-.wy-nav-top {
-  background-color: #333333;
+.md-center {
+  text-align: center;
+  margin: auto;
+}
+
+.md-center img {
+  max-width: 200px;
+}
+
+.go-logo {
+  font-size: 4em;
 }
