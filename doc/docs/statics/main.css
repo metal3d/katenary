@@ -39,6 +39,11 @@ article a:visited {
   max-width: 200px;
 }
 
+.md-nav__item .md-nav__link--active {
+  color: var(--md-code-hl-string-color) !important;
+  opacity: 0.7;
+}
+
 .go-logo {
   font-size: 4em;
 }
