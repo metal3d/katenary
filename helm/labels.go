@@ -27,20 +27,20 @@ const (
 
 // GetLabelsDocumentation returns the documentation for the labels.
 func GetLabelsDocumentation() string {
-	t, _ := template.New("labels").Parse(`# Labels
+	t, err := template.New("labels").Parse(`# Labels
 {{.LABEL_IGNORE         | printf "%-33s"}}: ignore the container, it will not yied any object in the helm chart (bool)
 {{.LABEL_SECRETVARS     | printf "%-33s"}}: secret variables to push on a secret file (coma separated)
 {{.LABEL_ENV_SECRET     | printf "%-33s"}}: set the given file names as a secret instead of configmap (coma separated)
-contaienr in {{.LABEL_MAP_ENV        | printf "%-33s"}}: map environment variable to a template string (yaml style, object)
+{{.LABEL_MAP_ENV        | printf "%-33s"}}: map environment variable to a template string (yaml style, object)
 {{.LABEL_PORT           | printf "%-33s"}}: set the ports to assign on the container in pod + expose as a service (coma separated)
 {{.LABEL_CONTAINER_PORT | printf "%-33s"}}: set the ports to assign on the contaienr in pod but avoid service (coma separated)
 {{.LABEL_INGRESS        | printf "%-33s"}}: set the port to expose in an ingress (coma separated)
 {{.LABEL_VOL_CM         | printf "%-33s"}}: specifies that the volumes points on a configmap (coma separated)
 {{.LABEL_SAMEPOD        | printf "%-33s"}}: specifies that the pod should be deployed in the same pod than the
-{{ printf "%-34s" ""}   } given service name (string)
+{{ printf "%-34s" ""}} given service name (string)
 {{.LABEL_VOLUMEFROM     | printf "%-33s"}}: specifies that the volumes to be mounted from the given service (yaml style)
 {{.LABEL_EMPTYDIRS      | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of
-{{ printf "%-34s" ""}   } persistentVolumeClaim (coma separated)
+{{ printf "%-34s" ""}} persistentVolumeClaim (coma separated)
 {{.LABEL_CRON           | printf "%-33s"}}: specifies a cronjobs to create (yaml style, array) - this will create a
 {{ printf "%-34s" ""}} cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
 {{ printf "%-34s" ""}} The form is the following:
@@ -54,6 +54,9 @@ contaienr in {{.LABEL_MAP_ENV        | printf "%-33s"}}: map environment variabl
 {{ printf "%-35s" ""}}  -> http://[ignored][:port][/path] to specify an http healthcheck
 {{ printf "%-35s" ""}}  -> tcp://[ignored]:port to specify a tcp healthcheck
 {{ printf "%-35s" ""}}  -> other string is condidered as a "command" healthcheck`)
+	if err != nil {
+		panic(err)
+	}
 	buff := bytes.NewBuffer(nil)
 	t.Execute(buff, map[string]string{
 		"LABEL_ENV_SECRET":     LABEL_ENV_SECRET,
