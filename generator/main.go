@@ -31,7 +31,6 @@ const (
 	ICON_CRON    = "🕒"
 )
 
-// Values is kept in memory to create a values.yaml file.
 var (
 	EmptyDirs   = []string{}
 	servicesMap = make(map[string]int)
@@ -267,8 +266,6 @@ func buildCommandProbe(s *types.ServiceConfig) *helm.Probe {
 }
 
 func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.Secret {
-	locker.Lock()
-	defer locker.Unlock()
 	// get the list of secret vars
 	secretvars, ok := s.Labels[helm.LABEL_SECRETVARS]
 	if !ok {
@@ -285,14 +282,23 @@ func setSecretVar(name string, s *types.ServiceConfig, c *helm.Container) *helm.
 		}
 		// add the secret
 		store.AddEnv(secretvar, ".Values."+name+".environment."+secretvar)
-		for i, env := range c.Env {
-			if env.Name == secretvar {
-				c.Env = append(c.Env[:i], c.Env[i+1:]...)
-				i--
+		AddEnvironment(name, secretvar, *s.Environment[secretvar])
+
+		// Finally remove the secret var from the environment on the service
+		// and the helm container definition.
+		defer func(secretvar string) { // defered because AddEnvironment locks the memory
+			locker.Lock()
+			defer locker.Unlock()
+
+			for i, env := range c.Env {
+				if env.Name == secretvar {
+					c.Env = append(c.Env[:i], c.Env[i+1:]...)
+					i--
+				}
 			}
-		}
-		// remove env from ServiceConfig
-		delete(s.Environment, secretvar)
+
+			delete(s.Environment, secretvar)
+		}(secretvar)
 	}
 	return store
 }

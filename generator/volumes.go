@@ -13,9 +13,21 @@ import (
 )
 
 var (
-	Values       = make(map[string]map[string]interface{})
+	// VolumeValues is the map of volumes for each deployment
+	// containing volume configuration
 	VolumeValues = make(map[string]map[string]map[string]EnvVal)
 )
+
+// AddVolumeValues add a volume to the values.yaml map for the given deployment name.
+func AddVolumeValues(deployment string, volname string, values map[string]EnvVal) {
+	locker.Lock()
+	defer locker.Unlock()
+
+	if _, ok := VolumeValues[deployment]; !ok {
+		VolumeValues[deployment] = make(map[string]map[string]EnvVal)
+	}
+	VolumeValues[deployment][volname] = values
+}
 
 // addVolumeFrom takes the LABEL_VOLUMEFROM to get volumes from another container. This can only work with
 // container that has got LABEL_SAMEPOD as we need to get the volumes from another container in the same deployment.
@@ -86,7 +98,11 @@ func addVolumeFrom(deployment *helm.Deployment, container *helm.Container, s *ty
 }
 
 // prepareVolumes add the volumes of a service.
-func prepareVolumes(deployment, name string, s *types.ServiceConfig, container *helm.Container, fileGeneratorChan HelmFileGenerator) []map[string]interface{} {
+func prepareVolumes(
+	deployment, name string,
+	s *types.ServiceConfig,
+	container *helm.Container,
+	fileGeneratorChan HelmFileGenerator) []map[string]interface{} {
 
 	volumes := make([]map[string]interface{}, 0)
 	mountPoints := make([]interface{}, 0)

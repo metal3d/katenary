@@ -7,6 +7,11 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
+var (
+	// Values is kept in memory to create a values.yaml file.
+	Values = make(map[string]map[string]interface{})
+)
+
 // AddValues adds values to the values.yaml map.
 func AddValues(servicename string, values map[string]EnvVal) {
 	locker.Lock()
@@ -21,15 +26,19 @@ func AddValues(servicename string, values map[string]EnvVal) {
 	}
 }
 
-// AddVolumeValues add a volume to the values.yaml map for the given deployment name.
-func AddVolumeValues(deployment string, volname string, values map[string]EnvVal) {
+func AddEnvironment(servicename string, key string, val EnvVal) {
 	locker.Lock()
 	defer locker.Unlock()
 
-	if _, ok := VolumeValues[deployment]; !ok {
-		VolumeValues[deployment] = make(map[string]map[string]EnvVal)
+	if _, ok := Values[servicename]; !ok {
+		Values[servicename] = make(map[string]interface{})
 	}
-	VolumeValues[deployment][volname] = values
+
+	if _, ok := Values[servicename]["environment"]; !ok {
+		Values[servicename]["environment"] = make(map[string]EnvVal)
+	}
+	Values[servicename]["environment"].(map[string]EnvVal)[key] = val
+
 }
 
 // setEnvToValues will set the environment variables to the values.yaml map.
@@ -44,13 +53,12 @@ func setEnvToValues(name string, s *types.ServiceConfig, c *helm.Container) {
 		return
 	}
 
-	valuesEnv := make(map[string]interface{})
 	for k, v := range env {
 		k = strings.ReplaceAll(k, ".", "_")
-		valuesEnv[k] = v
+		AddEnvironment(name, k, v)
 	}
 
-	AddValues(name, map[string]EnvVal{"environment": valuesEnv})
+	//AddValues(name, map[string]EnvVal{"environment": valuesEnv})
 	for k := range env {
 		fixedK := strings.ReplaceAll(k, ".", "_")
 		v := "{{ tpl .Values." + name + ".environment." + fixedK + " . }}"
