@@ -42,6 +42,15 @@ func GetLabelsDocumentation() string {
 {{.LABEL_VOLUMEFROM     | printf "%-33s"}}: specifies that the volumes to be mounted from the given service (yaml style)
 {{.LABEL_EMPTYDIRS      | printf "%-33s"}}: specifies that the given volume names should be "emptyDir" instead of
 {{ printf "%-34s" ""}} persistentVolumeClaim (coma separated)
+{{.LABEL_DEPENDENCIES   | printf "%-33s"}}: specifies that the given service is actually a Helm Dependency (yaml style)
+{{ printf "%-34s" ""}} The form is the following:
+{{ printf "%-34s" ""}} - name: name of the dependency
+{{ printf "%-34s" ""}}   version: version of the dependency
+{{ printf "%-34s" ""}}   repository: repository of the dependency
+{{ printf "%-34s" ""}}   alias: alias of the dependency (optional)
+{{ printf "%-34s" ""}}   config: config of the dependency (map, optional)
+{{ printf "%-34s" ""}}     environment: map for environment
+{{ printf "%-34s" ""}}     serviceName: the service name as defined in the chart that replace the current service name (default to the compose service name)
 {{.LABEL_CRON           | printf "%-33s"}}: specifies a cronjobs to create (yaml style, array) - this will create a
 {{ printf "%-34s" ""}} cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
 {{ printf "%-34s" ""}} The form is the following:
@@ -73,6 +82,7 @@ func GetLabelsDocumentation() string {
 		"LABEL_MAP_ENV":        LABEL_MAP_ENV,
 		"LABEL_SECRETVARS":     LABEL_SECRETVARS,
 		"LABEL_CRON":           LABEL_CRON,
+		"LABEL_DEPENDENCIES":   LABEL_DEPENDENCIES,
 	})
 	return buff.String()
 }
