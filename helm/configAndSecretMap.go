@@ -72,7 +72,9 @@ func (c *ConfigMap) AddEnvFile(file string, filter []string) error {
 			}
 		}
 		if !skip {
-			c.Data[parts[0]] = parts[1]
+			// c.Data[parts[0]] = parts[1]
+			name := strings.ReplaceAll(c.Name(), ReleaseNameTpl+"-", "")
+			c.Data[parts[0]] = fmt.Sprintf("{{ tpl .Values.%s.environment.%s .}}", name, parts[0])
 		}
 	}
 	return nil
@@ -131,7 +133,9 @@ func (s *Secret) AddEnvFile(file string, filter []string) error {
 			}
 		}
 		if !skip {
-			s.Data[parts[0]] = fmt.Sprintf(`{{ "%s" | b64enc }}`, parts[1])
+			//s.Data[parts[0]] = fmt.Sprintf(`{{ "%s" | b64enc }}`, parts[1])
+			name := strings.ReplaceAll(s.Name(), ReleaseNameTpl+"-", "")
+			s.Data[parts[0]] = fmt.Sprintf("{{ tpl .Values.%s.environment.%s . | b64enc }}", name, parts[0])
 		}
 	}
 
