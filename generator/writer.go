@@ -29,7 +29,7 @@ type HelmFile interface {
 type HelmFileGenerator chan HelmFile
 
 var PrefixRE = regexp.MustCompile(`\{\{.*\}\}-?`)
-var helmDependencies = []*helm.Dependency{}
+var helmDependencies = map[string]*helm.Dependency{}
 
 func portExists(port int, ports []types.ServicePortConfig) bool {
 	for _, p := range ports {
@@ -76,13 +76,13 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			if v, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && v != "" {
 				log.Fatal("You cannot set a service in a same pod and have dependencies:", service.Name)
 			}
-			d := manageDependencies(service)
+			dependency := manageDependencies(service)
 			// the service name is sometimes different from the dependency name.
 			var servicename string
-			if d.Config.ServiceName == "" {
-				servicename = d.Name
+			if dependency.Config.ServiceName == "" {
+				servicename = helm.ReleaseNameTpl + "-" + dependency.Name
 			} else {
-				servicename = d.Config.ServiceName
+				servicename = dependency.Config.ServiceName
 			}
 			for j, service2 := range p.Data.Services {
 				for name, dep := range service2.DependsOn {
@@ -96,10 +96,11 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			p.Data.Services[i].Name = servicename
 			service.Name = servicename
 			// add environment to the values
-			AddValues(d.Name, *d.Config.Environment)
+			AddValues(dependency.Name, *dependency.Config.Environment)
 			// to no export this in Chart.yaml file
-			d.Config = nil
-			helmDependencies = append(helmDependencies, d)
+			dependency.Config = nil
+			//helmDependencies = append(helmDependencies, d)
+			helmDependencies[service.Name] = dependency
 		}
 
 		// if the service port is declared in labels, add it to the service.
@@ -146,8 +147,6 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 
 	// for all services in linked map, and not in samePods map, generate the service
 	for _, s := range p.Data.Services {
-		name := s.Name
-
 		// do not make a deployment for services declared to be in the same pod than another
 		if _, ok := s.Labels[helm.LABEL_SAMEPOD]; ok {
 			continue
@@ -157,19 +156,24 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		linked := make(map[string]types.ServiceConfig, 0)
 		for _, service := range p.Data.Services {
 			n := service.Name
-			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == name {
+			if linkname, ok := service.Labels[helm.LABEL_SAMEPOD]; ok && linkname == s.Name {
 				linked[n] = service
 				delete(s.DependsOn, n)
 			}
 		}
 
-		generators[name] = CreateReplicaObject(name, s, linked)
+		// do not generate a deployment for services that are replaced by dependencies
+		if _, found := helmDependencies[s.Name]; found {
+			continue
+		}
+
+		generators[s.Name] = CreateReplicaObject(s.Name, s, linked)
 	}
 
 	// to generate notes, we need to keep an Ingresses list
 	ingresses := make(map[string]*helm.Ingress)
 
-	for n, generator := range generators { // generators is a map : name -> generator
+	for serviceName, generator := range generators { // generators is a map : name -> generator
 		for helmFile := range generator { // generator is a chan
 			if helmFile == nil { // generator finished
 				break
@@ -186,22 +190,22 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 			switch c := helmFile.(type) {
 			case *helm.Storage:
 				// For storage, we need to add a "condition" to activate it
-				writers.BuildStorage(c, n, templatesDir)
+				writers.BuildStorage(c, serviceName, templatesDir)
 
 			case *helm.Deployment:
 				// for the deployment, we need to fix persitence volumes
 				// to be activated only when the storage is "enabled",
 				// either we use an "emptyDir"
-				writers.BuildDeployment(c, n, templatesDir)
+				writers.BuildDeployment(c, serviceName, templatesDir)
 
 			case *helm.Service:
 				// Change the type for service if it's an "exposed" port
-				writers.BuildService(c, n, templatesDir)
+				writers.BuildService(c, serviceName, templatesDir)
 
 			case *helm.Ingress:
 				// we need to make ingresses "activable" from values
-				ingresses[n] = c // keep it to generate notes
-				writers.BuildIngress(c, n, templatesDir)
+				ingresses[serviceName] = c // keep it to generate notes
+				writers.BuildIngress(c, serviceName, templatesDir)
 
 			case *helm.ConfigMap, *helm.Secret:
 				// there could be several files, so let's force the filename
@@ -210,7 +214,7 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 				suffix = tools.PathToName(suffix)
 				name += suffix
 				name = PrefixRE.ReplaceAllString(name, "")
-				writers.BuildConfigMap(c, kind, n, name, templatesDir)
+				writers.BuildConfigMap(c, kind, serviceName, name, templatesDir)
 
 			default:
 				name := c.(helm.Named).Name() + "." + c.GetType()
@@ -260,7 +264,13 @@ func Generate(p *compose.Parser, katernayVersion, appName, appVersion, chartVers
 		"5-appVersion":  appVersion,
 	}
 	if len(helmDependencies) > 0 {
-		chart["6-dependencies"] = helmDependencies
+		dep := make([]interface{}, len(helmDependencies))
+		count := 0
+		for _, d := range helmDependencies {
+			dep[count] = d
+			count++
+		}
+		chart["6-dependencies"] = dep
 	}
 	enc.Encode(chart)
 
