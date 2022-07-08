@@ -57,20 +57,20 @@ Some example of usage:
 
 ```yaml
 services:
-    mariadb:
-        image: mariadb
-        labels:
-            katenary.io/healthcheck: tcp://localhost:3306
+  mariadb:
+    image: mariadb
+    labels:
+      katenary.io/healthcheck: tcp://localhost:3306
 
-    webapp:
-        image: nginx
-        labels:
-            katenary.io/healthcheck: http://localhost:80
+  webapp:
+    image: nginx
+    labels:
+      katenary.io/healthcheck: http://localhost:80
 
-    example:
-        image: yourimage
-        labels:
-            katenary.io/healthcheck: "test -f /opt/installed"
+  example:
+    image: yourimage
+    labels:
+      katenary.io/healthcheck: "test -f /opt/installed"
 ```
 
 ## crontabs
@@ -81,12 +81,12 @@ It's a YAML array in multiline label.
 
 ```yaml
 services:
-    mariadb:
-        image: mariadb
-        labels:
-            katenary.io/crontabs: |
-                - command: mysqldump -B myapp -uroot -p$${MYSQL_ROOT_PASSWORD} > dump.sql
-                  schedule: "@every 1h"
+  mariadb:
+    image: mariadb
+    labels:
+      katenary.io/crontabs: |
+        - command: mysqldump -B myapp -uroot -p$${MYSQL_ROOT_PASSWORD} > dump.sql
+          schedule: "@every 1h"
 ```
 The object is:
 ```
@@ -105,26 +105,26 @@ In this case, an "emptyDir" volume is appreciated.
 
 ```yaml
 services:
-    webapp:
-        image: nginx
-        volumes:
-        - websource:/var/www/html
-        labels:
-            # sources is actually an empty directory on the node
-            katenary.io/empty-dirs: websource
+  webapp:
+    image: nginx
+    volumes:
+    - websource:/var/www/html
+    labels:
+      # sources is actually an empty directory on the node
+      katenary.io/empty-dirs: websource
 
-    php:
-        image: php:7-fpm
-        volumes:
-        - sources:/var/www/html
-        labels:
-            # in the same pod than webapp
-            katenary.io/same-pod: webapp
-            # see the corresponding section, get the volume
-            # fro webapp
-            katenary.io/volume-from: |
-              sources:
-                webapp: websource
+  php:
+    image: php:7-fpm
+    volumes:
+    - sources:/var/www/html
+    labels:
+      # in the same pod than webapp
+      katenary.io/same-pod: webapp
+      # see the corresponding section, get the volume
+      # fro webapp
+      katenary.io/volume-from: |
+        sources:
+        webapp: websource
 ```
 
 ## volume-from
@@ -133,21 +133,21 @@ We see this in the [empty-dirs](#empty-dirs) section, this label defines that th
 
 ```yaml
 services:
-    webapp:
-        image: nginx
-        volumes:
-        - datasource:/var/www/html
+  webapp:
+    image: nginx
+    volumes:
+    - datasource:/var/www/html
 
-    app:
-        image: php
-        volumes:
-        - data:/opt/data
-        labels:
-            katenary.io/volume-from: |
-              # data in this container...
-              data:
-                # ... correspond to "datasource" in "webapp" container
-                webapp: datasource
+  app:
+    image: php
+    volumes:
+    - data:/opt/data
+    labels:
+      katenary.io/volume-from: |
+        # data in this container...
+        data:
+        # ... correspond to "datasource" in "webapp" container
+        webapp: datasource
 ```
 
 This implies that the declared volume in "webapp" will be mounted to "app" pods.
@@ -168,13 +168,13 @@ You must declare this label only on "supplementary" services and always use the 
 
 ```yaml
 services:
-    web:
-        image: nginx
+  web:
+    image: nginx
 
-    php:
-        image: php:8-fpm
-        labels:
-            katenary.io/same-pod: web
+  php:
+    image: php:8-fpm
+    labels:
+      katenary.io/same-pod: web
 ```
 
 The above example will create a `web` deployment, the PHP container is added in the `web` pod.
@@ -197,12 +197,12 @@ And a compose file (snippet):
 
 ```yaml
 serivces:
-    web:
-        image: nginx
-        volumes:
-        - ./static:/usr/share/nginx/html:z
-        labels:
-            katenary.io/configmap-volumes: ./statics
+  web:
+    image: nginx
+    volumes:
+    - ./static:/usr/share/nginx/html:z
+    labels:
+      katenary.io/configmap-volumes: ./statics
 ```
 
 What will make Katenary:
@@ -217,12 +217,12 @@ Declare which port to use to create an ingress. The hostname will be declared in
 
 ```yaml
 serivces:
-    web:
-        image: nginx
-        ports:
-        - 8080:80
-        labels:
-            katenary.io/ingress: 80
+  web:
+    image: nginx
+    ports:
+    - 8080:80
+    labels:
+      katenary.io/ingress: 80
 ```
 
 !!! Info
@@ -230,69 +230,73 @@ serivces:
 
 ## ports and container-ports
 
-It's sometimes not mandatory to declare a port in compose file, or maybe you want to avoid to expose them in the compose file. But Katenary will sometimes need to know the ports to create service, for example to allow `depends_on` directive.
+This changes or set the `Service` port declared in the Helm Chart.
 
-In this case, you can declare the ports in the corresponding label:
+Exposing or declaring ports in a compose file is not mandatory. Others containers may contact the container port because there is no "Pod" notion. And you probably don't wanto to explicitally declare these ports if you don't need them in a Docker/Podman context.
+
+> But Katenary will need to know the ports if you declared `depends_on` or if you need to contact the `Pod` from another one. That's because Kubernetes uses `Service` objects to load balance connexions to the `Pod`.
+
+In this case, you can declare the ports in the corresponding label, these will force the creation of a `Service` listening on the given ports (and making the load balancing to the `Pod` ports):
 
 ```yaml
 serivces:
-    web:
-        image: nginx
-        labels:
-            katenary.io/ports: 80,443
+  web:
+    image: nginx
+    labels:
+      katenary.io/ports: 80,443
 ```
 
 This will leave Katenary creating the service to open these ports to others pods.
 
-Sometimes, you need to have `containerPort` in pods but **avoid the service declaration**, so you can use this label:
+Another case is that you need to have `containerPort` in pods but **avoid the service declaration**, so you can use this label:
 
 ```yaml
 services:
-    php:
-        image: php:8-fpm
-        labels:
-            katenary.io/container-ports: 9000
+  php:
+    image: php:8-fpm
+    labels:
+      katenary.io/container-ports: 9000
 ```
 
-That will only declare the container port in the pod, but not in the service.
+That will only declare the container port in the pod, but **not in the service**.
 
 !!! Info
     It's very useful when you need to declare ports in conjonction with `same-pod`. Katenary would create a service with all the pods ports inside. The `container-ports` label will make the ports to be ignored in the service creation.
 
 ## mapenv
 
-Environment variables are working great for your compose stack but you sometimes need to change them in Helm. This label allows you to remap the value for Helm.
+Environment variables are working great for your compose stack, but you sometimes need to change them in Helm. This label allows you to remap the value for Helm.
 
 For example, when you use an environment variable to point on another service.
 
 ```yaml
 serivces:
-    php:
-        image: php
-        environment:
-            DB_HOST: database
+  php:
+    image: php
+    environment:
+      DB_HOST: database
 
-    database:
-        image: mariadb
-        labels:
-            katenary.io/ports: 3306
+  database:
+    image: mariadb
+    labels:
+      katenary.io/ports: 3306
 ```
 
 The above example will break when you'll start it in Kubernetes because the `database` service will not be named like this, it will be renamed to `{{ .Release.Name }}-database`. So, you can declare the rewrite:
 
 ```yaml
 services:
-    php:
-        image: php
-        environment:
-            DB_HOST: database
-        labels:
-            katenary.io/mapenv: |
-                DB_HOST: "{{ .Release.Name }}"-database
-    database:
-        image: mariadb
-        labels:
-            katenary.io/ports: 3306
+  php:
+    image: php
+    environment:
+      DB_HOST: database
+    labels:
+      katenary.io/mapenv: |
+        DB_HOST: "{{ .Release.Name }}"-database
+  database:
+    image: mariadb
+    labels:
+      katenary.io/ports: 3306
 
 ```
 
@@ -306,13 +310,13 @@ In this case, declare the files as is:
 
 ```yaml
 services:
-    app:
-        image: #...
-        env_file:
-            - ./env/whatever
-            - ./env/sensitives
-        labels:
-            katenary.io/secret-envfiles: ./env/sensitives
+  app:
+    image: #...
+    env_file:
+      - ./env/whatever
+      - ./env/sensitives
+    labels:
+      katenary.io/secret-envfiles: ./env/sensitives
 ```
 
 ## secret-vars
@@ -321,15 +325,15 @@ If you have some environemnt variables to declare as secret, you can list them i
 
 ```yaml
 services:
-    database:
-        image: mariadb
-        environemnt:
-            MYSQL_PASSWORD: foobar
-            MYSQL_ROOT_PASSWORD: longpasswordhere
-            MYSQL_USER: john
-            MYSQL_DATABASE: appdb
-        labels:
-            katenary.io/secret-vars: MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD
+  database:
+    image: mariadb
+    environemnt:
+      MYSQL_PASSWORD: foobar
+      MYSQL_ROOT_PASSWORD: longpasswordhere
+      MYSQL_USER: john
+      MYSQL_DATABASE: appdb
+    labels:
+      katenary.io/secret-vars: MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD
 ```
 
 ## ignore
@@ -339,31 +343,31 @@ Simply ignore the service to not be exported in the Helm Chart.
 ```yaml
 serivces:
 
-    # this service is able to answer HTTP
-    # on port 5000
-    webapp:
-        image: myapp
-        labels:
-            # declare the port
-            katenary.io/ports: 5000
-            # the ingress controller is a web proxy, so...
-            katenary.io/ingress: 5000
+  # this service is able to answer HTTP
+  # on port 5000
+  webapp:
+  image: myapp
+  labels:
+    # declare the port
+    katenary.io/ports: 5000
+    # the ingress controller is a web proxy, so...
+    katenary.io/ingress: 5000
 
 
-    # with local Docker, I want to access my webapp
-    # with "myapp.locahost" so I use a nice proxy on
-    # port 80
-    proxy:
-        image: quay.io/pathwae/proxy
-        ports:
-        - 80:80
-        environemnt:
-            CONFIG: |
-                myapp.localhost: webapp:5000
-        labels:
-            # I don't need it in Helm, it's only
-            # for local test!
-            katenary.io/ignore: true
+  # with local Docker, I want to access my webapp
+  # with "myapp.locahost" so I use a nice proxy on
+  # port 80
+  proxy:
+    image: quay.io/pathwae/proxy
+    ports:
+    - 80:80
+    environemnt:
+      CONFIG: |
+        myapp.localhost: webapp:5000
+    labels:
+      # I don't need it in Helm, it's only
+      # for local test!
+      katenary.io/ignore: true
 ```
 
 ## dependency
@@ -373,39 +377,39 @@ Replace the service by a [Helm Chart Dependency](https://helm.sh/docs/helm/helm_
 !!! Warning "Don't forget to update"
     You need to launch `helm dep update` to download the chart before to be able to test or deploy your generated helm chart
 
-The dependency respects the `Chart.yaml` file form + a "environemnt" block that will be set inside the `values.yaml` file.
+The dependency respects the `Chart.yaml` file form + an "environemnt" block that will be set inside the `values.yaml` file.
 
 ```yaml
 services:
-    myapp:
-        image: php:8-apache
-        depends_on:
-        - mariadb
+  myapp:
+    image: php:8-apache
+    depends_on:
+    - mariadb
 
-    mariadb:
-        # this for docker-compose
-        image: mariadb
-        labels:
-            # only for the depends_on directive
-            katenary.io/ports: 3306
-            # replace this by a "helm dependency"
-            katenary.io/dependency: |
-                name: mariadb-galera
-                repository: https://charts.bitnami.com/bitnami
-                version: 10.6.x
-                # alias: database
-                # serviceName: mariadb-galera
-                #
-                # Environemnt:
-                # taken from the chart
-                # => helm show values bitnami/mariadb-galera
-                environemnt:
-                    rootUser:
-                        password: TheRootPassword
-                    db:
-                        user: user1
-                        password: theuserpassword
-                        name: myapp
+  mariadb:
+    # this for docker-compose
+    image: mariadb
+    labels:
+      # only for the depends_on directive
+      katenary.io/ports: 3306
+      # replace this by a "helm dependency"
+      katenary.io/dependency: |
+        name: mariadb-galera
+        repository: https://charts.bitnami.com/bitnami
+        version: 10.6.x
+        # alias: database
+        #
+        # Configuration:
+        # => helm show values bitnami/mariadb-galera
+        config:
+          # serviceName: {{ .Release.Name }}-mariadb-galera
+          environemnt:
+            rootUser:
+              password: TheRootPassword
+            db:
+              user: user1
+              password: theuserpassword
+              name: myapp
 ```
 
 When katenary parses the docker compose file, it will replace the `myapp` `depends_on` list to match the helm dependency name. This because the majority of helm chart uses the helm chart name as service name. Of course, as usual, the `{{ .Release.Name }}` is set as prefix.
