@@ -19,6 +19,15 @@ katenary.io/same-pod             : specifies that the pod should be deployed in 
 katenary.io/volume-from          : specifies that the volumes to be mounted from the given service (yaml style)
 katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of
                                    persistentVolumeClaim (coma separated)
+katenary.io/dependency           : specifies that the given service is actually a Helm Dependency (yaml style)
+                                   The form is the following:
+                                   - name: name of the dependency
+                                     version: version of the dependency
+                                     repository: repository of the dependency
+                                     alias: alias of the dependency (optional)
+                                     config: config of the dependency (map, optional)
+                                       environment: map for environment
+                                       serviceName: the service name as defined in the chart that replace the current service name (default to the compose service name)
 katenary.io/crontabs             : specifies a cronjobs to create (yaml style, array) - this will create a
                                    cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
                                    The form is the following:
@@ -119,7 +128,7 @@ services:
 
 ## volume-from
 
-We see this in the [empty-dir](#empty-dir) section, this label defines that the corresponding volume should be shared in this pod.
+We see this in the [empty-dirs](#empty-dirs) section, this label defines that the corresponding volume should be shared in this pod.
 
 ```yaml
 services:
@@ -352,3 +361,50 @@ serivces:
             # for local test!
             katenary.io/ignore: true
 ```
+
+## dependency
+
+Replace the service by a [Helm Chart Dependency](https://helm.sh/docs/helm/helm_dependency/).
+
+!!! Warning "Don't forget to update"
+    You need to launch `helm dep update` to download the chart before to be able to test or deploy your generated helm chart
+
+The dependency respects the `Chart.yaml` file form + a "environemnt" block that will be set inside the `values.yaml` file.
+
+```yaml
+services:
+    myapp:
+        image: php:8-apache
+        depends_on:
+        - mariadb
+
+    mariadb:
+        # this for docker-compose
+        image: mariadb
+        labels:
+            # only for the depends_on directive
+            katenary.io/ports: 3306
+            # replace this by a "helm dependency"
+            katenary.io/dependency: |
+                name: mariadb-galera
+                repository: https://charts.bitnami.com/bitnami
+                version: 10.6.x
+                # alias: database
+                # serviceName: mariadb-galera
+                #
+                # Environemnt:
+                # taken from the chart
+                # => helm show values bitnami/mariadb-galera
+                environemnt:
+                    rootUser:
+                        password: TheRootPassword
+                    db:
+                        user: user1
+                        password: theuserpassword
+                        name: myapp
+```
+
+When katenary parses the docker compose file, it will replace the `myapp` `depends_on` list to match the helm dependency name. This because the majority of helm chart uses the helm chart name as service name. Of course, as usual, the `{{ .Release.Name }}` is set as prefix.
+
+For a few helm charts, this cannot be applied because the service name is not defined with this rule. So you can override the service name with `serviceName`.
+
