@@ -403,7 +403,7 @@ services:
         # => helm show values bitnami/mariadb-galera
         config:
           # serviceName: {{ .Release.Name }}-mariadb-galera
-          environemnt:
+          environment:
             rootUser:
               password: TheRootPassword
             db:
