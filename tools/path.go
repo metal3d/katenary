@@ -18,5 +18,8 @@ func GetRelPath(path string) string {
 func PathToName(path string) string {
 	path = strings.TrimPrefix(GetRelPath(path), "./")
 	path = regexp.MustCompile(replaceChars).ReplaceAllString(path, "-")
+	if path[0] == '-' {
+		path = path[1:]
+	}
 	return path
 }
