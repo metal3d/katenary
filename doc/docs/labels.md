@@ -99,10 +99,10 @@ services:
     webapp:
         image: nginx
         volumes:
-        - sources:/var/www/html
+        - websource:/var/www/html
         labels:
             # sources is actually an empty directory on the node
-            katenary.io/empty-dirs: sources
+            katenary.io/empty-dirs: websource
 
     php:
         image: php:7-fpm
@@ -113,8 +113,9 @@ services:
             katenary.io/same-pod: webapp
             # see the corresponding section, get the volume
             # fro webapp
-            katenary.io/volume-from:
-                sources: webapp
+            katenary.io/volume-from: |
+              sources:
+                webapp: websource
 ```
 
 ## volume-from
@@ -126,7 +127,7 @@ services:
     webapp:
         image: nginx
         volumes:
-        - data:/var/www/html
+        - datasource:/var/www/html
 
     app:
         image: php
@@ -134,7 +135,10 @@ services:
         - data:/opt/data
         labels:
             katenary.io/volume-from: |
-                data: webapp
+              # data in this container...
+              data:
+                # ... correspond to "datasource" in "webapp" container
+                webapp: datasource
 ```
 
 This implies that the declared volume in "webapp" will be mounted to "app" pods.
