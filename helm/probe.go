@@ -10,7 +10,7 @@ import (
 type Probe struct {
 	HttpGet      *HttpGet `yaml:"httpGet,omitempty"`
 	Exec         *Exec    `yaml:"exec,omitempty"`
-	TCP          *TCP     `yaml:"tcp,omitempty"`
+	TCP          *TCP     `yaml:"tcpSocket,omitempty"`
 	Period       float64  `yaml:"periodSeconds"`
 	InitialDelay float64  `yaml:"initialDelaySeconds"`
 	Success      uint64   `yaml:"successThreshold"`
