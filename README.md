@@ -68,7 +68,7 @@ source <(katenary completion bash)
 source <(katenary completion bash --no-description)
 
 # zsh in ~/.zshrc
-source <(helm completion zsh)
+source <(katenary completion zsh)
 
 # fish in ~/.config/fish/config.fish
 katenary completion fish | source
