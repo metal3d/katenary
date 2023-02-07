@@ -14,7 +14,7 @@ services:
       katenary.io/ingress: 80
       # DB_HOST is actually a service name
       katenary.io/mapenv: |
-        DB_HOST: {{ .Release.Name }}-database
+        DB_HOST: "{{ .Release.Name }}-database"
     depends_on:
       - database
 
