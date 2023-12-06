@@ -1,0 +1,29 @@
+// Parser package is a wrapper around compose-go to parse compose files.
+package parser
+
+import (
+	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/types"
+)
+
+// Parse compose files and return a project. The project is parsed with dotenv, osenv and profiles.
+func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, error) {
+
+	if len(dockerComposeFile) > 0 {
+		cli.DefaultFileNames = dockerComposeFile
+	}
+
+	options, err := cli.NewProjectOptions(nil,
+		cli.WithProfiles(profiles),
+		cli.WithDefaultConfigPath,
+		cli.WithOsEnv,
+		cli.WithDotEnv,
+		cli.WithNormalization(true),
+		cli.WithInterpolation(true),
+		//cli.WithResolvedPaths(true),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return cli.ProjectFromOptions(options)
+}

@@ -1,8 +1,0 @@
-# Create on 2022-02-17T11:36:02+01:00
-# Katenary command line: katenary convert --force
-apiVersion: v2
-appVersion: 0.0.1
-description: A helm chart for same-pod
-name: same-pod
-type: application
-version: 0.1.0

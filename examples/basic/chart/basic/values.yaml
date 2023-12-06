@@ -1,8 +1,0 @@
-database:
-  image: mariadb:10
-webapp:
-  image: php:7-apache
-  ingress:
-    class: nginx
-    enabled: false
-    host: webapp.basic.tld

@@ -27,7 +27,7 @@ button.md-clipboard:hover::after {
 
 article a,
 article a:visited {
-  color: var(--md-code-hl-number-color);
+  color: var(--md-code-hl-number-color) !important;
 }
 
 .md-center {
@@ -52,4 +52,16 @@ article a:visited {
 pre code.hljs {
   background-color: var(--code-bg-color);
   color: var(--code-fg-color);
+}
+
+table tbody code {
+  text-align: left;
+  white-space: nowrap;
+  font-size: 1em !important;
+  background-color: transparent !important;
+  color: var(--md-code-hl-special-color) !important;
+}
+
+h3[id*="katenaryio"] {
+  color: var(--md-code-hl-special-color);
 }

@@ -2,16 +2,6 @@
     <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
-> Warning!
-> Katenary will be soon go to release v3. This is a full rewrite of the tool, using official go-compose and kubernetes libraries to generate object.
-> The current state of the source code started to be unmaintainable and too complex to fix. I decided to revise and recreate the tool. This will change
-> some commands and the labels to use.
->
-> The current v2 version will be frozen to the current state.
-> 
-> No panic, the v3 detects the v2 syntax and will not break your helm chart.
-
-
 Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
 
 > **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.

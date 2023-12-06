@@ -1,8 +1,0 @@
-
-Congratulations,
-
-Your application is now deployed. This may take a while to be up and responding.
-
-{{ if .Values.http.ingress.enabled -}}
-- http is accessible on : http://{{ .Values.http.ingress.host }}
-{{- end }}

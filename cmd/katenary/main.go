@@ -2,152 +2,229 @@ package main
 
 import (
 	"fmt"
-	"katenary/generator/writers"
-	"katenary/helm"
-	"katenary/update"
-	"strconv"
+	"katenary/generator"
+	"katenary/utils"
+	"os"
+	"strings"
 
+	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"
 )
 
-var Version = "master" // changed at compile time
+const longHelp = `Katenary is a tool to convert compose files to Helm Charts.
 
-var longHelp = `Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
-It will create deployments, services, volumes, secrets, and ingress resources.
-But it will also create initContainers based on depend_on, healthcheck, and other features.
-It's not magical, sometimes you'll need to fix the generated charts.
-The general way to use it is to call one of these commands:
-
-    katenary convert
-    katenary convert -c docker-compose.yml
-    katenary convert -c docker-compose.yml -o ./charts
-
-In case of, check the help of each command using:
-    katenary <command> --help
-or
-    "katenary help <command>"
+Each [command] and subcommand has got an "help" and "--help" flag to show more information.
 `
 
-func init() {
-	// apply the version to the "update" package
-	update.Version = Version
-}
-
 func main() {
-
 	// The base command
 	rootCmd := &cobra.Command{
 		Use:   "katenary",
 		Long:  longHelp,
 		Short: "Katenary is a tool to convert docker-compose files to Helm Charts",
 	}
+	rootCmd.Example = `  katenary convert -c docker-compose.yml -o ./charts`
 
-	// to display the version
-	versionCmd := &cobra.Command{
-		Use:   "version",
-		Short: "Display version",
-		Run:   func(c *cobra.Command, args []string) { c.Println(Version) },
-	}
-
-	// convert command, need some flags
-	var composeFiles *[]string
-	convertCmd := &cobra.Command{
-		Use:   "convert",
-		Short: "Convert docker-compose to helm chart",
-		Long: "Convert docker-compose to helm chart. The resulting helm chart will be in the current directory/" +
-			ChartsDir + "/" + AppName +
-			".\nThe appversion will be generated that way:\n" +
-			"- if it's in a git project, it takes git version or tag\n" +
-			"- if it's not defined, so the version will be get from the --app-version flag \n" +
-			"- if it's not defined, so the 0.0.1 version is used",
-		Run: func(c *cobra.Command, args []string) {
-			force := c.Flag("force").Changed
-			appversion := c.Flag("app-version").Value.String()
-			appName := c.Flag("app-name").Value.String()
-			chartVersion := c.Flag("chart-version").Value.String()
-			chartDir := c.Flag("output-dir").Value.String()
-			indentation, err := strconv.Atoi(c.Flag("indent-size").Value.String())
-			if err != nil {
-				writers.IndentSize = indentation
-			}
-			Convert(*composeFiles, appversion, appName, chartDir, chartVersion, force)
-		},
-	}
-	composeFiles = convertCmd.Flags().StringArrayP(
-		"compose-file", "c", []string{ComposeFile}, "compose file to convert, can be use several times to override previous file. Order is important!")
-	convertCmd.Flags().BoolP(
-		"force", "f", false, "force overwrite of existing output files")
-	convertCmd.Flags().StringP(
-		"app-version", "a", AppVersion, "app version")
-	convertCmd.Flags().StringP(
-		"chart-version", "v", ChartVersion, "chart version")
-	convertCmd.Flags().StringP(
-		"app-name", "n", AppName, "application name")
-	convertCmd.Flags().StringP(
-		"output-dir", "o", ChartsDir, "chart directory")
-	convertCmd.Flags().IntP(
-		"indent-size", "i", 2, "set the indent size of the YAML files")
-
-	// show possible labels to set in docker-compose file
-	showLabelsCmd := &cobra.Command{
-		Use:   "show-labels",
-		Short: "Show labels of a resource",
-		Run: func(c *cobra.Command, args []string) {
-			c.Println(helm.GetLabelsDocumentation())
-		},
-	}
-
-	// Update the binary to the latest version
-	updateCmd := &cobra.Command{
-		Use:   "upgrade",
-		Short: "Upgrade katenary to the latest version if available",
-		Run: func(c *cobra.Command, args []string) {
-			version, assets, err := update.CheckLatestVersion()
-			if err != nil {
-				c.Println(err)
-				return
-			}
-			c.Println("Updating to version: " + version)
-			err = update.DownloadLatestVersion(assets)
-			if err != nil {
-				c.Println(err)
-				return
-			}
-			c.Println("Update completed")
-		},
-	}
+	rootCmd.Version = generator.Version
+	rootCmd.CompletionOptions.DisableDescriptions = false
+	rootCmd.CompletionOptions.DisableNoDescFlag = false
 
 	rootCmd.AddCommand(
-		versionCmd,
-		convertCmd,
-		showLabelsCmd,
-		updateCmd,
+		generateCompletionCommand(rootCmd.Name()),
+		generateVersionCommand(),
+		generateConvertCommand(),
+		generateHashComposefilesCommand(),
+		generateLabelHelpCommand(),
 	)
 
-	// in parallel, check if the current katenary version is the latest
-	ch := make(chan string)
-	go func() {
-		version, _, err := update.CheckLatestVersion()
-		if err != nil {
-			ch <- ""
-			return
-		}
-		if Version != version {
-			ch <- fmt.Sprintf("\x1b[33mNew version available: " +
-				version +
-				" - to auto upgrade katenary, you can execute: katenary upgrade\x1b[0m\n")
-		}
-	}()
+	rootCmd.Execute()
+}
 
-	// Execute the command
-	finalize := make(chan error)
-	go func() {
-		finalize <- rootCmd.Execute()
-	}()
+const completionHelp = `To load completions:
 
-	// Wait for both goroutines to finish
-	if err := <-finalize; err != nil {
-		fmt.Println(err)
+Bash:
+  # Add this line in your ~/.bashrc or ~/.bash_profile file
+  $ source <(%[1]s completion bash)
+
+  # Or, you can load completions for each users session. Execute once:
+  # Linux:
+  $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
+  # macOS:
+  $ %[1]s completion bash > $(brew --prefix)/etc/bash_completion.d/%[1]s
+
+Zsh:
+  # If shell completion is not already enabled in your environment,
+  # you will need to enable it.  You can execute the following once:
+
+  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+  # To load completions for each session, execute once:
+  $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
+
+  # You will need to start a new shell for this setup to take effect.
+
+fish:
+  $ %[1]s completion fish | source
+
+  # To load completions for each session, execute once:
+  $ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+
+PowerShell:
+  PS> %[1]s completion powershell | Out-String | Invoke-Expression
+
+  # To load completions for every new session, run:
+  PS> %[1]s completion powershell > %[1]s.ps1
+  # and source this file from your PowerShell profile.
+`
+
+func generateCompletionCommand(name string) *cobra.Command {
+	bashV1 := false
+	cmd := &cobra.Command{
+		Use:                   "completion",
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
+		Short:                 "Generates completion scripts",
+		Long:                  fmt.Sprintf(completionHelp, name),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) == 0 {
+				cmd.Help()
+				return
+			}
+			switch args[0] {
+			case "bash":
+				// get the bash version
+				if cmd.Flags().Changed("bash-v1") {
+					cmd.Root().GenBashCompletion(os.Stdout)
+					return
+				}
+				cmd.Root().GenBashCompletionV2(os.Stdout, true)
+			case "zsh":
+				cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				cmd.Root().GenPowerShellCompletion(os.Stdout)
+			}
+		},
 	}
-	fmt.Print(<-ch)
+
+	// add a flag to force bash completion v1
+	cmd.Flags().Bool("bash-v1", bashV1, "Force bash completion v1")
+
+	return cmd
+}
+
+func generateConvertCommand() *cobra.Command {
+	force := false
+	outputDir := "./chart"
+	dockerComposeFile := make([]string, 0)
+	profiles := make([]string, 0)
+	helmdepUpdate := false
+	var appVersion *string
+	givenAppVersion := ""
+	chartVersion := "0.1.0"
+
+	convertCmd := &cobra.Command{
+		Use:   "convert",
+		Short: "Converts a docker-compose file to a Helm Chart",
+		Run: func(cmd *cobra.Command, args []string) {
+			if givenAppVersion != "" {
+				appVersion = &givenAppVersion
+			}
+			generator.Convert(generator.ConvertOptions{
+				Force:        force,
+				OutputDir:    outputDir,
+				Profiles:     profiles,
+				HelmUpdate:   helmdepUpdate,
+				AppVersion:   appVersion,
+				ChartVersion: chartVersion,
+			}, dockerComposeFile...)
+		},
+	}
+
+	convertCmd.Flags().BoolVarP(&force, "force", "f", force, "Force the overwrite of the chart directory")
+	convertCmd.Flags().BoolVarP(&helmdepUpdate, "helm-update", "u", helmdepUpdate, "Update helm dependencies if helm is installed")
+	convertCmd.Flags().StringSliceVarP(&profiles, "profile", "p", profiles, "Specify the profiles to use")
+	convertCmd.Flags().StringVarP(&outputDir, "output-dir", "o", outputDir, "Specify the output directory")
+	convertCmd.Flags().StringSliceVarP(&dockerComposeFile, "compose-file", "c", cli.DefaultFileNames, "Specify an alternate compose files - can be specified multiple times or use coma to separate them")
+	convertCmd.Flags().StringVarP(&givenAppVersion, "app-version", "a", "", "Specify the app version (in Chart.yaml)")
+	convertCmd.Flags().StringVarP(&chartVersion, "chart-version", "v", chartVersion, "Specify the chart version (in Chart.yaml)")
+	return convertCmd
+
+}
+
+func generateVersionCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print the version number of Katenary",
+		Run: func(cmd *cobra.Command, args []string) {
+			println(generator.Version)
+		},
+	}
+}
+
+func generateLabelHelpCommand() *cobra.Command {
+
+	markdown := false
+	all := false
+	cmd := &cobra.Command{
+		Use:   "help-labels [label]",
+		Short: "Print the labels help for all or a specific label",
+		Long: `Print the labels help for all or a specific label
+If no label is specified, the help for all labels is printed.
+If a label is specified, the help for this label is printed.
+
+The name of the label must be specified without the prefix ` + generator.KATENARY_PREFIX + `.
+
+e.g. 
+  kanetary help-labels
+  katenary help-labels ingress
+  katenary help-labels map-env
+`,
+		ValidArgs: generator.GetLabelNames(),
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) > 0 {
+				fmt.Println(generator.GetLabelHelpFor(args[0], markdown))
+				return
+			}
+			if all {
+				// show the help for all labels
+				l := len(generator.GetLabelNames())
+				for i, label := range generator.GetLabelNames() {
+					fmt.Println(generator.GetLabelHelpFor(label, markdown))
+					if !markdown && i < l-1 {
+						fmt.Println(strings.Repeat("-", 80))
+					}
+				}
+				return
+			}
+			fmt.Println(generator.GetLabelHelp(markdown))
+		},
+	}
+
+	cmd.Flags().BoolVarP(&markdown, "markdown", "m", markdown, "Use the markdown format")
+	cmd.Flags().BoolVarP(&all, "all", "a", all, "Print the full help for all labels")
+
+	return cmd
+}
+
+func generateHashComposefilesCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "hash-composefiles [composefile]",
+		Short: "Print the hash of the composefiles",
+		Long: `Print the hash of the composefiles
+If no composefile is specified, the hash of all composefiles is printed.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if len(args) > 0 {
+				if hash, err := utils.HashComposefiles(args); err != nil {
+					fmt.Println(err)
+				} else {
+					fmt.Println(hash)
+				}
+				return
+			}
+		},
+	}
+	return cmd
 }

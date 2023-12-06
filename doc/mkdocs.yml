@@ -18,8 +18,8 @@ markdown_extensions:
   - admonition
   - attr_list
   - pymdownx.emoji:
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
       anchor_linenums: true
       use_pygments: false
@@ -28,7 +28,7 @@ extra_css:
   - statics/main.css
 extra_javascript:
   - statics/addons.js
-copyright: Copyright &copy; 2021 - 2022 - Katenary authors
+copyright: Copyright &copy; 2021 - 2023 - Katenary authors
 extra:
   generator: false
   social:
@@ -38,3 +38,12 @@ nav:
   - "Home": index.md
   - usage.md
   - labels.md
+  - Behind the scene:
+    - coding.md
+    - dependencies.md
+  - Go Packages:
+    - packages/generator.md
+    - packages/parser.md
+    - packages/update.md
+    - packages/utils.md
+    - packages/generator/extrafiles.md

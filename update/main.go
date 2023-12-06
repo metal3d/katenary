@@ -1,3 +1,4 @@
+/* Update package is used to check if a new version of katenary is available.*/
 package update
 
 import (
@@ -76,6 +77,13 @@ func CheckLatestVersion() (string, []Asset, error) {
 
 // DownloadLatestVersion will download the latest version of katenary.
 func DownloadLatestVersion(assets []Asset) error {
+
+	defer func() {
+		if r := recover(); r != nil {
+			os.Rename(exe+".old", exe)
+		}
+	}()
+
 	// Download the latest version
 	fmt.Println("Downloading the latest version...")
 

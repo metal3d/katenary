@@ -4,27 +4,51 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
+GOVERSION=1.21
 GO=container
 OUT=katenary
-BLD_CMD=go build -ldflags="-X 'main.Version=$(VERSION)'" -o $(OUT) ./cmd/katenary/*.go
+BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary
 GOOS=linux
 GOARCH=amd64
+SIGNER=metal3d@gmail.com
 
-BUILD_IMAGE=docker.io/golang:1.18-alpine
+BUILD_IMAGE=docker.io/golang:$(GOVERSION)-alpine
+# SHELL=/bin/bash
 
-.PHONY: help clean build
+# List of source files
+SOURCES=$(wildcard ./*.go ./*/*.go ./*/*/*.go)
+# List of binaries to build and sign
+BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
+# List of signatures to build
+ASC_BINARIES=$(patsubst %,%.asc,$(BINARIES))
 
+# defaults
+SHELL := bash
+# strict mode
+.SHELLFLAGS := -eu -o pipefail -c
+# One session per target
 .ONESHELL:
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+.PHONY: help clean build install
+
+all: build
+
 help:
-	@cat <<EOF
+	@cat <<EOF | fold -s -w 80
 	=== HELP ===
 	To avoid you to install Go, the build is made by podman or docker.
 	
-	You can use:
+	Installinf (you can use local Go by setting GO=local)):
+	# use podman or docker to build
 	$$ make install
+	# or use local Go
+	$$ make install GO=local
 	This will build and install katenary inside the PREFIX(/bin) value (default is $(PREFIX))
 	
-	To change the PREFIX to somewhere where only root or sudo users can save the binary, it is recommended to build before install:
+	
+	To change the PREFIX to somewhere where only root or sudo users can save the binary, it is recommended to build before install, one more time you can use local Go by setting GO=local:
 	$$ make build
 	$$ sudo make install PREFIX=/usr/local
 	
@@ -47,13 +71,9 @@ help:
 	$$ make build-all
 	EOF
 
+
+## Standard build
 build: pull katenary
-
-build-all:
-	rm -f dist/*
-	$(MAKE) _build-all
-
-_build-all: pull dist dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
 
 pull:
 ifneq ($(GO),local)
@@ -61,14 +81,36 @@ ifneq ($(GO),local)
 	@$(CTN) pull $(BUILD_IMAGE)
 endif
 
-dist:
+katenary: $(SOURCES) Makefile go.mod go.sum
+ifeq ($(GO),local)
+	@echo "=> Build on host using go"
+else
+	@echo "=> Build in container using" $(CTN)
+endif
+	echo $(BLD_CMD)
+ifeq ($(GO),local)
+	$(BLD_CMD)
+else ifeq ($(CTN),podman)
+	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it $(BUILD_IMAGE) $(BLD_CMD)
+else
+	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it $(BUILD_IMAGE) $(BLD_CMD)
+endif
+	echo "=> Stripping if possible"
+	strip $(OUT) 2>/dev/null || echo "=> No strip available"
+
+
+## Release build
+dist: prepare $(BINARIES) $(ASC_BINARIES)
+
+prepare: pull
 	mkdir -p dist
 
 dist/katenary-linux-amd64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-amd64...\033[0m"
 	$(MAKE) katenary GOOS=linux GOARCH=amd64 OUT=$@
-
 
 dist/katenary-linux-arm64:
 	@echo
@@ -94,30 +136,16 @@ dist/katenary-freebsd-arm64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUT=$@
-
-katenary: $(wildcard */*.go Makefile go.mod go.sum)
-ifeq ($(GO),local)
-	@echo "=> Build in host using go"
-else
-	@echo "=> Build in container using" $(CTN)
-endif
-	echo $(BLD_CMD)
-ifeq ($(GO),local)
-	$(BLD_CMD)
-else ifeq ($(CTN),podman)
-	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it $(BUILD_IMAGE) $(BLD_CMD)
-else
-	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it $(BUILD_IMAGE) $(BLD_CMD)
-endif
-	echo "=> Stripping if possible"
-	strip $(OUT) 2>/dev/null || echo "=> No strip available"
 	
+gpg-sign:
+	rm -f dist/*.asc
+	$(MAKE) $(ASC_BINARIES)
 
+dist/%.asc: dist/%
+	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
 
 install: build
-	cp katenary $(PREFIX)/bin/katenary
+	install -Dm755 katenary $(PREFIX)/bin/katenary
 
 uninstall:
 	rm -f $(PREFIX)/bin/katenary
@@ -131,8 +159,6 @@ test:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
 	go test -v ./...
 
-
-.ONESHELL:
 push-release: build-all
 	@rm -f release.id
 	# read personal access token from .git-credentials
@@ -154,3 +180,37 @@ push-release: build-all
 			https://uploads.github.com/repos/metal3d/katenary/releases/$$(cat release.id)/assets?name=$$(basename $$i)
 	done
 	@rm -f release.id
+
+
+__label_doc:
+	@echo "=> Generating labels doc..."
+	# short label doc
+	go run ./cmd/katenary help-labels -m | \
+		sed -i '
+			/START_LABEL_DOC/,/STOP_LABEL_DOC/{/<!--/!d};
+			/START_LABEL_DOC/,/STOP_LABEL_DOC/r/dev/stdin
+		' doc/docs/labels.md
+	# detailed label doc
+	go run ./cmd/katenary help-labels -am | sed 's/^##/###/' | \
+		sed -i '
+			/START_DETAILED_DOC/,/STOP_DETAILED_DOC/{/<!--/!d}; 
+			/START_DETAILED_DOC/,/STOP_DETAILED_DOC/r/dev/stdin
+		' doc/docs/labels.md
+	
+	echo "=> Generating Code documentation..."
+	PACKAGES=$$(for f in $$(find . -name "*.go" -type f); do dirname $$f; done | sort -u)
+	for pack in $$PACKAGES; do
+		echo "-> Generating doc for $$pack"
+		#gomarkdoc -o doc/docs/packages/$$pack.md $$pack
+		gomarkdoc -f azure-devops $$pack | pandoc  -t gfm -o doc/docs/packages/$$pack.md
+		# drop the Index section without removing the title
+		# - remove the Index section, but keep the following heading
+		sed -i  '/^## Index/,/^##/ { /## Index/d; /^##/! d }' doc/docs/packages/$$pack.md
+		# fixes for markdown problem
+		# - there are \* on heading, replace to *
+		sed -i 's/\\\*/\*/g' doc/docs/packages/$$pack.md
+		## parenthis in heading are escaped, replace to unescaped
+		sed -i 's/\\(/\(/g' doc/docs/packages/$$pack.md
+		sed -i 's/\\)/\)/g' doc/docs/packages/$$pack.md
+		## list are badly formatted with 2 spaces, replace to 4
+	done
