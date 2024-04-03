@@ -55,15 +55,15 @@ See this compose file:
 version: "3"
 
 services:
-    webapp:
-        image: php:8-apache
-        depends_on:
-        - database
+  webapp:
+    image: php:8-apache
+    depends_on:
+      - database
 
-    database:
-        image: mariadb
-        environment:
-            MYSQL_ROOT_PASSWORD: foobar
+  database:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: foobar
 ```
 
 In this case, `webapp` needs to know the `database` port because the `depends_on` points on it and Kubernetes has not (yet) solution to check the database startup. Katenary wants to create a `initContainer` to hit on the related service. So, instead of exposing the port in the compose definition, let's declare this to katenary with labels:
@@ -73,17 +73,18 @@ In this case, `webapp` needs to know the `database` port because the `depends_on
 version: "3"
 
 services:
-    webapp:
-        image: php:8-apache
-        depends_on:
-        - database
+  webapp:
+    image: php:8-apache
+    depends_on:
+      - database
 
-    database:
-        image: mariadb
-        environment:
-            MYSQL_ROOT_PASSWORD: foobar
-        labels:
-            katenary.io/ports: 3306
+  database:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: foobar
+    labels:
+      katenary.v3/ports: |-
+        - 3306
 ```
 
 ### Declare ingresses
@@ -93,11 +94,13 @@ It's very common to have an `Ingress` on web application to deploy on Kuberenete
 ```yaml
 # ...
 services:
-    webapp:
-        image: ...
-        ports: 8080:5050
-        labels:
-            katenary.io/ingress: 5050
+  webapp:
+    image: ...
+    ports: 8080:5050
+    labels:
+      katenary.v3/ingress: |-
+        port: 5050
+        hostname: myapp.example.com
 ```
 
 Note that the port to bind is the one used by the container, not the used locally. This is because Katenary create a service to bind the container itself.
@@ -111,13 +114,13 @@ With a compose file, there is no problem as Docker/Podman allows to resolve the 
 
 ```yaml
 services:
-    webapp:
-        image: php:7-apache
-        environment:
-            DB_HOST: database
+  webapp:
+    image: php:7-apache
+    environment:
+      DB_HOST: database
 
-    database:
-        image: mariadb
+  database:
+    image: mariadb
 ```
 
 Katenary prefixes the services with `{{ .Release.Name }}` (to make it possible to install the application several times in a namespace), so you need to "remap" the environment variable to the right one.
@@ -125,33 +128,33 @@ Katenary prefixes the services with `{{ .Release.Name }}` (to make it possible t
 
 ```yaml
 services:
-    webapp:
-        image: php:7-apache
-        environment:
-            DB_HOST: database
-        labels:
-            katenary.io/mapenv: |
-                DB_HOST: "{{ .Release.Name }}-database"
+  webapp:
+    image: php:7-apache
+    environment:
+      DB_HOST: database
+    labels:
+      katenary.v3/mapenv: |-
+        DB_HOST: "{{ .Release.Name }}-database"
 
-    database:
-        image: mariadb
+  database:
+      image: mariadb
 ```
 
 !!! Warning
-    This is a "multiline" label that accepts YAML or JSON content, don't forget to add a pipe char (`|`) and to indent your content
+    This is a "multiline" label that accepts YAML or JSON content, don't forget to add a pipe char (`|` or `|-`) and to **indent** your content
 
 This label can be used to map others environment for any others reason. E.g. to change an informational environment variable.
 
 ```yaml
 
 services:
-    webapp:
-        #...
-        environment:
-            RUNNING: docker
-        labels:
-            katenary.io/mapenv: |
-                RUNNING: kubernetes
+  webapp:
+  #...
+    environment:
+      RUNNING: docker
+    labels:
+      katenary.v3/mapenv: |-
+        RUNNING: kubernetes
 ```
 
 In the above example, `RUNNING` will be set to `kubernetes` when you'll deploy the application with helm, and it's `docker` for "podman" and "docker" executions.
