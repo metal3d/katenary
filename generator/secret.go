@@ -76,7 +76,7 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 // SetData sets the data of the secret.
 func (s *Secret) SetData(data map[string]string) {
 	for key, value := range data {
-		s.AddData(key, fmt.Sprintf("%s", value))
+		s.AddData(key, value)
 	}
 
 }

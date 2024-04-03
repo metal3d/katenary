@@ -33,13 +33,6 @@ type Deployment struct {
 // It also creates the Values map that will be used to create the values.yaml file.
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 
-	ports := []corev1.ContainerPort{}
-	for _, port := range service.Ports {
-		ports = append(ports, corev1.ContainerPort{
-			ContainerPort: int32(port.Target),
-		})
-	}
-
 	isMainApp := false
 	if mainLabel, ok := service.Labels[LABEL_MAIN_APP]; ok {
 		main := strings.ToLower(mainLabel)

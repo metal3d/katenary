@@ -388,6 +388,7 @@ const imagePullSecretHelp = `
 func addImagePullSecretsHelp(values []byte) []byte {
 	// add imagePullSecrets help
 	lines := strings.Split(string(values), "\n")
+
 	for i, line := range lines {
 		if strings.Contains(line, "pullSecrets:") {
 			spaces := utils.CountStartingSpaces(line)
@@ -411,10 +412,10 @@ func addChartDoc(values []byte, project *types.Project) []byte {
 	lines := strings.Split(string(values), "\n")
 	for i, line := range lines {
 		if regexp.MustCompile(`(?m)^name:`).MatchString(line) {
-			doc := fmt.Sprintf("\n# Name of the chart (required), basically the name of the project.\n")
+			doc := "\n# Name of the chart (required), basically the name of the project.\n"
 			lines[i] = doc + line
 		} else if regexp.MustCompile(`(?m)^version:`).MatchString(line) {
-			doc := fmt.Sprintf("\n# Version of the chart (required)\n")
+			doc := "\n# Version of the chart (required)\n"
 			lines[i] = doc + line
 		} else if strings.Contains(line, "appVersion:") {
 			spaces := utils.CountStartingSpaces(line)

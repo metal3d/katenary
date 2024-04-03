@@ -3,9 +3,6 @@ package generator
 import "regexp"
 
 var (
-	// regexp to all tpl strings
-	tplValueRegexp = regexp.MustCompile(`\{\{.*\}\}-`)
-
 	// find all labels starting by __replace_ and ending with ":"
 	// and get the value between the quotes
 	// ?s => multiline
