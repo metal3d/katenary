@@ -20,6 +20,7 @@ func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, erro
 		cli.WithDotEnv,
 		cli.WithNormalization(true),
 		cli.WithInterpolation(true),
+		cli.WithResolvedPaths(false),
 		//cli.WithResolvedPaths(true),
 	)
 	if err != nil {
