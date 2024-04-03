@@ -73,34 +73,27 @@ katenary completion fish | source
 # Usage
 
 ```
-Katenary aims to be a tool to convert docker-compose files to Helm Charts. 
-It will create deployments, services, volumes, secrets, and ingress resources.
-But it will also create initContainers based on depend_on, healthcheck, and other features.
-It's not magical, sometimes you'll need to fix the generated charts.
-The general way to use it is to call one of these commands:
+Katenary is a tool to convert compose files to Helm Charts.
 
-    katenary convert
-    katenary convert -c docker-compose.yml
-    katenary convert -c docker-compose.yml -o ./charts
-
-In case of, check the help of each command using:
-    katenary <command> --help
-or
-    "katenary help <command>"
+Each [command] and subcommand has got an "help" and "--help" flag to show more information.
 
 Usage:
   katenary [command]
 
+Examples:
+  katenary convert -c docker-compose.yml -o ./charts
+
 Available Commands:
-  completion  Generate the autocompletion script for the specified shell
-  convert     Convert docker-compose to helm chart
-  help        Help about any command
-  show-labels Show labels of a resource
-  upgrade     Upgrade katenary to the latest version if available
-  version     Display version
+  completion        Generates completion scripts
+  convert           Converts a docker-compose file to a Helm Chart
+  hash-composefiles Print the hash of the composefiles
+  help              Help about any command
+  help-labels       Print the labels help for all or a specific label
+  version           Print the version number of Katenary
 
 Flags:
-  -h, --help   help for katenary
+  -h, --help      help for katenary
+  -v, --version   version for katenary
 
 Use "katenary [command] --help" for more information about a command.
 ```
@@ -118,9 +111,7 @@ What can be interpreted by Katenary:
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending on service (using the first port)
 - `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with configMap for now)
-- some labels can help to bind values, for example:
-    - `katenary.io/ingress: 80` will expose the port 80 in an ingress
-    - `katenary.io/mapenv: |`: allow mapping environment to something else than the given value in the compose file 
+- some labels can help to bind values, see examples below
 
 Exemple of a possible `docker-compose.yaml` file:
 
@@ -140,11 +131,13 @@ services:
             - database
         labels:
             # expose the port 80 as an ingress
-            katenary.io/ingress: 80
+            katenary.v3/ingress: |-
+                hostname: myapp.example.com
+                port: 80
             # make adaptations, DB_HOST environment is actually the service name
             # to hit (note the yaml style, start with "|")
-            katenary.io/mapenv: |
-              DB_HOST: {{ .Release.Name }}-database
+            katenary.v3/mapenv: |-
+              DB_HOST: '{{ .Release.Name }}-database'
     database:
         image: mariadb:10
         env_file:
@@ -157,42 +150,36 @@ services:
         labels:
             # no need to declare this port in docker-compose
             # but katenary will need it
-            katenary.io/ports: 3306
+            katenary.v3/ports: |-
+                - 3306
             # these variables are secrets
-            katenary.io/secret-vars: MARIADB_ROOT_PASSWORD, MARIADB_PASSWORD
+            katenary.v3/secrets: |-
+                - MARIADB_ROOT_PASSWORD
+                - MARIADB_PASSWORD
 ```
 
 # Labels
 
-These labels could be found by `katenary show-labels`, and can be placed as "labels" inside your docker-compose file:
+These labels could be found by `katenary help-labels`, and can be placed as "labels" inside your docker-compose file:
 
 ```
-# Labels
-katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart (bool)
-katenary.io/secret-vars          : secret variables to push on a secret file (coma separated)
-katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap (coma separated)
-katenary.io/mapenv               : map environment variable to a template string (yaml style, object)
-katenary.io/ports                : set the ports to expose as a service (coma separated)
-katenary.io/ingress              : set the port to expose in an ingress (coma separated)
-katenary.io/configmap-volumes    : specifies that the volumes points on a configmap (coma separated)
-katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the
-                                   given service name (string)
-katenary.io/volume-from          : specifies that the volumes to be mounted from the given service (yaml style)
-katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of
-                                   persistentVolumeClaim (coma separated)
-katenary.io/crontabs             : specifies a cronjobs to create (yaml style, array) - this will create a
-                                   cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
-                                   The form is the following:
-                                   - command: the command to run
-                                     schedule: the schedule to run the command (e.g. "@daily" or "*/1 * * * *")
-                                     image: the image to use for the command (default to "bitnami/kubectl")
-                                     allPods: true if you want to run the command on all pods (default to false)
-katenary.io/healthcheck          : specifies that the container should be monitored by a healthcheck,
-                                   **it overrides the docker-compose healthcheck**. 
-                                   You can use these form of label values:
-                                     -> http://[ignored][:port][/path] to specify an http healthcheck
-                                     -> tcp://[ignored]:port to specify a tcp healthcheck
-                                     -> other string is condidered as a "command" healthcheck
+To get more information about a label, use `katenary help-label <name_without_prefix>
+e.g. katenary help-label dependencies
+
+katenary.v3/configmap-files:	list of strings		Add files to the configmap.
+katenary.v3/cronjob:		object			Create a cronjob from the service.
+katenary.v3/dependencies:	list of objects		Add Helm dependencies to the service.
+katenary.v3/description:	string			Description of the service
+katenary.v3/env-from:		list of strings		Add environment variables from antoher service.
+katenary.v3/health-check:	object			Health check to be added to the deployment.
+katenary.v3/ignore:		bool			Ignore the service
+katenary.v3/ingress:		object			Ingress rules to be added to the service.
+katenary.v3/main-app:		bool			Mark the service as the main app.
+katenary.v3/map-env:		object			Map env vars from the service to the deployment.
+katenary.v3/ports:		list of uint32		Ports to be added to the service.
+katenary.v3/same-pod:		string			Move the same-pod deployment to the target deployment.
+katenary.v3/secrets:		list of string		Env vars to be set as secrets.
+katenary.v3/values:		list of string or map	Environment variables to be added to the values.yaml
 ```
 
 # What a name...
