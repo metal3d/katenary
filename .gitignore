@@ -4,6 +4,7 @@ dist/*
 chart/*
 *.yaml
 *.yml
+!generator/*.yaml
 !doc/mkdocs.yaml
 !.readthedocs.yaml
 ./katenary
