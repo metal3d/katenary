@@ -11,6 +11,10 @@ func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, erro
 
 	cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, "compose.katenary.yaml")
 
+	if len(dockerComposeFile) == 0 {
+		cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, dockerComposeFile...)
+	}
+
 	options, err := cli.NewProjectOptions(nil,
 		cli.WithProfiles(profiles),
 		cli.WithDefaultConfigPath,
