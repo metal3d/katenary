@@ -6,12 +6,6 @@ Katenary is a tool to help to transform `docker-compose` files to a working Helm
 
 > **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
 
-This project is partially made at [Smile](https://www.smile.eu) 
-
-<div style="text-align:center" align="center">
-<a href="https://www.smile.eu"><img src="./misc/Logo_Smile.png" alt="Smile Logo" width="250" /></a>
-</div>
-
 # Install
 
 You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
