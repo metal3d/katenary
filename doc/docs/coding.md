@@ -1,14 +1,19 @@
 # How Katenary works behind the scene
 
-This section is for developers who want to take part in Katenary. Here we describe how it works and the expected principles.
+This section is for developers who want to take part in Katenary. Here we describe how it works and the expected
+principles.
 
 ## A few important points
 
-Katenary is developed in Go. The version currently supported is 1.20. For reasons of readability, the `any` type is preferred to `interface{}`.
+Katenary is developed in Go. The version currently supported is 1.20. For reasons of readability, the `any` type is
+preferred to `interface{}`.
 
-Since version v3, Katenary uses, in addition to `go-compose`, the `k8s` library to generate objects that are guaranteed to work before transformation. Katenary adds Helm syntax entries to add loops, transformations and conditions.
+Since version v3, Katenary uses, in addition to `go-compose`, the `k8s` library to generate objects that are guaranteed
+to work before transformation. Katenary adds Helm syntax entries to add loops, transformations and conditions.
 
-We really try to follow best practices and code principles. But, Katenary needs a lot of workarounds and string manipulation during the process. There are, also, some drawbacks using standard k8s packages that makes a lot of type checks when generating the objects. We need to finalize the values after object generation.
+We really try to follow best practices and code principles. But, Katenary needs a lot of workarounds and string
+manipulation during the process. There are, also, some drawbacks using standard k8s packages that makes a lot of type
+checks when generating the objects. We need to finalize the values after object generation.
 
 **This makes the coding a bit harder than simply converting from YAML to YAML.**
 
@@ -16,9 +21,12 @@ We really try to follow best practices and code principles. But, Katenary needs 
 
 ## General principle
 
-During conversion, the `generator` package is primarily responsible for creating "objects". The principle is to generate one `Deployment` per `compose` service. If the container coming from "compose" exposes ports (explicitly), then a service is created.
+During conversion, the `generator` package is primarily responsible for creating "objects". The principle is to generate
+one `Deployment` per `compose` service. If the container coming from "compose" exposes ports (explicitly), then a
+service is created.
 
-If the declaration of a container is to be integrated into another pod (via the `same-pod` label), this `Deployment` and its associated service are still created. They are deleted last, once the merge has been completed.
+If the declaration of a container is to be integrated into another pod (via the `same-pod` label), this `Deployment` and
+its associated service are still created. They are deleted last, once the merge has been completed.
 
 ## Conversion in "`generator`" package
 
@@ -28,8 +36,8 @@ The generation is made by using a `HelmChart` object:
 
 ```golang
 chart := NewChart(appName string)
-```
-Then, some processes are made to detect the "main app verion" (tag for the main service image), bootstrapping declared ports in labels, managing links to bind containers in one pods...
+``` Then, some processes are made to detect the "main app verion" (tag for the main service image), bootstrapping
+declared ports in labels, managing links to bind containers in one pods...
 
 Then, a loop basically makes this:
 
@@ -44,12 +52,15 @@ for _, service := range project.Services {
 }
 ```
 
-**A lot** of string manipulations are made by each `Yaml()` methods. This is where you find the complex and impacting operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart Yaml content with template conditions, vamues and calls to helper templates.
+**A lot** of string manipulations are made by each `Yaml()` methods. This is where you find the complex and impacting
+operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart Yaml content with template
+conditions, vamues and calls to helper templates.
 
-> The `Yaml()` methods, in each object, need contribution, help, fixes, enhancements...
-> They work, but there is a lot of complexity. Please, create issues, pull-requests and conversation in the GitHub repository.
+> The `Yaml()` methods, in each object, need contribution, help, fixes, enhancements... They work, but there is a lot of
+> complexity. Please, create issues, pull-requests and conversation in the GitHub repository.
 
-The final step, before sending all templates to chart, is to bind the containers inside the same pod where it's specified.
+The final step, before sending all templates to chart, is to bind the containers inside the same pod where it's
+specified.
 
 For each source container linked to the destination:
 

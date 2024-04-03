@@ -353,7 +353,7 @@ Environment variables to be added to the values.yaml
 
 By default, all environment variables in the "env" and environment
 files are added to configmaps with the static values set. This label
-allows to add environment variables to the values.yaml file.
+allows adding environment variables to the values.yaml file.
 
 Note that the value inside the configmap is `{{ tpl vaname . }}`, so 
 you can set the value to a template that will be rendered with the 

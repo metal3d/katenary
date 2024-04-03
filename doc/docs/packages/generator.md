@@ -365,7 +365,7 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
 ### func (*Deployment) DependsOn
 
 ``` go
-func (d *Deployment) DependsOn(to *Deployment) error
+func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 ```
 
 DependsOn adds a initContainer to the deployment that will wait for the
