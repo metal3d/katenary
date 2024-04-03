@@ -321,19 +321,22 @@ func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *
 func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error) {
 	// helm dependency
 	if v, ok := service.Labels[LABEL_DEPENDENCIES]; ok {
-		d := Dependency{}
+		d := []Dependency{}
 		if err := yaml.Unmarshal([]byte(v), &d); err != nil {
 			return false, err
 		}
-		fmt.Printf("%s Adding dependency to %s\n", utils.IconDependency, d.Name)
-		chart.Dependencies = append(chart.Dependencies, d)
 
-		name := d.Name
-		if d.Alias != "" {
-			name = d.Alias
+		for _, dep := range d {
+			fmt.Printf("%s Adding dependency to %s\n", utils.IconDependency, dep.Name)
+			chart.Dependencies = append(chart.Dependencies, dep)
+			name := dep.Name
+			if dep.Alias != "" {
+				name = dep.Alias
+			}
+			// add the dependency env vars to the values.yaml
+			chart.Values[name] = dep.Values
 		}
-		// add the dependency env vars to the values.yaml
-		chart.Values[name] = d.Values
+
 		return true, nil
 	}
 	return false, nil
@@ -493,80 +496,6 @@ func generateConfigMapsAndSecrets(project *types.Project, chart *HelmChart) erro
 		}
 	}
 	return nil
-}
-
-func mergePods(target, from *Deployment, services map[string]*Service, chart *HelmChart) {
-
-	targetName := target.service.Name
-	fromName := from.service.Name
-
-	// copy the volumes from the source deployment
-	for _, v := range from.Spec.Template.Spec.Volumes {
-		// ensure that the volume is not already present
-		found := false
-		for _, tv := range target.Spec.Template.Spec.Volumes {
-			if tv.Name == v.Name {
-				found = true
-				break
-			}
-		}
-		if found {
-			continue
-		}
-		target.Spec.Template.Spec.Volumes = append(target.Spec.Template.Spec.Volumes, v)
-	}
-	// copy the containers from the source deployment
-	for _, c := range from.Spec.Template.Spec.Containers {
-		target.Spec.Template.Spec.Containers = append(target.Spec.Template.Spec.Containers, c)
-	}
-	// copy the init containers from the source deployment
-	for _, c := range from.Spec.Template.Spec.InitContainers {
-		target.Spec.Template.Spec.InitContainers = append(target.Spec.Template.Spec.InitContainers, c)
-	}
-	// drop the deployment from the chart
-	delete(chart.Templates, fromName+".deployment.yaml")
-
-	// rewite the target deployment
-	y, err := target.Yaml()
-	if err != nil {
-		log.Fatal("error rewriting deployment:", err)
-	}
-	chart.Templates[target.Filename()] = &ChartTemplate{
-		Content:     y,
-		Servicename: targetName,
-	}
-
-	// now, if the source deployment has a service, we need to merge it with the target service
-	if _, ok := chart.Templates[targetName+".service.yaml"]; ok {
-		container, _ := utils.GetContainerByName(fromName, target.Spec.Template.Spec.Containers)
-		if container.Ports == nil || len(container.Ports) == 0 {
-			return
-		}
-		targetService := services[targetName]
-		for _, port := range container.Ports {
-			targetService.AddPort(types.ServicePortConfig{
-				Target:   uint32(port.ContainerPort),
-				Protocol: "TCP",
-			}, port.Name)
-		}
-		// rewrite the tartget service
-		y, _ := targetService.Yaml()
-		chart.Templates[targetName+".service.yaml"] = &ChartTemplate{
-			Content:     y,
-			Servicename: target.service.Name,
-		}
-
-		// and remove the source service from the chart
-		delete(chart.Templates, fromName+".service.yaml")
-
-		// In Valuses, remove the "replicas" key from the source service
-		if v, ok := chart.Values[fromName]; ok {
-			// if v is a Value
-			if v, ok := v.(*Value); ok {
-				v.Replicas = nil
-			}
-		}
-	}
 }
 
 func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, deployments map[string]*Deployment) bool {
