@@ -9,9 +9,7 @@ import (
 // Parse compose files and return a project. The project is parsed with dotenv, osenv and profiles.
 func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, error) {
 
-	if len(dockerComposeFile) > 0 {
-		cli.DefaultFileNames = dockerComposeFile
-	}
+	cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, "compose.katenary.yaml")
 
 	options, err := cli.NewProjectOptions(nil,
 		cli.WithProfiles(profiles),
@@ -21,6 +19,7 @@ func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, erro
 		cli.WithNormalization(true),
 		cli.WithInterpolation(true),
 		cli.WithResolvedPaths(false),
+
 		//cli.WithResolvedPaths(true),
 	)
 	if err != nil {
