@@ -4,13 +4,17 @@
 
 Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
 
-> **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap" tool and then to manually enhance the generated helm chart.
+> **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose
+> doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap"
+> tool and then to manually enhance the generated helm chart.
 
 # Install
 
-You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
+You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary
+and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
 
-You can of course get the binary with `go install -u github.com/metal3d/katenary/cmd/katenary/...` but the `main` branch is continuously updated. It's preferable to use releases.
+You can of course get the binary with `go install -u github.com/metal3d/katenary/cmd/katenary/...` but the `main` branch
+is continuously updated. It's preferable to use releases.
 
 You can use this commands on Linux:
 
@@ -31,7 +35,8 @@ You can then install it with:
 make install
 ```
 
-It will use the default PREFIX (`~/.local/`) to install the binary in the `bin` subdirectory. You can force the PREFIX value at install time, but maybe you need to use "sudo":
+It will use the default PREFIX (`~/.local/`) to install the binary in the `bin` subdirectory. You can force the PREFIX
+value at install time, but maybe you need to use "sudo":
 
 ```bash
 sudo make install PREFIX=/usr/local
@@ -51,7 +56,8 @@ Then place the `katenary` binary file inside your PATH.
 
 # Tips
 
-We strongly recommand to add the "completion" call to you SHELL using the common bashrc, or whatever the profile file you use.
+We strongly recommand to add the "completion" call to you SHELL using the common bashrc, or whatever the profile file
+you use.
 
 E.g.:
 
@@ -98,19 +104,25 @@ Flags:
 Use "katenary [command] --help" for more information about a command.
 ```
 
-Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask you if you want to delete it before recreating.
+Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
+check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
+you if you want to delete it before recreating.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
-> To respect the ability to install the same application in the same namespace, Katenary will create "variable" names like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help katenary to build a correct helm chart.
+> To respect the ability to install the same application in the same namespace, Katenary will create "variable" names
+> like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
+> katenary to build a correct helm chart.
 
 What can be interpreted by Katenary:
 
 - Services with "image" section (cannot work with "build" section)
-- **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation to Helm Chart because there is (for now) no way to make it working (see below for resolution)
+- **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation
+  to Helm Chart because there is (for now) no way to make it working (see below for resolution)
 - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending on service (using the first port)
-- `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with configMap for now)
+- `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with
+  configMap for now)
 - some labels can help to bind values, see examples below
 
 Exemple of a possible `docker-compose.yaml` file:
@@ -186,7 +198,8 @@ katenary.v3/values:		list of string or map	Environment variables to be added to 
 
 Katenary is the stylized name of the project that comes from the "catenary" word.
 
-A catenary is a curve formed by a wire, rope, or chain hanging freely from two points that are not in the same vertical line. For example, the anchor chain between a boat and the anchor.
+A catenary is a curve formed by a wire, rope, or chain hanging freely from two points that are not in the same vertical
+line. For example, the anchor chain between a boat and the anchor.
 
 This "curved link" represents what we try to do, the project is a "streched link from docker-compose to helm chart".
 
