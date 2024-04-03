@@ -148,7 +148,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	for _, s := range project.Services {
 		for _, d := range s.GetDependencies() {
 			if dep, ok := deployments[d]; ok {
-				deployments[s.Name].DependsOn(dep)
+				deployments[s.Name].DependsOn(dep, d)
 			} else {
 				log.Printf("service %[1]s depends on %[2]s, but %[2]s is not defined", s.Name, d)
 			}

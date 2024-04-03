@@ -91,11 +91,15 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 }
 
 // DependsOn adds a initContainer to the deployment that will wait for the service to be up.
-func (d *Deployment) DependsOn(to *Deployment) error {
+func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	// Add a initContainer with busybox:latest using netcat to check if the service is up
 	// it will wait until the service responds to all ports
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
+		if len(container.Ports) == 0 {
+			utils.Warn("No ports found for service ", servicename, ". You should declare a port in the service or use "+LABEL_PORTS+" label.")
+			os.Exit(1)
+		}
 		for _, port := range container.Ports {
 			command := fmt.Sprintf("until nc -z %s %d; do\n  sleep 1;\ndone", to.Name, port.ContainerPort)
 			commands = append(commands, command)
