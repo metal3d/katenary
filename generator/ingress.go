@@ -59,10 +59,16 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	if Chart.Values[service.Name] == nil {
 		Chart.Values[service.Name] = &Value{}
 	}
+
+	// fix the ingress host => hostname
+	if hostname, ok := mapping["host"]; ok && hostname != "" {
+		mapping["hostname"] = hostname
+	}
+
 	Chart.Values[service.Name].(*Value).Ingress = &IngressValue{
 		Enabled:     mapping["enabled"].(bool),
 		Path:        mapping["path"].(string),
-		Host:        mapping["host"].(string),
+		Host:        mapping["hostname"].(string),
 		Class:       mapping["class"].(string),
 		Annotations: map[string]string{},
 	}
