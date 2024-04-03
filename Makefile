@@ -31,7 +31,7 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help clean build install
+.PHONY: help clean build install tests test
 
 all: build
 
