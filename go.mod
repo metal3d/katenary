@@ -7,7 +7,7 @@ require (
 	github.com/mitchellh/go-wordwrap v1.0.1
 	github.com/spf13/cobra v1.8.0
 	github.com/thediveo/netdb v1.0.2
-	golang.org/x/mod v0.11.0
+	golang.org/x/mod v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
