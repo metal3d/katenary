@@ -1,6 +1,19 @@
-<div style="text-align:center; margin: auto" align="center">
-    <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" align="center"/>
+<div style="text-align:center; margin: auto 0 4em 0" align="center">
+    <img src="./doc/docs/statics/logo-bright.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
+
+
+🚀 Unleash Productivity with Katenary! 🚀
+
+Tired of manual conversions? Katenary harnesses the labels from your "compose" file to craft complete Helm Charts 
+effortlessly, saving you time and energy.
+
+🛠️ Simple autmated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding 
+and Helm Chart creation.
+
+💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call `katenary convert` and let the magic happen.
+
+# What ?
 
 Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
 
