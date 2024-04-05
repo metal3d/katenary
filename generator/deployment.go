@@ -236,7 +236,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 				VolumeSource: corev1.VolumeSource{
 					ConfigMap: &corev1.ConfigMapVolumeSource{
 						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cm.ObjectMeta.Name,
+							Name: cm.Name,
 						},
 					},
 				},
@@ -268,7 +268,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 							VolumeSource: corev1.VolumeSource{
 								ConfigMap: &corev1.ConfigMapVolumeSource{
 									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cm.ObjectMeta.Name,
+										Name: cm.Name,
 									},
 								},
 							},
