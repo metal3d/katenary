@@ -1,9 +1,10 @@
 package generator
 
 import (
-	"katenary/utils"
 	"log"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v3"
@@ -26,7 +27,7 @@ type CronJob struct {
 
 // NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
 func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (*CronJob, *RBAC) {
-	var labels, ok = service.Labels[LABEL_CRONJOB]
+	labels, ok := service.Labels[LABEL_CRONJOB]
 	if !ok {
 		return nil, nil
 	}

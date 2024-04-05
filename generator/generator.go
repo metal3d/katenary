@@ -5,13 +5,14 @@ package generator
 import (
 	"bytes"
 	"fmt"
-	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v3"
@@ -24,23 +25,15 @@ import (
 //
 // The Generate function will create the HelmChart object this way:
 //
-// 1. Detect the service port name or leave the port number if not found.
-//
-// 2. Create a deployment for each service that are not ingnore.
-//
-// 3. Create a service and ingresses for each service that has ports and/or declared ingresses.
-//
-// 4. Create a PVC or Configmap volumes for each volume.
-//
-// 5. Create init containers for each service which has dependencies to other services.
-//
-// 6. Create a chart dependencies.
-//
-// 7. Create a configmap and secrets from the environment variables.
-//
-// 8. Merge the same-pod services.
+//   - Detect the service port name or leave the port number if not found.
+//   - Create a deployment for each service that are not ingnore.
+//   - Create a service and ingresses for each service that has ports and/or declared ingresses.
+//   - Create a PVC or Configmap volumes for each volume.
+//   - Create init containers for each service which has dependencies to other services.
+//   - Create a chart dependencies.
+//   - Create a configmap and secrets from the environment variables.
+//   - Merge the same-pod services.
 func Generate(project *types.Project) (*HelmChart, error) {
-
 	var (
 		appName     = project.Name
 		deployments = make(map[string]*Deployment, len(project.Services))
@@ -226,7 +219,6 @@ func computeNIndent(b []byte) []byte {
 //
 // we now want to replace it with {{ include "foo.labels" . }}, without the label name.
 func removeReplaceString(b []byte) []byte {
-
 	// replace all matches with the value of the capture group
 	// and remove all new lines and repeated spaces
 	b = replaceLabelRegexp.ReplaceAllFunc(b, func(b []byte) []byte {
@@ -239,6 +231,7 @@ func removeReplaceString(b []byte) []byte {
 	return b
 }
 
+// serviceIsMain returns true if the service is the main app.
 func serviceIsMain(service types.ServiceConfig) bool {
 	if main, ok := service.Labels[LABEL_MAIN_APP]; ok {
 		return main == "true" || main == "yes" || main == "1"
@@ -246,6 +239,7 @@ func serviceIsMain(service types.ServiceConfig) bool {
 	return false
 }
 
+// setChartVersion sets the chart version from the service image tag.
 func setChartVersion(chart *HelmChart, service types.ServiceConfig) {
 	if chart.Version == "" {
 		image := service.Image
@@ -258,6 +252,7 @@ func setChartVersion(chart *HelmChart, service types.ServiceConfig) {
 	}
 }
 
+// fixPorts checks the "ports" label from container and add it to the service.
 func fixPorts(service *types.ServiceConfig) error {
 	// check the "ports" label from container and add it to the service
 	if portsLabel, ok := service.Labels[LABEL_PORTS]; ok {
@@ -286,6 +281,7 @@ func fixPorts(service *types.ServiceConfig) error {
 	return nil
 }
 
+// setCronJob creates a cronjob from the service labels.
 func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *CronJob {
 	if _, ok := service.Labels[LABEL_CRONJOB]; !ok {
 		return nil
@@ -318,6 +314,7 @@ func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *
 	return cronjob
 }
 
+// setDependencies sets the dependencies from the service labels.
 func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error) {
 	// helm dependency
 	if v, ok := service.Labels[LABEL_DEPENDENCIES]; ok {
@@ -342,6 +339,7 @@ func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error
 	return false, nil
 }
 
+// isIgnored returns true if the service is ignored.
 func isIgnored(service types.ServiceConfig) bool {
 	if v, ok := service.Labels[LABEL_IGNORE]; ok {
 		return v == "true" || v == "yes" || v == "1"
@@ -349,6 +347,7 @@ func isIgnored(service types.ServiceConfig) bool {
 	return false
 }
 
+// buildVolumes creates the volumes for the service.
 func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) error {
 	appName := chart.Name
 	for _, v := range service.Volumes {
@@ -371,7 +370,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 			y, _ := pvc.Yaml()
 			chart.Templates[pvc.Filename()] = &ChartTemplate{
 				Content:     y,
-				Servicename: service.Name, //TODO, use name
+				Servicename: service.Name, // TODO, use name
 			}
 
 		case "bind":
@@ -437,6 +436,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 	return nil
 }
 
+// generateConfigMapsAndSecrets creates the configmaps and secrets from the environment variables.
 func generateConfigMapsAndSecrets(project *types.Project, chart *HelmChart) error {
 	appName := chart.Name
 	for _, s := range project.Services {
@@ -498,6 +498,7 @@ func generateConfigMapsAndSecrets(project *types.Project, chart *HelmChart) erro
 	return nil
 }
 
+// samePodVolume returns true if the volume is already in the target deployment.
 func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, deployments map[string]*Deployment) bool {
 	// if the service has volumes, and it has "same-pod" label
 	// - get the target deployment
@@ -541,6 +542,7 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 	return false
 }
 
+// setSharedConf sets the shared configmap to the service.
 func setSharedConf(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) {
 	// if the service has the "shared-conf" label, we need to add the configmap
 	// to the chart and add the env vars to the service
@@ -583,5 +585,4 @@ func setSharedConf(service types.ServiceConfig, chart *HelmChart, deployments ma
 			target.Spec.Template.Spec.Containers[i] = c
 		}
 	}
-
 }

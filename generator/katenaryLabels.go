@@ -4,12 +4,13 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"katenary/utils"
 	"regexp"
 	"sort"
 	"strings"
 	"text/tabwriter"
 	"text/template"
+
+	"katenary/utils"
 
 	"sigs.k8s.io/yaml"
 )
@@ -139,7 +140,6 @@ func generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLe
 
 // GetLabelHelpFor returns the help for a specific label.
 func GetLabelHelpFor(labelname string, asMarkdown bool) string {
-
 	help, ok := labelFullHelp[labelname]
 	if !ok {
 		return "No help available for " + labelname + "."
@@ -225,5 +225,4 @@ Type: {{ .Help.Type }}
 Example:
 {{ .Help.Example }}
 `
-
 }

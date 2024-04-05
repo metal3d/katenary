@@ -1,9 +1,10 @@
 package generator
 
 import (
-	"katenary/utils"
 	"log"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v3"
@@ -21,7 +22,6 @@ type Ingress struct {
 
 // NewIngress creates a new Ingress from a compose service.
 func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
-
 	appName := Chart.Name
 
 	// parse the KATENARY_PREFIX/ingress label from the service
@@ -73,7 +73,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		Annotations: map[string]string{},
 	}
 
-	//ingressClassName := `{{ .Values.` + service.Name + `.ingress.class }}`
+	// ingressClassName := `{{ .Values.` + service.Name + `.ingress.class }}`
 	ingressClassName := utils.TplValue(service.Name, "ingress.class")
 
 	servicePortName := utils.GetServiceNameByPort(int(mapping["port"].(int32)))
@@ -173,7 +173,6 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	out = append(out, `{{- end -}}`)
 	ret = []byte(strings.Join(out, "\n"))
 	return ret, nil
-
 }
 
 func (ingress *Ingress) Filename() string {

@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"katenary/generator"
-	"katenary/utils"
 	"os"
 	"strings"
+
+	"katenary/generator"
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"
@@ -151,7 +152,6 @@ func generateConvertCommand() *cobra.Command {
 	convertCmd.Flags().StringVarP(&givenAppVersion, "app-version", "a", "", "Specify the app version (in Chart.yaml)")
 	convertCmd.Flags().StringVarP(&chartVersion, "chart-version", "v", chartVersion, "Specify the chart version (in Chart.yaml)")
 	return convertCmd
-
 }
 
 func generateVersionCommand() *cobra.Command {
@@ -165,7 +165,6 @@ func generateVersionCommand() *cobra.Command {
 }
 
 func generateLabelHelpCommand() *cobra.Command {
-
 	markdown := false
 	all := false
 	cmd := &cobra.Command{

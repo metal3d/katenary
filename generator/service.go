@@ -1,9 +1,10 @@
 package generator
 
 import (
-	"katenary/utils"
 	"regexp"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"
@@ -22,7 +23,6 @@ type Service struct {
 
 // NewService creates a new Service from a compose service.
 func NewService(service types.ServiceConfig, appName string) *Service {
-
 	ports := []v1.ServicePort{}
 
 	s := &Service{

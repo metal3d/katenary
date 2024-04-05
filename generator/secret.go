@@ -3,8 +3,9 @@ package generator
 import (
 	"encoding/base64"
 	"fmt"
-	"katenary/utils"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
@@ -12,8 +13,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var _ DataMap = (*Secret)(nil)
-var _ Yaml = (*Secret)(nil)
+var (
+	_ DataMap = (*Secret)(nil)
+	_ Yaml    = (*Secret)(nil)
+)
 
 // Secret is a kubernetes Secret.
 //
@@ -78,7 +81,6 @@ func (s *Secret) SetData(data map[string]string) {
 	for key, value := range data {
 		s.AddData(key, value)
 	}
-
 }
 
 // AddData adds a key value pair to the secret.

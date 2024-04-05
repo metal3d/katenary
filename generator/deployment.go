@@ -2,13 +2,14 @@ package generator
 
 import (
 	"fmt"
-	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,7 +33,6 @@ type Deployment struct {
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
 // It also creates the Values map that will be used to create the values.yaml file.
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
-
 	isMainApp := false
 	if mainLabel, ok := service.Labels[LABEL_MAIN_APP]; ok {
 		main := strings.ToLower(mainLabel)
@@ -163,7 +163,6 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 // AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment.
 // If the volume is a bind volume it will warn the user that it is not supported yet.
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
-
 	tobind := map[string]bool{}
 	if v, ok := service.Labels[LABEL_CM_FILES]; ok {
 		binds := []string{}
@@ -323,7 +322,6 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 
 // SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
-
 	if len(service.Environment) == 0 {
 		return
 	}
@@ -419,7 +417,6 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 }
 
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
-
 	// get the label for healthcheck
 	if v, ok := service.Labels[LABEL_HEALTHCHECK]; ok {
 		probes := struct {
@@ -473,7 +470,6 @@ func (d *Deployment) Yaml() ([]byte, error) {
 				volumeName = strings.TrimSpace(strings.Replace(content[i], "name: ", "", 1))
 				break
 			}
-
 		}
 		if volumeName == "" {
 			continue
@@ -561,6 +557,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	return []byte(strings.Join(content, "\n")), nil
 }
 
+// Filename returns the filename of the deployment.
 func (d *Deployment) Filename() string {
 	return d.service.Name + ".deployment.yaml"
 }

@@ -90,7 +90,6 @@ func GetContainerByName(name string, containers []corev1.Container) (*corev1.Con
 
 // GetContainerByName returns a container by name and its index in the array.
 func TplValue(serviceName, variable string, pipes ...string) string {
-
 	if len(pipes) == 0 {
 		return `{{ tpl .Values.` + serviceName + `.` + variable + ` $ }}`
 	} else {
@@ -108,8 +107,8 @@ func PathToName(path string) string {
 	if path[0] == '/' || path[0] == '.' {
 		path = path[1:]
 	}
-	path = strings.Replace(path, "/", "_", -1)
-	path = strings.Replace(path, ".", "_", -1)
+	path = strings.ReplaceAll(path, "/", "_")
+	path = strings.ReplaceAll(path, ".", "_")
 	return path
 }
 
@@ -130,9 +129,9 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 			log.Fatal(err)
 		}
 		for _, value := range labelContent {
-			switch value.(type) {
+			switch val := value.(type) {
 			case string:
-				descriptions[value.(string)] = nil
+				descriptions[val] = nil
 			case map[string]interface{}:
 				for k, v := range value.(map[string]interface{}) {
 					descriptions[k] = &EnvConfig{Service: service, Description: v.(string)}

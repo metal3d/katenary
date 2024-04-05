@@ -13,6 +13,8 @@ const (
 	ServiceLabel
 )
 
+// GetLabels returns the labels for a service. It uses the appName to replace the __replace__ in the labels.
+// This is used to generate the labels in the templates.
 func GetLabels(serviceName, appName string) map[string]string {
 	labels := map[string]string{
 		KATENARY_PREFIX + "component": serviceName,
@@ -24,6 +26,8 @@ func GetLabels(serviceName, appName string) map[string]string {
 	return labels
 }
 
+// GetMatchLabels returns the matchLabels for a service. It uses the appName to replace the __replace__ in the labels.
+// This is used to generate the matchLabels in the templates.
 func GetMatchLabels(serviceName, appName string) map[string]string {
 	labels := map[string]string{
 		KATENARY_PREFIX + "component": serviceName,

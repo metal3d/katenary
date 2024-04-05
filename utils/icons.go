@@ -8,17 +8,17 @@ type Icon string
 // Icons used in katenary.
 const (
 	IconSuccess    Icon = "✅"
-	IconFailure         = "❌"
-	IconWarning         = "⚠️'"
-	IconNote            = "📝"
-	IconWorld           = "🌐"
-	IconPlug            = "🔌"
-	IconPackage         = "📦"
-	IconCabinet         = "🗄️"
-	IconInfo            = "❕"
-	IconSecret          = "🔒"
-	IconConfig          = "🔧"
-	IconDependency      = "🔗"
+	IconFailure    Icon = "❌"
+	IconWarning    Icon = "⚠️'"
+	IconNote       Icon = "📝"
+	IconWorld      Icon = "🌐"
+	IconPlug       Icon = "🔌"
+	IconPackage    Icon = "📦"
+	IconCabinet    Icon = "🗄️"
+	IconInfo       Icon = "❕"
+	IconSecret     Icon = "🔒"
+	IconConfig     Icon = "🔧"
+	IconDependency Icon = "🔗"
 )
 
 // Warn prints a warning message

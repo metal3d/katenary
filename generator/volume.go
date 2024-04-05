@@ -1,8 +1,9 @@
 package generator
 
 import (
-	"katenary/utils"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"
@@ -59,7 +60,6 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 	}
 	volumeName := v.volumeName
 	out, err := yaml.Marshal(v)
-
 	if err != nil {
 		return nil, err
 	}
