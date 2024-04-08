@@ -1,12 +1,13 @@
 package generator
 
 import (
-	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v3"
@@ -53,7 +54,6 @@ type ConfigMap struct {
 // NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name.
 // The ConfigMap is filled by environment variables and labels "map-env".
 func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
-
 	done := map[string]bool{}
 	drop := map[string]bool{}
 	secrets := []string{}
@@ -98,7 +98,7 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 			done[value] = true
 			continue
 		}
-		//val := `{{ tpl .Values.` + service.Name + `.environment.` + value + ` $ }}`
+		// val := `{{ tpl .Values.` + service.Name + `.environment.` + value + ` $ }}`
 		val := utils.TplValue(service.Name, "environment."+value)
 		service.Environment[value] = &val
 	}
@@ -177,7 +177,6 @@ func (c *ConfigMap) AppendDir(path string) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		log.Fatalf("Path %s does not exist\n", path)
-
 	}
 	// recursively read all files in the path and add them to the configmap
 	if stat.IsDir() {

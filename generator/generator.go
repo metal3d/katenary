@@ -38,7 +38,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		appName     = project.Name
 		deployments = make(map[string]*Deployment, len(project.Services))
 		services    = make(map[string]*Service)
-		podToMerge  = make(map[string]*Deployment)
+		podToMerge  = make(map[string]*types.ServiceConfig)
 	)
 	chart := NewChart(appName)
 
@@ -54,7 +54,6 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	mainCount := 0
 	for _, service := range project.Services {
 		if serviceIsMain(service) {
-			log.Printf("Found main app %s", service.Name)
 			mainCount++
 			if mainCount > 1 {
 				return nil, fmt.Errorf("found more than one main app")
@@ -96,7 +95,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		// get the same-pod label if exists, add it to the list.
 		// We later will copy some parts to the target deployment and remove this one.
 		if samePod, ok := service.Labels[LABEL_SAME_POD]; ok && samePod != "" {
-			podToMerge[samePod] = d
+			podToMerge[samePod] = &service
 		}
 
 		// create the needed service for the container port
@@ -124,12 +123,12 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	}
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
-	for _, service := range project.Services {
+	for _, service := range podToMerge {
 		if samepod, ok := service.Labels[LABEL_SAME_POD]; ok && samepod != "" {
 			// move this deployment volumes to the target deployment
 			if target, ok := deployments[samepod]; ok {
-				target.AddContainer(service)
-				target.BindFrom(service, deployments[service.Name])
+				target.AddContainer(*service)
+				target.BindFrom(*service, deployments[service.Name])
 				delete(deployments, service.Name)
 			} else {
 				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, LABEL_SAME_POD)
@@ -168,11 +167,25 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// generate all services
 	for _, s := range services {
+		// add the service ports to the target service if it's a "same-pod" service
+		if samePod, ok := podToMerge[s.service.Name]; ok {
+			// get the target service
+			target := services[samePod.Name]
+			// merge the services
+			s.Spec.Ports = append(s.Spec.Ports, target.Spec.Ports...)
+		}
 		y, _ := s.Yaml()
 		chart.Templates[s.Filename()] = &ChartTemplate{
 			Content:     y,
 			Servicename: s.service.Name,
 		}
+	}
+
+	// drop all "same-pod" services
+	for _, s := range podToMerge {
+		// get the target service
+		target := services[s.Name]
+		delete(chart.Templates, target.Filename())
 	}
 
 	// compute all needed resplacements in YAML templates

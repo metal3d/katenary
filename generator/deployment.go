@@ -124,6 +124,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 		name := utils.GetServiceNameByPort(int(port.Target))
 		if name == "" {
 			utils.Warn("Port name not found for port ", port.Target, " in service ", service.Name, ". Using port number instead")
+			name = fmt.Sprintf("port-%d", port.Target)
 		}
 		ports = append(ports, corev1.ContainerPort{
 			ContainerPort: int32(port.Target),
@@ -288,14 +289,11 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 }
 
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
-	log.Printf("In %s deployment, add volumes for service %s from binded deployment %s", d.Name, service.Name, binded.Name)
 	// find the volume in the binded deployment
 	for _, bindedVolume := range binded.Spec.Template.Spec.Volumes {
-		log.Println("bindedVolume.Name found", bindedVolume.Name)
 		skip := false
 		for _, targetVol := range d.Spec.Template.Spec.Volumes {
 			if targetVol.Name == bindedVolume.Name {
-				log.Println("Volume", bindedVolume.Name, "already exists in deployment", d.Name)
 				skip = true
 				break
 			}
@@ -303,16 +301,13 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 		if !skip {
 			// add the volume to the current deployment
 			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, bindedVolume)
-			log.Println("d.Spec.Template.Spec.Volumes", d.Spec.Template.Spec.Volumes)
 			// get the container
-
 		}
 		// add volume mount to the container
 		targetContainer, ti := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
 		sourceContainer, _ := utils.GetContainerByName(service.Name, binded.Spec.Template.Spec.Containers)
 		for _, bindedMount := range sourceContainer.VolumeMounts {
 			if bindedMount.Name == bindedVolume.Name {
-				log.Println("bindedMount.Name found", bindedMount.Name)
 				targetContainer.VolumeMounts = append(targetContainer.VolumeMounts, bindedMount)
 			}
 		}
