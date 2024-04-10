@@ -1,20 +1,3 @@
-<style> 
-#logo{ 
-  background-image: url('statics/logo-dark.svg'); 
-  background-repeat: no-repeat; 
-  background-position: center;
-  background-size: contain; 
-  height: 8em; 
-  width: 100%; 
-  margin: 0 auto;
-
-}
-
-[data-md-color-scheme=slate] #logo { 
-  background-image: url('statics/logo-bright.svg'); 
-}
-</style>
-
 <div class="md-center" id="logo"></div>
 
 # Welcome to Katenary documentation
@@ -28,6 +11,11 @@ effortlessly, saving you time and energy.
 and Helm Chart creation.
 
 💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call `katenary convert` and let the magic happen.
+
+<div style="margin: auto" class="zoomable">
+  <img src="statics/workflow.png" id="workflow-image"/>
+</div>
+
 
 # What ?
 

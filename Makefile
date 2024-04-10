@@ -4,7 +4,7 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
-GOVERSION=1.21
+GOVERSION=1.22
 GO=container
 OUT=katenary
 BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary
@@ -154,6 +154,15 @@ clean:
 	rm -rf katenary dist/* release.id 
 
 
+serve-doc: __label_doc
+	@cd doc && \
+		[ -d venv ] || python -m venv venv; \
+		source venv/bin/activate && \
+		echo "==> Installing requirements in the virtual env..."
+		pip install -qq -r requirements.txt && \
+		echo "==> Serving doc with mkdocs..." && \
+		mkdocs serve
+
 tests: test
 test:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
@@ -183,6 +192,8 @@ push-release: build-all
 
 
 __label_doc:
+	@command -v gomarkdoc || (echo "==> We need to install gomarkdoc..." && \
+		go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest)
 	@echo "=> Generating labels doc..."
 	# short label doc
 	go run ./cmd/katenary help-labels -m | \
@@ -201,16 +212,6 @@ __label_doc:
 	PACKAGES=$$(for f in $$(find . -name "*.go" -type f); do dirname $$f; done | sort -u)
 	for pack in $$PACKAGES; do
 		echo "-> Generating doc for $$pack"
-		#gomarkdoc -o doc/docs/packages/$$pack.md $$pack
-		gomarkdoc -f azure-devops $$pack | pandoc  -t gfm -o doc/docs/packages/$$pack.md
-		# drop the Index section without removing the title
-		# - remove the Index section, but keep the following heading
+		gomarkdoc --repository.default-branch $(shell git branch --show-current) -o doc/docs/packages/$$pack.md $$pack
 		sed -i  '/^## Index/,/^##/ { /## Index/d; /^##/! d }' doc/docs/packages/$$pack.md
-		# fixes for markdown problem
-		# - there are \* on heading, replace to *
-		sed -i 's/\\\*/\*/g' doc/docs/packages/$$pack.md
-		## parenthis in heading are escaped, replace to unescaped
-		sed -i 's/\\(/\(/g' doc/docs/packages/$$pack.md
-		sed -i 's/\\)/\)/g' doc/docs/packages/$$pack.md
-		## list are badly formatted with 2 spaces, replace to 4
 	done

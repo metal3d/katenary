@@ -4,23 +4,55 @@ Basically, you can use `katenary` to transpose a docker-compose file (or any com
 `podman-compose` and `docker-compose`) to a configurable Helm Chart. This resulting helm chart can be installed with
 `helm` command to your Kubernetes cluster.
 
+!!! Warning "YAML in multiline label" 
+    
+    Compose only accept text label. So, to put a complete YAML content in the target label, you need to use a pipe char (`|` or `|-`) 
+    and to **indent** your content.
+
+    For example :
+
+    ```yaml
+      labels:
+        # your labels
+        foo: bar
+        # katenary labels with multiline
+        katenary.v3/ingress: |-
+          hostname: my.website.tld
+          port: 80
+        katenary.v3/ports: |-
+          - 1234
+    ```
+
+
 Katenary transforms compose services this way:
 
 - Takes the service and create a "Deployment" file
 - if a port is declared, katenary creates a service (ClusterIP)
-- it a port is exposed, katenary creates a service (NodePort)
-- environment variables will be stored in `values.yaml` file
+- if a port is exposed, katenary creates a service (NodePort)
+- environment variables will be stored inside a configMap
 - image, tags, and ingresses configuration are also stored in `values.yaml` file
-- if named volumes are declared, katenary create PersistentVolumeClaims - not enabled in values file (a `emptyDir` is
-  used by default)
-- any other volume (local mount points) are ignored
+- if named volumes are declared, katenary create PersistentVolumeClaims - not enabled in values file
 - `depends_on` needs that the pointed service declared a port. If not, you can use labels to inform katenary
+
+For any other specific configuration, like binding local files as configMap, bind variables, add values with documentation, etc. You'll need to use labels.
 
 Katenary can also configure containers grouping in pods, declare dependencies, ignore some services, force variables as
 secrets, mount files as `configMap`, and many others things. To adapt the helm chart generation, you will need to use
 some specific labels.
 
 For more complete label usage, see [the labels page](labels.md).
+
+!!! Info "Overriding file"
+
+    It could be sometimes more convinient to separate the 
+    configuration related to Katenary inside a secondary file.
+
+    Instead of adding labels inside the `compose.yaml` file,
+    you can create a file named `compose.katenary.yaml` and 
+    declare your labels inside. Katenary will detect it by 
+    default. 
+
+    **No need to precise the file in the command line.**
 
 ## Make convertion
 
@@ -153,8 +185,6 @@ services:
       image: mariadb
 ```
 
-!!! Warning This is a "multiline" label that accepts YAML or JSON content, don't forget to add a pipe char (`|` or `|-`)
-and to **indent** your content
 
 This label can be used to map others environment for any others reason. E.g. to change an informational environment
 variable.

@@ -2,186 +2,193 @@
 
 # utils
 
-``` go
+```go
 import "katenary/utils"
 ```
 
-Utils package provides some utility functions used in katenary. It
-defines some constants and functions used in the whole project.
+Utils package provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
 
-## Constants
+## func [CountStartingSpaces](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L31>)
 
-Icons used in katenary.
-
-``` go
-const (
-    IconSuccess    Icon = "✅"
-    IconFailure         = "❌"
-    IconWarning         = "⚠️'"
-    IconNote            = "📝"
-    IconWorld           = "🌐"
-    IconPlug            = "🔌"
-    IconPackage         = "📦"
-    IconCabinet         = "🗄️"
-    IconInfo            = "❕"
-    IconSecret          = "🔒"
-    IconConfig          = "🔧"
-    IconDependency      = "🔗"
-)
-```
-
-## func CountStartingSpaces
-
-``` go
+```go
 func CountStartingSpaces(line string) int
 ```
 
-CountStartingSpaces counts the number of spaces at the beginning of a
-string.
+CountStartingSpaces counts the number of spaces at the beginning of a string.
 
-## func GetContainerByName
+<a name="GetContainerByName"></a>
+## func [GetContainerByName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L82>)
 
-``` go
+```go
 func GetContainerByName(name string, containers []corev1.Container) (*corev1.Container, int)
 ```
 
-GetContainerByName returns a container by name and its index in the
-array. It returns nil, -1 if not found.
+GetContainerByName returns a container by name and its index in the array. It returns nil, \-1 if not found.
 
-## func GetKind
+<a name="GetKind"></a>
+## func [GetKind](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L44>)
 
-``` go
+```go
 func GetKind(path string) (kind string)
 ```
 
 GetKind returns the kind of the resource from the file path.
 
-## func GetServiceNameByPort
+<a name="GetServiceNameByPort"></a>
+## func [GetServiceNameByPort](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L72>)
 
-``` go
+```go
 func GetServiceNameByPort(port int) string
 ```
 
-GetServiceNameByPort returns the service name for a port. It the service
-name is not found, it returns an empty string.
+GetServiceNameByPort returns the service name for a port. It the service name is not found, it returns an empty string.
 
-## func GetValuesFromLabel
+<a name="GetValuesFromLabel"></a>
+## func [GetValuesFromLabel](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L122>)
 
-``` go
+```go
 func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[string]*EnvConfig
 ```
 
 GetValuesFromLabel returns a map of values from a label.
 
-## func HashComposefiles
+<a name="HashComposefiles"></a>
+## func [HashComposefiles](<https://github.com/metal3d/katenary/blob/develop/utils/hash.go#L12>)
 
-``` go
+```go
 func HashComposefiles(files []string) (string, error)
 ```
 
 HashComposefiles returns a hash of the compose files.
 
-## func Int32Ptr
+<a name="Int32Ptr"></a>
+## func [Int32Ptr](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L25>)
 
-``` go
+```go
 func Int32Ptr(i int32) *int32
 ```
 
 Int32Ptr returns a pointer to an int32.
 
-## func MapKeys
+<a name="MapKeys"></a>
+## func [MapKeys](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L156>)
 
-``` go
+```go
 func MapKeys(m map[string]interface{}) []string
 ```
 
-## func PathToName
 
-``` go
+
+<a name="PathToName"></a>
+## func [PathToName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L101>)
+
+```go
 func PathToName(path string) string
 ```
 
 PathToName converts a path to a kubernetes complient name.
 
-## func StrPtr
+<a name="StrPtr"></a>
+## func [StrPtr](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L28>)
 
-``` go
+```go
 func StrPtr(s string) *string
 ```
 
 StrPtr returns a pointer to a string.
 
-## func TplName
+<a name="TplName"></a>
+## func [TplName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L17>)
 
-``` go
+```go
 func TplName(serviceName, appname string, suffix ...string) string
 ```
 
-TplName returns the name of the kubernetes resource as a template
-string. It is used in the templates and defined in \_helper.tpl file.
+TplName returns the name of the kubernetes resource as a template string. It is used in the templates and defined in \_helper.tpl file.
 
-## func TplValue
+<a name="TplValue"></a>
+## func [TplValue](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L92>)
 
-``` go
+```go
 func TplValue(serviceName, variable string, pipes ...string) string
 ```
 
-GetContainerByName returns a container by name and its index in the
-array.
+GetContainerByName returns a container by name and its index in the array.
 
-## func Warn
+<a name="Warn"></a>
+## func [Warn](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L25>)
 
-``` go
+```go
 func Warn(msg ...interface{})
 ```
 
 Warn prints a warning message
 
-## func WordWrap
+<a name="WordWrap"></a>
+## func [WordWrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L152>)
 
-``` go
+```go
 func WordWrap(text string, lineWidth int) string
 ```
 
-WordWrap wraps a string to a given line width. Warning: it may break the
-string. You need to check the result.
+WordWrap wraps a string to a given line width. Warning: it may break the string. You need to check the result.
 
-## func Wrap
+<a name="Wrap"></a>
+## func [Wrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L61>)
 
-``` go
+```go
 func Wrap(src, above, below string) string
 ```
 
-Wrap wraps a string with a string above and below. It will respect the
-indentation of the src string.
+Wrap wraps a string with a string above and below. It will respect the indentation of the src string.
 
-## func WrapBytes
+<a name="WrapBytes"></a>
+## func [WrapBytes](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L67>)
 
-``` go
+```go
 func WrapBytes(src, above, below []byte) []byte
 ```
 
-WrapBytes wraps a byte array with a byte array above and below. It will
-respect the indentation of the src string.
+WrapBytes wraps a byte array with a byte array above and below. It will respect the indentation of the src string.
 
-## type EnvConfig
+<a name="EnvConfig"></a>
+## type [EnvConfig](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L116-L119>)
 
-EnvConfig is a struct to hold the description of an environment
-variable.
+EnvConfig is a struct to hold the description of an environment variable.
 
-``` go
+```go
 type EnvConfig struct {
     Description string
     Service     types.ServiceConfig
 }
 ```
 
-## type Icon
+<a name="Icon"></a>
+## type [Icon](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L6>)
 
 Icon is a unicode icon
 
-``` go
+```go
 type Icon string
 ```
 
-Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)
+<a name="IconSuccess"></a>Icons used in katenary.
+
+```go
+const (
+    IconSuccess    Icon = "✅"
+    IconFailure    Icon = "❌"
+    IconWarning    Icon = "⚠️'"
+    IconNote       Icon = "📝"
+    IconWorld      Icon = "🌐"
+    IconPlug       Icon = "🔌"
+    IconPackage    Icon = "📦"
+    IconCabinet    Icon = "🗄️"
+    IconInfo       Icon = "❕"
+    IconSecret     Icon = "🔒"
+    IconConfig     Icon = "🔧"
+    IconDependency Icon = "🔗"
+)
+```
+
+Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

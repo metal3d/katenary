@@ -42,6 +42,7 @@ nav:
     - coding.md
     - dependencies.md
   - Go Packages:
+    - packages/cmd/katenary.md
     - packages/generator.md
     - packages/parser.md
     - packages/update.md
