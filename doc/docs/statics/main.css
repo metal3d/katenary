@@ -65,3 +65,36 @@ table tbody code {
 h3[id*="katenaryio"] {
   color: var(--md-code-hl-special-color);
 }
+
+#logo {
+  background-image: url("logo-dark.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  height: 8em;
+  width: 100%;
+  margin: 0 auto 2rem auto;
+}
+
+/*Zoomable images*/
+
+[data-md-color-scheme="slate"] #logo {
+  background-image: url("logo-bright.svg");
+}
+
+.zoomable input[type="checkbox"] {
+  display: none;
+}
+
+@media all and (min-width: 1399px) {
+  .zoomable label img {
+    cursor: zoom-in;
+    transition: all 0.2s ease-in-out;
+  }
+  .zoomable input[type="checkbox"]:checked ~ label img {
+    transform: scale(2);
+    cursor: zoom-out;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+  }
+}
