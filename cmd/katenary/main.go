@@ -1,3 +1,7 @@
+// Katenary CLI, main package.
+//
+// This package is not intended to be imported. It contains the
+// main function that build the command line with `cobra` package.
 package main
 
 import (
