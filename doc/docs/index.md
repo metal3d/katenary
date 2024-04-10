@@ -42,9 +42,7 @@ that is in your `PATH`.
 If you are a Linux user, you can use the "one line installation command" which will download the binary in your 
 `$HOME/.local/bin` directory if it exists.
 
-```bash
 sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
-```
 
 !!! Info "Upgrading is integrated to the `katenary` command"
     Katenary propose a `upgrade` subcommand to update the current binary to the latest stable release.
@@ -61,21 +59,17 @@ sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install
     But, note that the "master" branch is not the "stable" version. It's preferable to switch to a tag, or to use the
     releases.
 
-```bash
 git clone https://github.com/metal3d/katenary.git
 cd katenary
 make build
 make install
-```
 
 `make install` copies `./katenary` binary to your user binary path (`~/.local/bin`) 
 
 You can install it in other directory by changing the `PREFIX` variable. E.g.:
 
-```bash
 make build
 sudo make install PREFIX=/usr/local
-```
 
 Check if everything is OK using `katenary version` and / or `katenary help`
 
@@ -84,10 +78,8 @@ Check if everything is OK using `katenary version` and / or `katenary help`
 Katenary uses the very nice project named `cobra` to manage flags, argument and auto-completion.
 
 You can activate it with:
-```bash
 # replace "bash" by "zsh" if needed
 source <(katenary completion bash)
-```
 
 Add this line in you `~/.profile` or `~/.bashrc` file to have completion at startup.
 

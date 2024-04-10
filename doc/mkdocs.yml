@@ -3,7 +3,8 @@ docs_dir: ./docs
 theme:
   name: material
   custom_dir: overrides
-  logo: statics/logo-dark.svg
+  logo: statics/logo-bright.svg
+  favicon: statics/icon.svg
   palette:
     - scheme: slate
       toggle:
@@ -28,7 +29,7 @@ extra_css:
   - statics/main.css
 extra_javascript:
   - statics/addons.js
-copyright: Copyright &copy; 2021 - 2023 - Katenary authors
+copyright: Copyright &copy; 2021 - 2024 - Katenary authors
 extra:
   generator: false
   social:

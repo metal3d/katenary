@@ -35,14 +35,6 @@ The `generator` package is where object struct are defined, and where the `Gener
 The generation is made by using a `HelmChart` object:
 
 ```golang
-chart := NewChart(appName string)
-``` 
-
-Then, some processes are made to detect the "main app verion" (tag for the main service image), bootstrapping declared
-ports in labels, managing links to bind containers in one pods...
-
-Then, a loop basically makes this:
-
 ```golang
 for _, service := range project.Services {
     dep := NewDeployment(service)
@@ -52,7 +44,6 @@ for _, service := range project.Services {
         Servicename: service.Name,
     }
 }
-```
 
 **A lot** of string manipulations are made by each `Yaml()` methods. This is where you find the complex and impacting
 operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart Yaml content with template
