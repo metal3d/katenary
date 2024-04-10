@@ -5,6 +5,7 @@ chart/*
 *.yaml
 *.yml
 !generator/*.yaml
+doc/venv/*
 !doc/mkdocs.yaml
 !.readthedocs.yaml
 ./katenary
