@@ -1,5 +1,7 @@
 site_name: Katenary documentation
 docs_dir: ./docs
+plugins: 
+  - inline-svg
 theme:
   name: material
   custom_dir: overrides

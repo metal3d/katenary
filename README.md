@@ -1,5 +1,5 @@
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
-    <img src="./doc/docs/statics/logo-bright.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
+    <img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
 

@@ -67,7 +67,7 @@ h3[id*="katenaryio"] {
 }
 
 #logo {
-  background-image: url("logo-dark.svg");
+  background-image: url("logo-vertical.svg");
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
@@ -78,8 +78,21 @@ h3[id*="katenaryio"] {
 
 /*Zoomable images*/
 
-[data-md-color-scheme="slate"] #logo {
+/*[data-md-color-scheme="slate"] #logo {
   background-image: url("logo-bright.svg");
+}*/
+
+.zoomable svg {
+  background-color: var(--md-default-bg-color);
+  padding: 1rem;
+}
+
+[data-md-color-scheme="slate"] .zoomable svg {
+  background-color: var(--md-default-bg-color);
+}
+
+[data-md-color-scheme="slate"] .zoomable svg .colorize {
+  fill: var(--md-typeset-color) !important;
 }
 
 .zoomable input[type="checkbox"] {
@@ -87,11 +100,11 @@ h3[id*="katenaryio"] {
 }
 
 @media all and (min-width: 1399px) {
-  .zoomable label img {
+  .zoomable label > * {
     cursor: zoom-in;
     transition: all 0.2s ease-in-out;
   }
-  .zoomable input[type="checkbox"]:checked ~ label img {
+  .zoomable input[type="checkbox"]:checked ~ label > * {
     transform: scale(2);
     cursor: zoom-out;
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);

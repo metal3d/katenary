@@ -4,3 +4,4 @@ MarkupSafe>=2.1.5
 pymdown-extensions>=10.7.1
 mkdocs-material>=9.5.17
 mkdocs-material-extensions>=1.3.1
+mkdocs-plugin-inline-svg-mod>=0.0.1

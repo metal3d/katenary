@@ -1,4 +1,6 @@
-<div class="md-center" id="logo"></div>
+<div class="md-center">
+![Katenary Logo](statics/logo-vertical.svg)
+</div>
 
 # Welcome to Katenary documentation
 
@@ -14,7 +16,7 @@ and Helm Chart creation.
 and let the magic happen.
 
 <div style="margin: auto" class="zoomable">
-  <img src="statics/workflow.png" id="workflow-image"/>
+![](statics/workflow.svg)
 </div>
 
 

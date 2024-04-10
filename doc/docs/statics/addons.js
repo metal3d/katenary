@@ -24,7 +24,7 @@ function makeImagesZoomable() {
   const zone = document.querySelectorAll(".zoomable");
 
   zone.forEach((z, i) => {
-    const im = z.querySelectorAll("img");
+    const im = z.querySelectorAll("img,svg");
     if (im.length == 0) {
       return;
     }
