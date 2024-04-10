@@ -377,7 +377,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 			// to the target deployment
 			if override, ok := service.Labels[LABEL_SAME_POD]; ok {
 				pvc.nameOverride = override
-				pvc.PersistentVolumeClaim.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
+				pvc.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
 				chart.Values[override].(*Value).AddPersistence(v.Source)
 			}
 			y, _ := pvc.Yaml()
