@@ -23,7 +23,6 @@ var readmeTemplate string
 
 // ReadMeFile returns the content of the README.md file.
 func ReadMeFile(charname, description string, values map[string]any) string {
-
 	// values is a yaml structure with keys and structured values...
 	// we want to make list of dot separated keys and their values
 
