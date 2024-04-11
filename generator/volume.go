@@ -42,7 +42,7 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 					v1.ReadWriteOnce,
 				},
 				StorageClassName: utils.StrPtr(`{{ .Values.` + service.Name + `.persistence.` + volumeName + `.storageClass }}`),
-				Resources: v1.ResourceRequirements{
+				Resources: v1.VolumeResourceRequirements{
 					Requests: v1.ResourceList{
 						v1.ResourceStorage: resource.MustParse("1Gi"),
 					},
