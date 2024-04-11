@@ -317,7 +317,7 @@ func addStorageClassHelp(values []byte) []byte {
 // addModeline adds a modeline to the values.yaml file to make sure that vim
 // will use the correct syntax highlighting.
 func addModeline(values []byte) []byte {
-	modeline := "# vi" + "m: ft=gotmpl.yaml"
+	modeline := "# vi" + "m: ft=helm.gotmpl.yaml"
 
 	// if the values ends by `{{- end }}` we need to add the modeline before
 	lines := strings.Split(string(values), "\n")
