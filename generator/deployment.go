@@ -51,7 +51,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 
 	defaultTag := `default "latest"`
 	if isMainApp {
-		defaultTag = `default .Chart.AppVersion "latest"`
+		defaultTag = `default .Chart.AppVersion`
 	}
 
 	chart.Values[service.Name] = NewValue(service, isMainApp)
