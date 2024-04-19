@@ -1,6 +1,7 @@
 site_name: Katenary documentation
 docs_dir: ./docs
 plugins: 
+  - search
   - inline-svg
 theme:
   name: material
@@ -19,6 +20,7 @@ theme:
         name: Switch to dark mode
 markdown_extensions:
   - admonition
+  - footnotes
   - attr_list
   - pymdownx.emoji:
       emoji_index: !!python/name:material.extensions.emoji.twemoji
@@ -44,6 +46,7 @@ nav:
   - Behind the scene:
     - coding.md
     - dependencies.md
+  - FAQ: faq.md
   - Go Packages:
     - packages/cmd/katenary.md
     - packages/generator.md
