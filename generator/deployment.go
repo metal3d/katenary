@@ -20,14 +20,24 @@ import (
 
 var _ Yaml = (*Deployment)(nil)
 
+type mountPathConfig struct {
+	mountPath string
+	subPath   string
+}
+
+type ConfigMapMount struct {
+	configMap *ConfigMap
+	mountPath []mountPathConfig
+}
+
 // Deployment is a kubernetes Deployment.
 type Deployment struct {
 	*appsv1.Deployment `yaml:",inline"`
-	chart              *HelmChart           `yaml:"-"`
-	configMaps         map[string]bool      `yaml:"-"`
-	service            *types.ServiceConfig `yaml:"-"`
-	defaultTag         string               `yaml:"-"`
-	isMainApp          bool                 `yaml:"-"`
+	chart              *HelmChart                 `yaml:"-"`
+	configMaps         map[string]*ConfigMapMount `yaml:"-"`
+	service            *types.ServiceConfig       `yaml:"-"`
+	defaultTag         string                     `yaml:"-"`
+	isMainApp          bool                       `yaml:"-"`
 }
 
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
@@ -74,7 +84,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 				},
 			},
 		},
-		configMaps: map[string]bool{},
+		configMaps: map[string]*ConfigMapMount{},
 	}
 
 	// add containers
@@ -182,6 +192,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 		isSamePod = v != ""
 	}
 
+	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
 	for _, volume := range service.Volumes {
 		// not declared as a bind volume, skip
 		if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
@@ -195,7 +206,6 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 			continue
 		}
 
-		container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
 		if container == nil {
 			utils.Warn("Container not found for volume", volume.Source)
 			continue
@@ -231,61 +241,62 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 			})
 		case "bind":
 			// Add volume to container
-			cm := NewConfigMapFromFiles(service, appName, volume.Source)
-			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: utils.PathToName(volume.Source),
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: cm.Name,
-						},
-					},
-				},
-			})
-			// add the mount path to the container
-			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-				Name:      utils.PathToName(volume.Source),
-				MountPath: volume.Target,
-			})
-
-			d.configMaps[utils.PathToName(volume.Source)] = true
-			// add all subdirectories to the list of directories
 			stat, err := os.Stat(volume.Source)
 			if err != nil {
 				log.Fatal(err)
 			}
+
 			if stat.IsDir() {
-				files, err := os.ReadDir(volume.Source)
+				pathnme := utils.PathToName(volume.Source)
+				if _, ok := d.configMaps[pathnme]; !ok {
+					d.configMaps[pathnme] = &ConfigMapMount{
+						mountPath: []mountPathConfig{},
+					}
+				}
+
+				// TODO: make it recursive to add all files in the directory and subdirectories
+				_, err := os.ReadDir(volume.Source)
 				if err != nil {
 					log.Fatal(err)
 				}
-				for _, file := range files {
-					if file.IsDir() {
-						cm := NewConfigMapFromFiles(service, appName, filepath.Join(volume.Source, file.Name()))
-						name := utils.PathToName(volume.Source) + "-" + file.Name()
-						d.configMaps[name] = true
-						d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-							Name: utils.PathToName(volume.Source) + "-" + file.Name(),
-							VolumeSource: corev1.VolumeSource{
-								ConfigMap: &corev1.ConfigMapVolumeSource{
-									LocalObjectReference: corev1.LocalObjectReference{
-										Name: cm.Name,
-									},
-								},
-							},
-						})
-						// add the mount path to the container
-						container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-							Name:      name,
-							MountPath: filepath.Join(volume.Target, file.Name()),
-						})
+				cm := NewConfigMapFromDirectory(service, appName, volume.Source)
+				d.configMaps[pathnme] = &ConfigMapMount{
+					configMap: cm,
+					mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
+						mountPath: volume.Target,
+					}),
+				}
+			} else {
+				dirname := filepath.Dir(volume.Source)
+				pathnme := utils.PathToName(dirname)
+				var cm *ConfigMap
+				if v, ok := d.configMaps[pathnme]; !ok {
+					cm = NewConfigMap(*d.service, appName)
+					cm.usage = FileMapUsageFiles
+					cm.path = dirname
+					cm.Name = utils.TplName(service.Name, appName) + "-" + pathnme
+					d.configMaps[pathnme] = &ConfigMapMount{
+						configMap: cm,
+						mountPath: []mountPathConfig{},
 					}
+				} else {
+					cm = v.configMap
+				}
+
+				cm.AppendFile(volume.Source)
+				d.configMaps[pathnme] = &ConfigMapMount{
+					configMap: cm,
+					mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
+						mountPath: volume.Target,
+						subPath:   filepath.Base(volume.Source),
+					}),
 				}
 			}
 		}
 
-		d.Spec.Template.Spec.Containers[index] = *container
 	}
+
+	d.Spec.Template.Spec.Containers[index] = *container
 }
 
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {

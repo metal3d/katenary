@@ -127,10 +127,10 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	return cm
 }
 
-// NewConfigMapFromFiles creates a new ConfigMap from a compose service. This path is the path to the
+// NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the
 // file or directory. If the path is a directory, all files in the directory are added to the ConfigMap.
 // Each subdirectory are ignored. Note that the Generate() function will create the subdirectories ConfigMaps.
-func NewConfigMapFromFiles(service types.ServiceConfig, appName string, path string) *ConfigMap {
+func NewConfigMapFromDirectory(service types.ServiceConfig, appName string, path string) *ConfigMap {
 	normalized := path
 	normalized = strings.TrimLeft(normalized, ".")
 	normalized = strings.TrimLeft(normalized, "/")
@@ -178,6 +178,7 @@ func (c *ConfigMap) AppendDir(path string) {
 	if err != nil {
 		log.Fatalf("Path %s does not exist\n", path)
 	}
+	log.Printf("Appending files from %s to configmap\n", path)
 	// recursively read all files in the path and add them to the configmap
 	if stat.IsDir() {
 		files, err := os.ReadDir(path)
@@ -198,6 +199,23 @@ func (c *ConfigMap) AppendDir(path string) {
 			c.AddData(filename, string(content))
 		}
 	} else {
+		// add the file to the configmap
+		content, err := os.ReadFile(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		c.AddData(filepath.Base(path), string(content))
+	}
+}
+
+func (c *ConfigMap) AppendFile(path string) {
+	// read all files in the path and add them to the configmap
+	stat, err := os.Stat(path)
+	if err != nil {
+		log.Fatalf("Path %s does not exist\n", path)
+	}
+	// recursively read all files in the path and add them to the configmap
+	if !stat.IsDir() {
 		// add the file to the configmap
 		content, err := os.ReadFile(path)
 		if err != nil {

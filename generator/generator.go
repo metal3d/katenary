@@ -6,8 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -385,66 +383,45 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 				Content:     y,
 				Servicename: service.Name, // TODO, use name
 			}
+		}
+	}
 
-		case "bind":
-			// ensure the path is in labels
-			bindPath := map[string]string{}
-			if _, ok := service.Labels[LABEL_CM_FILES]; ok {
-				files := []string{}
-				if err := yaml.Unmarshal([]byte(service.Labels[LABEL_CM_FILES]), &files); err != nil {
-					return err
-				}
-				for _, f := range files {
-					bindPath[f] = f
-				}
-			}
-			if _, ok := bindPath[v.Source]; !ok {
-				continue
-			}
-
-			cm := NewConfigMapFromFiles(service, appName, v.Source)
-			var err error
+	// add the bound configMaps files to the deployment containers
+	for _, d := range deployments {
+		container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+		for volumeName, config := range d.configMaps {
 			var y []byte
-			if y, err = cm.Yaml(); err != nil {
+			var err error
+			if y, err = config.configMap.Yaml(); err != nil {
 				log.Fatal(err)
 			}
-			chart.Templates[cm.Filename()] = &ChartTemplate{
+			// add the configmap to the chart
+			d.chart.Templates[config.configMap.Filename()] = &ChartTemplate{
 				Content:     y,
-				Servicename: service.Name,
+				Servicename: d.service.Name,
+			}
+			// add the moint path to the container
+			for _, m := range config.mountPath {
+				container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+					Name:      utils.PathToName(volumeName),
+					MountPath: m.mountPath,
+					SubPath:   m.subPath,
+				})
 			}
 
-			// continue with subdirectories
-			stat, err := os.Stat(v.Source)
-			if err != nil {
-				return err
-			}
-			if stat.IsDir() {
-				files, err := filepath.Glob(filepath.Join(v.Source, "*"))
-				if err != nil {
-					return err
-				}
-				for _, f := range files {
-					if f == v.Source {
-						continue
-					}
-					if stat, err := os.Stat(f); err != nil || !stat.IsDir() {
-						continue
-					}
-					cm := NewConfigMapFromFiles(service, appName, f)
-					var err error
-					var y []byte
-					if y, err = cm.Yaml(); err != nil {
-						log.Fatal(err)
-					}
-					log.Printf("Adding configmap %s %s", cm.Filename(), f)
-					chart.Templates[cm.Filename()] = &ChartTemplate{
-						Content:     y,
-						Servicename: service.Name,
-					}
-				}
-			}
-
+			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: utils.PathToName(volumeName),
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: config.configMap.Name,
+						},
+					},
+				},
+			})
 		}
+
+		d.Spec.Template.Spec.Containers[index] = *container
 	}
 	return nil
 }
