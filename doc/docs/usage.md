@@ -126,10 +126,11 @@ services:
 
 ### Declare ingresses
 
-It's very common to have an `Ingress` on web application to deploy on Kuberenetes. The `katenary.io/ingress` declare the
-port to bind.
+It's very common to have an Ingress resource on web application to deploy on Kuberenetes. It allows to expose the
+service to the outside of the cluster (you need to install an ingress controller). 
 
-# ...
+Katenary can create this resource for you. You just need to declare the hostname and the port to bind.
+
 ```yaml 
 services:
   webapp:
@@ -137,6 +138,7 @@ services:
     ports: 8080:5050
     labels:
       katenary.v3/ingress: |-
+        # the target port is 5050 wich is the "service" port
         port: 5050
         hostname: myapp.example.com
 ```
