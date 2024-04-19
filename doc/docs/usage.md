@@ -86,6 +86,7 @@ to make you able to wait for a service to respond. But you'll probably need to a
 
 See this compose file:
 
+```yaml 
 version: "3"
 
 services:
@@ -98,12 +99,14 @@ services:
     image: mariadb
     environment:
       MYSQL_ROOT_PASSWORD: foobar
+```
 
 In this case, `webapp` needs to know the `database` port because the `depends_on` points on it and Kubernetes has not
 (yet) solution to check the database startup. Katenary wants to create a `initContainer` to hit on the related service.
 So, instead of exposing the port in the compose definition, let's declare this to katenary with labels:
 
 
+```yaml 
 version: "3"
 
 services:
@@ -119,6 +122,7 @@ services:
     labels:
       katenary.v3/ports: |-
         - 3306
+```
 
 ### Declare ingresses
 
@@ -126,6 +130,7 @@ It's very common to have an `Ingress` on web application to deploy on Kuberenete
 port to bind.
 
 # ...
+```yaml 
 services:
   webapp:
     image: ...
@@ -134,6 +139,7 @@ services:
       katenary.v3/ingress: |-
         port: 5050
         hostname: myapp.example.com
+```
 
 Note that the port to bind is the one used by the container, not the used locally. This is because Katenary create a
 service to bind the container itself.
@@ -146,6 +152,7 @@ example, to connect a PHP application to a database.
 
 With a compose file, there is no problem as Docker/Podman allows to resolve the name by container name:
 
+```yaml 
 services:
   webapp:
     image: php:7-apache
@@ -154,11 +161,13 @@ services:
 
   database:
     image: mariadb
+```
 
 Katenary prefixes the services with `{{ .Release.Name }}` (to make it possible to install the application several times
 in a namespace), so you need to "remap" the environment variable to the right one.
 
 
+```yaml
 services:
   webapp:
     image: php:7-apache
@@ -170,12 +179,12 @@ services:
 
   database:
       image: mariadb
-
+```
 
 This label can be used to map others environment for any others reason. E.g. to change an informational environment
 variable.
 
-
+```yaml
 services:
   webapp:
   #...
@@ -184,6 +193,7 @@ services:
     labels:
       katenary.v3/mapenv: |-
         RUNNING: kubernetes
+```
 
 In the above example, `RUNNING` will be set to `kubernetes` when you'll deploy the application with helm, and it's
 `docker` for "podman" and "docker" executions.
