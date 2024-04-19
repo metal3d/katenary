@@ -389,6 +389,9 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 	// add the bound configMaps files to the deployment containers
 	for _, d := range deployments {
 		container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+		if container == nil { // may append for the same-pod services
+			break
+		}
 		for volumeName, config := range d.configMaps {
 			var y []byte
 			var err error
