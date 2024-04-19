@@ -6,10 +6,23 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
+func init() {
+	// prepend compose.katenary.yaml to the list of default override file names
+	cli.DefaultOverrideFileNames = append([]string{
+		"compose.katenary.yml",
+		"compose.katenary.yaml",
+	}, cli.DefaultOverrideFileNames...)
+	cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames,
+		[]string{
+			"podman-compose.katenary.yml",
+			"podman-compose.katenary.yaml",
+			"podman-compose.yml",
+			"podman-compose.yaml",
+		}...)
+}
+
 // Parse compose files and return a project. The project is parsed with dotenv, osenv and profiles.
 func Parse(profiles []string, dockerComposeFile ...string) (*types.Project, error) {
-	cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, "compose.katenary.yaml")
-
 	if len(dockerComposeFile) == 0 {
 		cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, dockerComposeFile...)
 	}

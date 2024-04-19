@@ -152,7 +152,7 @@ func generateConvertCommand() *cobra.Command {
 	convertCmd.Flags().BoolVarP(&helmdepUpdate, "helm-update", "u", helmdepUpdate, "Update helm dependencies if helm is installed")
 	convertCmd.Flags().StringSliceVarP(&profiles, "profile", "p", profiles, "Specify the profiles to use")
 	convertCmd.Flags().StringVarP(&outputDir, "output-dir", "o", outputDir, "Specify the output directory")
-	convertCmd.Flags().StringSliceVarP(&dockerComposeFile, "compose-file", "c", cli.DefaultFileNames, "Specify an alternate compose files - can be specified multiple times or use coma to separate them")
+	convertCmd.Flags().StringSliceVarP(&dockerComposeFile, "compose-file", "c", cli.DefaultFileNames, "Specify an alternate compose files - can be specified multiple times or use coma to separate them.\nNote that overides files are also used whatever the files you specify here.\nThe overides files are:\n"+strings.Join(cli.DefaultOverrideFileNames, ", \n")+"\n")
 	convertCmd.Flags().StringVarP(&givenAppVersion, "app-version", "a", "", "Specify the app version (in Chart.yaml)")
 	convertCmd.Flags().StringVarP(&chartVersion, "chart-version", "v", chartVersion, "Specify the chart version (in Chart.yaml)")
 	return convertCmd
