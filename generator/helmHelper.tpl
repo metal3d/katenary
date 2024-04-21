@@ -22,10 +22,10 @@
 {{- define "__APP__.labels" -}}
 {{ include "__APP__.selectorLabels" .}}
 {{ if .Chart.Version -}}
-{{ printf "__PREFIX__chart-version: %s" .Chart.Version }}
+{{ printf "__PREFIX__chart-version: '%s'" .Chart.Version }}
 {{- end }}
 {{ if .Chart.AppVersion -}}
-{{ printf "__PREFIX__app-version: %s" .Chart.AppVersion }}
+{{ printf "__PREFIX__app-version: '%s'" .Chart.AppVersion }}
 {{- end }}
 {{- end -}}
 

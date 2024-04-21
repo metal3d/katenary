@@ -1,27 +1,39 @@
-Your release is named {{ .Release.Name }}.
+Thanks to have installed {{ .Chart.Name }} {{ .Chart.Version }} as {{ .Release.Name }} ({{.Chart.AppVersion }}).
+
+# Get release information
 
 To learn more about the release, try:
 
   $ helm -n {{ .Release.Namespace }} status {{ .Release.Name }}
+  $ helm -n {{ .Release.Namespace }} get values {{ .Release.Name }}
   $ helm -n {{ .Release.Namespace }} get all {{ .Release.Name }}
 
-To delete the release, run:
+# To delete the release
 
-  $ helm -n {{ .Release.Namespace }} delete {{ .Release.Name }}
+Use helm uninstall command to delete the release. 
+
+  $ helm -n {{ .Release.Namespace }} uninstall {{ .Release.Name }}
+
+Note that some resources may still be in use after a release is deleted. For exemple, PersistentVolumeClaims are not deleted by default for some storage classes or if some annotations are set.
+
+# More information
 
 You can see this notes again by running:
 
   $ helm -n {{ .Release.Namespace }} get notes {{ .Release.Name }}
 
 {{- $count := 0 -}}
-{{- range $s, $v := .Values -}}
-{{- if and $v $v.ingress -}}
-{{- $count = add $count 1 -}}
-{{- if eq $count 1 }}
+{{- $listOfURL := "" -}}
+{{* DO NOT REMOVE, replaced by notes.go: ingress_list *}}
+{{- if gt $count 0 }}
 
-The ingress list is:
-{{ end }}
-  - {{ $s }}: http://{{ $v.ingress.host }}{{ $v.ingress.path }}
-{{- end -}}
-{{ end -}}
+# List of activated ingresses URL:
+{{ $listOfURL }}
 
+You can get these urls with kubectl:
+
+    kubeclt get ingress -n {{ .Release.Namespace }}
+
+{{- end }}
+
+Thanks for using Helm!

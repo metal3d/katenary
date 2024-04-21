@@ -242,7 +242,11 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	f.Write([]byte(readme))
 	f.Close()
 
-	notes := extrafiles.NotesFile()
+	services := make([]string, 0)
+	for _, service := range project.Services {
+		services = append(services, service.Name)
+	}
+	notes := extrafiles.NotesFile(services)
 	f, err = os.Create(notesPath)
 	if err != nil {
 		fmt.Println(utils.IconFailure, err)
