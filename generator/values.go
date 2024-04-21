@@ -57,6 +57,8 @@ type Value struct {
 	Environment     map[string]any               `yaml:"environment,omitempty"`
 	Replicas        *uint32                      `yaml:"replicas,omitempty"`
 	CronJob         *CronJobValue                `yaml:"cronjob,omitempty"`
+	NodeSelector    map[string]string            `yaml:"nodeSelector"`
+	ServiceAccount  string                       `yaml:"serviceAccount"`
 }
 
 // CronJobValue is a cronjob configuration that will be saved in values.yaml.

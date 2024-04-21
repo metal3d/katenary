@@ -81,6 +81,11 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: GetMatchLabels(service.Name, appName),
 					},
+					Spec: corev1.PodSpec{
+						NodeSelector: map[string]string{
+							"katenary.v3/node-selector": "replace",
+						},
+					},
 				},
 			},
 		},
@@ -160,6 +165,9 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 	d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{
 		Name: `{{ .Values.pullSecrets | toYaml | indent __indent__ }}`,
 	}}
+
+	// add ServiceAccount to the deployment
+	d.Spec.Template.Spec.ServiceAccountName = `{{ .Values.` + service.Name + `.serviceAccount | quote }}`
 
 	d.AddHealthCheck(service, &container)
 
@@ -539,24 +547,55 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	}
 
 	// for impagePullSecrets, replace the name with the value from values.yaml
-	inpullsecrets := false
 	for i, line := range content {
 		if strings.Contains(line, "imagePullSecrets:") {
-			inpullsecrets = true
-		}
-		if inpullsecrets && strings.Contains(line, "- name: ") && inpullsecrets {
-			line = strings.Replace(line, "- name: ", "", 1)
-			line = strings.ReplaceAll(line, "'", "")
+			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
+			line = spaces + "{{- if .Values.pullSecrets }}"
+			line += "\n" + spaces + "imagePullSecrets:\n"
+			line += spaces + "{{- .Values.pullSecrets | toYaml | nindent __indent__ }}"
+			line += "\n" + spaces + "{{- end }}"
 			content[i] = line
-			inpullsecrets = false
 		}
 	}
 
 	// Find the replicas line and replace it with the value from values.yaml
 	for i, line := range content {
+		// manage nodeSelector
+		if strings.Contains(line, "nodeSelector:") {
+			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
+			pre := spaces + `{{- if .Values.` + serviceName + `.nodeSelector }}`
+			post := spaces + "{{- end }}"
+			ns := spaces + "nodeSelector:\n"
+			ns += spaces + `  {{- .Values.` + serviceName + `.nodeSelector | toYaml | nindent __indent__ }}`
+			//line = strings.Replace(line, "katenary.v3/node-selector: replace", ns, 1)
+			line = pre + "\n" + ns + "\n" + post
+		}
+		// manage replicas
 		if strings.Contains(line, "replicas:") {
 			line = regexp.MustCompile("replicas: .*$").ReplaceAllString(line, "replicas: {{ .Values."+serviceName+".replicas }}")
-			content[i] = line
+		}
+
+		// manage serviceAccount, add condition to use the serviceAccount from values.yaml
+		if strings.Contains(line, "serviceAccountName:") {
+			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
+			pre := spaces + `{{- if ne .Values.` + serviceName + `.serviceAccount "" }}`
+			post := spaces + "{{- end }}"
+			line = strings.ReplaceAll(line, "'", "")
+			line = pre + "\n" + line + "\n" + post
+		}
+
+		content[i] = line
+	}
+
+	// find the katenary.v3/node-selector line, and remove it
+	for i, line := range content {
+		if strings.Contains(line, "katenary.v3/node-selector") {
+			content = append(content[:i], content[i+1:]...)
+			continue
+		}
+		if strings.Contains(line, "- name: '{{ .Values.pullSecrets ") {
+			content = append(content[:i], content[i+1:]...)
+			continue
 		}
 	}
 
