@@ -101,31 +101,31 @@ source <(katenary completion zsh)
 
 # Usage
 
-  ```
-  Katenary is a tool to convert compose files to Helm Charts.
+```
+Katenary is a tool to convert compose files to Helm Charts.
 
-  Each [command] and subcommand has got an "help" and "--help" flag to show more information.
+Each [command] and subcommand has got an "help" and "--help" flag to show more information.
 
-  Usage:
-  katenary [command]
+Usage:
+katenary [command]
 
-  Examples:
-  katenary convert -c docker-compose.yml -o ./charts
+Examples:
+katenary convert -c docker-compose.yml -o ./charts
 
-  Available Commands:
-  completion        Generates completion scripts
-  convert           Converts a docker-compose file to a Helm Chart
-  hash-composefiles Print the hash of the composefiles
-  help              Help about any command
-  help-labels       Print the labels help for all or a specific label
-  version           Print the version number of Katenary
+Available Commands:
+completion        Generates completion scripts
+convert           Converts a docker-compose file to a Helm Chart
+hash-composefiles Print the hash of the composefiles
+help              Help about any command
+help-labels       Print the labels help for all or a specific label
+version           Print the version number of Katenary
 
-  Flags:
-  -h, --help      help for katenary
-  -v, --version   version for katenary
+Flags:
+-h, --help      help for katenary
+-v, --version   version for katenary
 
-  Use "katenary [command] --help" for more information about a command.
-  ```
+Use "katenary [command] --help" for more information about a command.
+```
 
   Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
   check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
@@ -150,47 +150,47 @@ to Helm Chart because there is (for now) no way to make it working (see below fo
 
   Exemple of a possible `docker-compose.yaml` file:
 
-  ```yaml
-  version: "3"
-  services:
-webapp:
-image: php:7-apache
-environment:
-# note that "database" is a service name
-DB_HOST: database
-expose:
-- 80
-depends_on:
-# this will create a init container waiting for 3306 port
-# because it's the "exposed" port
-- database
-labels:
-# expose the port 80 as an ingress
-katenary.v3/ingress: |-
-hostname: myapp.example.com
-port: 80
-# make adaptations, DB_HOST environment is actually the service name
-# to hit (note the yaml style, start with "|")
-katenary.v3/mapenv: |-
-DB_HOST: '{{ .Release.Name }}-database'
-database:
-image: mariadb:10
-env_file:
-# this will create a configMap
-- my_env.env
-environment:
-MARIADB_USER: foo
-MARIADB_ROOT_PASSWORD: foobar
-MARIADB_PASSWORD: bar
-labels:
-# no need to declare this port in docker-compose
-# but katenary will need it
-katenary.v3/ports: |-
-- 3306
-# these variables are secrets
-katenary.v3/secrets: |-
-- MARIADB_ROOT_PASSWORD
-- MARIADB_PASSWORD
+```yaml
+services:
+  webapp:
+    image: php:7-apache
+    environment:
+      # note that "database" is a "compose" service name
+      # so we need to adapt it with the map-env label
+      DB_HOST: database
+    expose:
+    - 80
+    depends_on:
+      # this will create a init container waiting for 3306 port
+      # because it's the "exposed" port
+      - database
+    labels:
+      # expose the port 80 as an ingress
+      katenary.v3/ingress: |-
+        hostname: myapp.example.com
+        port: 80
+      katenary.v3/mapenv: |-
+        # make adaptations, DB_HOST environment is actually the service name
+        DB_HOST: '{{ .Release.Name }}-database'
+
+    database:
+      image: mariadb:10
+      env_file:
+        # this will create a configMap
+        - my_env.env
+      environment:
+        MARIADB_USER: foo
+        MARIADB_ROOT_PASSWORD: foobar
+        MARIADB_PASSWORD: bar
+      labels:
+        # no need to declare this port in docker-compose
+        # but katenary will need it
+        katenary.v3/ports: |-
+          - 3306
+        # these variables are secrets
+        katenary.v3/secrets: |-
+          - MARIADB_ROOT_PASSWORD
+          - MARIADB_PASSWORD
 ```
 
 # Labels
@@ -225,5 +225,3 @@ A catenary is a curve formed by a wire, rope, or chain hanging freely from two p
 line. For example, the anchor chain between a boat and the anchor.
 
 This "curved link" represents what we try to do, the project is a "streched link from docker-compose to helm chart".
-
-
