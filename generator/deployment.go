@@ -153,6 +153,9 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 		Ports:           ports,
 		Name:            service.Name,
 		ImagePullPolicy: corev1.PullIfNotPresent,
+		Resources: corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{},
+		},
 	}
 	if _, ok := d.chart.Values[service.Name]; !ok {
 		d.chart.Values[service.Name] = NewValue(service, d.isMainApp)
@@ -581,6 +584,16 @@ func (d *Deployment) Yaml() ([]byte, error) {
 			pre := spaces + `{{- if ne .Values.` + serviceName + `.serviceAccount "" }}`
 			post := spaces + "{{- end }}"
 			line = strings.ReplaceAll(line, "'", "")
+			line = pre + "\n" + line + "\n" + post
+		}
+
+		if strings.Contains(line, "resources: {}") {
+			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
+			pre := spaces + `{{- if .Values.` + serviceName + `.resources }}`
+			post := spaces + "{{- end }}"
+
+			line = strings.ReplaceAll(line, "resources: {}", "resources:")
+			line += "\n" + spaces + "  {{ .Values." + serviceName + ".resources | toYaml | nindent __indent__ }}"
 			line = pre + "\n" + line + "\n" + post
 		}
 
