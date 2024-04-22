@@ -215,6 +215,8 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	values = addImagePullPolicyHelp(values)
 	values = addVariablesDoc(values, project)
 	values = addMainTagAppDoc(values, project)
+	values = addResourceHelp(values)
+	values = addYAMLSelectorPath(values)
 	values = append([]byte(headerHelp), values...)
 
 	f, err = os.Create(valuesPath)
@@ -274,7 +276,6 @@ const ingressClassHelp = `# Default value for ingress.class annotation
 # If the value is "", Ingress will be set to an empty string, so
 # controller will use the default value for ingressClass
 # If the value is specified, controller will set the named class e.g. "nginx"
-# More info: https://kubernetes.io/docs/concepts/services-networking/ingress/#the-ingress-resource
 `
 
 func addCommentsToValues(values []byte) []byte {
@@ -297,7 +298,6 @@ const storageClassHelp = `# Storage class to use for PVCs
 # storageClass: "-" means use default
 # storageClass: "" means do not specify
 # storageClass: "foo" means use that storageClass
-# More info: https://kubernetes.io/docs/concepts/storage/storage-classes/
 `
 
 // addStorageClassHelp adds a comment to the values.yaml file to explain how to
@@ -385,7 +385,6 @@ const imagePullSecretHelp = `
 # pullSecrets:
 # - name: regcred
 # You are, for now, repsonsible for creating the secret.
-# More info: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 `
 
 func addImagePullSecretsHelp(values []byte) []byte {
@@ -447,7 +446,6 @@ const imagePullPolicyHelp = `# imagePullPolicy allows you to specify a policy to
 # - Always       -> will always pull the image
 # - Never        -> will never pull the image, the image should be present on the node
 # - IfNotPresent -> will pull the image only if it is not present on the node
-# More info: https://kubernetes.io/docs/concepts/containers/images/#updating-images
 `
 
 func addImagePullPolicyHelp(values []byte) []byte {
@@ -462,6 +460,36 @@ func addImagePullPolicyHelp(values []byte) []byte {
 			imagePullPolicyHelp = strings.TrimRight(imagePullPolicyHelp, " ")
 			imagePullPolicyHelp = spacesString + imagePullPolicyHelp
 			lines[i] = imagePullPolicyHelp + line
+		}
+	}
+	return []byte(strings.Join(lines, "\n"))
+}
+
+const resourceHelp = `# Resources allows you to specify the resource requests and limits for a service.
+# Resources are used to specify the amount of CPU and memory that 
+# a container needs.
+#
+# e.g.
+# resources:
+#   requests:
+#     memory: "64Mi"
+#     cpu: "250m"
+#   limits:
+#     memory: "128Mi"
+#     cpu: "500m"
+`
+
+func addResourceHelp(values []byte) []byte {
+	lines := strings.Split(string(values), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, "resources:") {
+			spaces := utils.CountStartingSpaces(line)
+			spacesString := strings.Repeat(" ", spaces)
+			// indent resourceHelp comment
+			resourceHelp := strings.ReplaceAll(resourceHelp, "\n", "\n"+spacesString)
+			resourceHelp = strings.TrimRight(resourceHelp, " ")
+			resourceHelp = spacesString + resourceHelp
+			lines[i] = resourceHelp + line
 		}
 	}
 	return []byte(strings.Join(lines, "\n"))
@@ -635,4 +663,52 @@ func helmLint(config ConvertOptions) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
+}
+
+// keyRegExp checks if the line starts by a #
+var keyRegExp = regexp.MustCompile(`^\s*[^#]+:.*`)
+
+// addYAMLSelectorPath adds a selector path to the yaml file for each key
+// as comment. E.g. foo.ingress.host
+func addYAMLSelectorPath(values []byte) []byte {
+	lines := strings.Split(string(values), "\n")
+	currentKey := ""
+	currentLevel := 0
+	toReturn := []string{}
+	for _, line := range lines {
+		// if the line is a not a key, continue
+		if !keyRegExp.MatchString(line) {
+			toReturn = append(toReturn, line)
+			continue
+		}
+		// get the key
+		key := strings.TrimSpace(strings.Split(line, ":")[0])
+
+		// get the spaces
+		spaces := utils.CountStartingSpaces(line)
+
+		if spaces/2 > currentLevel {
+			currentLevel++
+		} else if spaces/2 < currentLevel {
+			currentLevel--
+		}
+		currentKey = strings.Join(strings.Split(currentKey, ".")[:spaces/2], ".")
+
+		if currentLevel == 0 {
+			currentKey = key
+			toReturn = append(toReturn, line)
+			continue
+		}
+		// if the key is not empty, add the selector path
+		if currentKey != "" {
+			currentKey += "."
+		}
+		currentKey += key
+		// add the selector path as comment
+		toReturn = append(
+			toReturn,
+			strings.Repeat(" ", spaces)+"# key: "+currentKey+"\n"+line,
+		)
+	}
+	return []byte(strings.Join(toReturn, "\n"))
 }
