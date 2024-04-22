@@ -274,7 +274,7 @@ Yaml returns the yaml representation of the cronjob.
 Implements the Yaml interface.
 
 <a name="CronJobValue"></a>
-## type [CronJobValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L65-L70>)
+## type [CronJobValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L66-L71>)
 
 CronJobValue is a cronjob configuration that will be saved in values.yaml.
 
@@ -354,7 +354,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig)
 AddContainer adds a container to the deployment.
 
 <a name="Deployment.AddHealthCheck"></a>
-### func \(\*Deployment\) [AddHealthCheck](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L433>)
+### func \(\*Deployment\) [AddHealthCheck](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L436>)
 
 ```go
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container)
@@ -363,7 +363,7 @@ func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *core
 
 
 <a name="Deployment.AddIngress"></a>
-### func \(\*Deployment\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L178>)
+### func \(\*Deployment\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L181>)
 
 ```go
 func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *Ingress
@@ -372,7 +372,7 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 AddIngress adds an ingress to the deployment. It creates the ingress object.
 
 <a name="Deployment.AddVolumes"></a>
-### func \(\*Deployment\) [AddVolumes](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L184>)
+### func \(\*Deployment\) [AddVolumes](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L187>)
 
 ```go
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
@@ -381,7 +381,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
 AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment. If the volume is a bind volume it will warn the user that it is not supported yet.
 
 <a name="Deployment.BindFrom"></a>
-### func \(\*Deployment\) [BindFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L310>)
+### func \(\*Deployment\) [BindFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L313>)
 
 ```go
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
@@ -399,7 +399,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 
 <a name="Deployment.Filename"></a>
-### func \(\*Deployment\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L606>)
+### func \(\*Deployment\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L619>)
 
 ```go
 func (d *Deployment) Filename() string
@@ -408,7 +408,7 @@ func (d *Deployment) Filename() string
 Filename returns the filename of the deployment.
 
 <a name="Deployment.SetEnvFrom"></a>
-### func \(\*Deployment\) [SetEnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L338>)
+### func \(\*Deployment\) [SetEnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L341>)
 
 ```go
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string)
@@ -417,7 +417,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string)
 SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 
 <a name="Deployment.Yaml"></a>
-### func \(\*Deployment\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L466>)
+### func \(\*Deployment\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L469>)
 
 ```go
 func (d *Deployment) Yaml() ([]byte, error)
@@ -855,7 +855,7 @@ func (r *ServiceAccount) Yaml() ([]byte, error)
 
 
 <a name="Value"></a>
-## type [Value](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L52-L62>)
+## type [Value](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L52-L63>)
 
 Value will be saved in values.yaml. It contains configuraiton for all deployment and services. The content will be lile:
 
@@ -887,11 +887,12 @@ type Value struct {
     CronJob         *CronJobValue                `yaml:"cronjob,omitempty"`
     NodeSelector    map[string]string            `yaml:"nodeSelector"`
     ServiceAccount  string                       `yaml:"serviceAccount"`
+    Resources       map[string]any               `yaml:"resources"`
 }
 ```
 
 <a name="NewValue"></a>
-### func [NewValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L77>)
+### func [NewValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L78>)
 
 ```go
 func NewValue(service types.ServiceConfig, main ...bool) *Value
@@ -902,7 +903,7 @@ NewValue creates a new Value from a compose service. The value contains the nece
 If \`main\` is true, the tag will be empty because it will be set in the helm chart appVersion.
 
 <a name="Value.AddIngress"></a>
-### func \(\*Value\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L116>)
+### func \(\*Value\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L117>)
 
 ```go
 func (v *Value) AddIngress(host, path string)
@@ -911,7 +912,7 @@ func (v *Value) AddIngress(host, path string)
 
 
 <a name="Value.AddPersistence"></a>
-### func \(\*Value\) [AddPersistence](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L104>)
+### func \(\*Value\) [AddPersistence](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L105>)
 
 ```go
 func (v *Value) AddPersistence(volumeName string)
