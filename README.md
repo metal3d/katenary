@@ -94,10 +94,11 @@ source <(katenary completion bash --no-description)
 source <(katenary completion zsh)
 
 # fish in ~/.config/fish/config.fish
-  katenary completion fish | source
+katenary completion fish | source
 
+# experimental
 # powershell (as we don't provide any support on Windows yet, please avoid this...)
-  ```
+```
 
 # Usage
 
@@ -159,7 +160,7 @@ services:
       # so we need to adapt it with the map-env label
       DB_HOST: database
     expose:
-    - 80
+      - 80
     depends_on:
       # this will create a init container waiting for 3306 port
       # because it's the "exposed" port
