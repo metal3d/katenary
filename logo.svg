@@ -1,8 +1,0 @@
-<svg viewBox="0 0 600 300" width="600" height="300" xmlns="http://www.w3.org/2000/svg">
-    <style>
-      image {
-        background-color: white;
-      }
-    </style>
-    <image width="600" height="300" href="./doc/docs/statics/klee.svg"/>
-</svg>

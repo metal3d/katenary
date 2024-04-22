@@ -29,11 +29,6 @@ Today, it's partially developped in collaboration with [Klee Group](https://www.
 and **will stay an opensource and free (as freedom) project**. We are convinced that the best way to make it better is to
 share it with the community.
 
-
-<div style="width: 100%">
-<img src="./logo.svg" alt="Katenary Logo" style="width: 100%" align="center"/>
-</div>
-
 The main developer is [Patrice FERLET](https://github.com/metal3d).
 
 # Install
