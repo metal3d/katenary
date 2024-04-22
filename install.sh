@@ -10,48 +10,56 @@ set -e
 OS=$(uname)
 ARCH=$(uname -m)
 
-# Detect where to install the binary, local path is the prefered method
-INSTALL_TYPE=$(echo $PATH | grep "$HOME/.local/bin" 2>&1 >/dev/null && echo "local" || echo "global")
+# Detect the home directory "bin" directory, it is commonly:
+# - $HOME/.local/bin
+# - $HOME/.bin
+# - $HOME/bin
+COMON_INSTALL_PATHS="$HOME/.local/bin $HOME/.bin $HOME/bin"
+
+INSTALL_PATH=""
+for p in $COMON_INSTALL_PATHS; do
+    if [ -d $p ]; then
+        INSTALL_PATH=$p
+        break
+    fi
+done
+
+# check if the user has write access to the INSTALL_PATH
+if [ -z "$INSTALL_PATH" ]; then
+    INSTALL_PATH="/usr/local/bin"
+    if [ ! -w $INSTALL_PATH ]; then
+        echo "You don't have write access to $INSTALL_PATH"
+        echo "Please, run with sudo or install locally"
+        exit 1
+    fi
+fi
+
+# ensure that $INSTALL_PATH is in the PATH
+if ! echo $PATH | grep -q $INSTALL_PATH; then
+    echo "Sorry, $INSTALL_PATH is not in the PATH"
+    echo "Please, add it to your PATH in your shell configuration file"
+    echo "then restart your shell and run this script again"
+    exit 1
+fi
 
 # Where to download the binary
 BASE="https://github.com/metal3d/katenary/releases/latest/download/"
 
-
+# for compatibility with older ARM versions
 if [ $ARCH = "x86_64" ]; then
     ARCH="amd64"
 fi
 
 BIN_URL="$BASE/katenary-$OS-$ARCH"
 
-if [ "$INSTALL_TYPE" = "local" ]; then
-    echo "Installing to local directory, installing in $HOME/.local/bin"
-    BIN_PATH="$HOME/.local/bin"
-else
-    echo "Installing to global directory, installing in /usr/local/bin - we need to use sudo..."
-    answer=""
-    while [ "$answer" != "y" ] && [ "$answer" != "n" ]; do
-        echo -n "Are you OK? [y/N] "
-        read answer
-        # lower case answer
-        answer=$(echo $answer | tr '[:upper:]' '[:lower:]')
-        if [ "$answer" == "n" ] || [ -z "$answer" ]; then
-            echo "--> To install locally, please ensure that \$HOME/.local/bin is in your PATH"
-            echo "Cancelling installation"
-            exit 0
-        fi
-    done
-    BIN_PATH="/usr/local/bin"
-fi
-
 echo
 echo "Downloading $BIN_URL"
-USE_SUDO=$([ "$INSTALL_TYPE" = "local" ] && echo "" || echo "sudo")
 
 T=$(mktemp -u)
-$USE_SUDO curl -SL -# $BIN_URL -o $T || (echo "Failed to download katenary" && rm -f $T && exit 1)
+curl -SL -# $BIN_URL -o $T || (echo "Failed to download katenary" && rm -f $T && exit 1)
 
-$USE_SUDO mv $T $BIN_PATH/katenary
-$USE_SUDO chmod +x $BIN_PATH/katenary
+mv $T $INSTALL_PATH/katenary
+chmod +x $INSTALL_PATH/katenary
 echo
-echo "Installed to $BIN_PATH/katenary"
-echo "Installation complete! Run 'katenary --help' to get started."
+echo "Installed to $INSTALL_PATH/katenary"
+echo "Installation complete! Run 'katenary help' to get started."
