@@ -1,7 +1,10 @@
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
-    <img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
+<img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
+[![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/en/latest/?badge=latest)
+[![Go Report Card](https://goreportcard.com/badge/github.com/metal3d/katenary)](https://goreportcard.com/report/github.com/metal3d/katenary)
+[![GitHub release](https://img.shields.io/github/v/release/metal3d/katenary)](https://github.com/metal3d/katenary/releases)
 
 🚀 Unleash Productivity with Katenary! 🚀
 
@@ -20,6 +23,18 @@ Katenary is a tool to help to transform `docker-compose` files to a working Helm
 > **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose
 > doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap"
 > tool and then to manually enhance the generated helm chart.
+
+
+Today, it's partially developped in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
+and **will stay an opensource and free (as freedom) project**. We are convinced that the best way to make it better is to
+share it with the community.
+
+
+<div style="width: 100%">
+<img src="./logo.svg" alt="Katenary Logo" style="width: 100%" align="center"/>
+</div>
+
+The main developer is [Patrice FERLET](https://github.com/metal3d).
 
 # Install
 
@@ -84,25 +99,25 @@ source <(katenary completion bash --no-description)
 source <(katenary completion zsh)
 
 # fish in ~/.config/fish/config.fish
-katenary completion fish | source
+  katenary completion fish | source
 
 # powershell (as we don't provide any support on Windows yet, please avoid this...)
-```
+  ```
 
 # Usage
 
-```
-Katenary is a tool to convert compose files to Helm Charts.
+  ```
+  Katenary is a tool to convert compose files to Helm Charts.
 
-Each [command] and subcommand has got an "help" and "--help" flag to show more information.
+  Each [command] and subcommand has got an "help" and "--help" flag to show more information.
 
-Usage:
+  Usage:
   katenary [command]
 
-Examples:
+  Examples:
   katenary convert -c docker-compose.yml -o ./charts
 
-Available Commands:
+  Available Commands:
   completion        Generates completion scripts
   convert           Converts a docker-compose file to a Helm Chart
   hash-composefiles Print the hash of the composefiles
@@ -110,77 +125,77 @@ Available Commands:
   help-labels       Print the labels help for all or a specific label
   version           Print the version number of Katenary
 
-Flags:
+  Flags:
   -h, --help      help for katenary
   -v, --version   version for katenary
 
-Use "katenary [command] --help" for more information about a command.
-```
+  Use "katenary [command] --help" for more information about a command.
+  ```
 
-Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
-check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
-you if you want to delete it before recreating.
+  Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
+  check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
+  you if you want to delete it before recreating.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
-> To respect the ability to install the same application in the same namespace, Katenary will create "variable" names
-> like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
-> katenary to build a correct helm chart.
+  > To respect the ability to install the same application in the same namespace, Katenary will create "variable" names
+  > like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
+  > katenary to build a correct helm chart.
 
-What can be interpreted by Katenary:
+  What can be interpreted by Katenary:
 
-- Services with "image" section (cannot work with "build" section)
-- **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation
-  to Helm Chart because there is (for now) no way to make it working (see below for resolution)
-- if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
+  - Services with "image" section (cannot work with "build" section)
+  - **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation
+to Helm Chart because there is (for now) no way to make it working (see below for resolution)
+  - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
 - `depends_on` will add init containers to wait for the depending on service (using the first port)
-- `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with
-  configMap for now)
-- some labels can help to bind values, see examples below
+  - `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with
+      configMap for now)
+  - some labels can help to bind values, see examples below
 
-Exemple of a possible `docker-compose.yaml` file:
+  Exemple of a possible `docker-compose.yaml` file:
 
-```yaml
-version: "3"
-services:
-    webapp:
-        image: php:7-apache
-        environment:
-            # note that "database" is a service name
-            DB_HOST: database
-        expose:
-            - 80
-        depends_on:
-            # this will create a init container waiting for 3306 port
-            # because it's the "exposed" port
-            - database
-        labels:
-            # expose the port 80 as an ingress
-            katenary.v3/ingress: |-
-                hostname: myapp.example.com
-                port: 80
-            # make adaptations, DB_HOST environment is actually the service name
-            # to hit (note the yaml style, start with "|")
-            katenary.v3/mapenv: |-
-              DB_HOST: '{{ .Release.Name }}-database'
-    database:
-        image: mariadb:10
-        env_file:
-            # this will create a configMap
-            - my_env.env
-        environment:
-            MARIADB_USER: foo
-            MARIADB_ROOT_PASSWORD: foobar
-            MARIADB_PASSWORD: bar
-        labels:
-            # no need to declare this port in docker-compose
-            # but katenary will need it
-            katenary.v3/ports: |-
-                - 3306
-            # these variables are secrets
-            katenary.v3/secrets: |-
-                - MARIADB_ROOT_PASSWORD
-                - MARIADB_PASSWORD
+  ```yaml
+  version: "3"
+  services:
+webapp:
+image: php:7-apache
+environment:
+# note that "database" is a service name
+DB_HOST: database
+expose:
+- 80
+depends_on:
+# this will create a init container waiting for 3306 port
+# because it's the "exposed" port
+- database
+labels:
+# expose the port 80 as an ingress
+katenary.v3/ingress: |-
+hostname: myapp.example.com
+port: 80
+# make adaptations, DB_HOST environment is actually the service name
+# to hit (note the yaml style, start with "|")
+katenary.v3/mapenv: |-
+DB_HOST: '{{ .Release.Name }}-database'
+database:
+image: mariadb:10
+env_file:
+# this will create a configMap
+- my_env.env
+environment:
+MARIADB_USER: foo
+MARIADB_ROOT_PASSWORD: foobar
+MARIADB_PASSWORD: bar
+labels:
+# no need to declare this port in docker-compose
+# but katenary will need it
+katenary.v3/ports: |-
+- 3306
+# these variables are secrets
+katenary.v3/secrets: |-
+- MARIADB_ROOT_PASSWORD
+- MARIADB_PASSWORD
 ```
 
 # Labels
