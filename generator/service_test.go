@@ -27,7 +27,7 @@ services:
 	output := _compile_test(t, "-s", "templates/web/service.yaml")
 	service := v1.Service{}
 	if err := yaml.Unmarshal([]byte(output), &service); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 
 	if len(service.Spec.Ports) != 2 {

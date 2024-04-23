@@ -9,6 +9,8 @@ import (
 	"katenary/parser"
 )
 
+const unmarshalError = "Failed to unmarshal the output: %s"
+
 func setup(content string) string {
 	// write the _compose_file in temporary directory
 	tmpDir, err := os.MkdirTemp("", "katenary")

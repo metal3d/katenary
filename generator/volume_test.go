@@ -31,7 +31,7 @@ volumes:
 
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 
 	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
@@ -71,7 +71,7 @@ services:
 	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 	// get the volume mount path
 	volumeMountPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath
@@ -88,7 +88,7 @@ services:
 	}
 	configMap := corev1.ConfigMap{}
 	if err := yaml.Unmarshal([]byte(output), &configMap); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 	data := configMap.Data
 	if len(data) != 1 {

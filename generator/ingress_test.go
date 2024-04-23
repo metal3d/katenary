@@ -33,7 +33,7 @@ services:
 	output := _compile_test(t, "-s", "templates/web/ingress.yaml", "--set", "web.ingress.enabled=true")
 	ingress := v1.Ingress{}
 	if err := yaml.Unmarshal([]byte(output), &ingress); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 	if len(ingress.Spec.Rules) != 1 {
 		t.Errorf("Expected 1 rule, got %d", len(ingress.Spec.Rules))

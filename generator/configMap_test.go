@@ -27,7 +27,7 @@ services:
 	output := _compile_test(t, "-s", "templates/web/configmap.yaml")
 	configMap := v1.ConfigMap{}
 	if err := yaml.Unmarshal([]byte(output), &configMap); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 	data := configMap.Data
 	if len(data) != 2 {

@@ -32,7 +32,7 @@ services:
 	output := _compile_test(t, "-s", "templates/web/secret.yaml")
 	secret := v1.Secret{}
 	if err := yaml.Unmarshal([]byte(output), &secret); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 	data := secret.Data
 	if len(data) != 1 {

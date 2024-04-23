@@ -26,7 +26,7 @@ services:
 	// dt := DeploymentTest{}
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
+		t.Errorf(unmarshalError, err)
 	}
 
 	if *dt.Spec.Replicas != 1 {
