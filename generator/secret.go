@@ -88,7 +88,7 @@ func (s *Secret) AddData(key string, value string) {
 	if value == "" {
 		return
 	}
-	s.Data[key] = []byte(`{{ tpl ` + value + ` $ | quote | b64enc }}`)
+	s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
 }
 
 // Yaml returns the yaml representation of the secret.
