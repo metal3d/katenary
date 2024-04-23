@@ -1,3 +1,8 @@
+> WARNING
+>
+>The version of the "master" branch, v2.x, will no longer be supported once the "develop" branch (v3.x) is merged. Version 3.x brings a large number of modifications and fixes, such as support for static files, improved generation of the `values.yaml` file, better support for dependencies, etc.
+> If you'd like to help speed up development of version 3, please refer to the "develop" branch. 
+
 <div style="text-align:center; margin: auto" align="center">
     <img src="./misc/logo.png" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
