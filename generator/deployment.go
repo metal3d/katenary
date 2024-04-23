@@ -282,6 +282,9 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 					}),
 				}
 			} else {
+				// In case of a file, add it to the configmap and use "subPath" to mount it
+				// Note that the volumes and volume mounts are not added to the deployment yet, they will be added later
+				// in generate.go
 				dirname := filepath.Dir(volume.Source)
 				pathname := utils.PathToName(dirname)
 				var cm *ConfigMap
@@ -290,7 +293,6 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 					cm.usage = FileMapUsageFiles
 					cm.path = dirname
 					cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
-					// assign a new mountPathConfig to the configMap
 					d.configMaps[pathname] = &ConfigMapMount{
 						configMap: cm,
 						mountPath: []mountPathConfig{{
