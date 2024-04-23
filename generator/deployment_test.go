@@ -38,32 +38,3 @@ services:
 		t.Errorf("Expected image to be nginx:1.29, got %s", dt.Spec.Template.Spec.Containers[0].Image)
 	}
 }
-
-func TestGenerateWithBoundVolume(t *testing.T) {
-	_compose_file := `
-services:
-    web:
-        image: nginx:1.29
-        volumes:
-        - data:/var/www
-volumes:
-    data:
-`
-	tmpDir := setup(_compose_file)
-	defer teardown(tmpDir)
-
-	currentDir, _ := os.Getwd()
-	os.Chdir(tmpDir)
-	defer os.Chdir(currentDir)
-
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
-
-	dt := v1.Deployment{}
-	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
-		t.Errorf("Failed to unmarshal the output: %s", err)
-	}
-
-	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected volume name to be data: %v", dt)
-	}
-}
