@@ -114,11 +114,16 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// now we have all deployments, we can create PVC if needed (it's separated from
 	// the above loop because we need all deployments to not duplicate PVC for "same-pod" services)
+	// bind static volumes
+	for _, service := range project.Services {
+		addStaticVolumes(deployments, service)
+	}
 	for _, service := range project.Services {
 		if err := buildVolumes(service, chart, deployments); err != nil {
 			return nil, err
 		}
 	}
+
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
 	for _, service := range podToMerge {
@@ -156,7 +161,10 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 	// generate yaml files
 	for _, d := range deployments {
-		y, _ := d.Yaml()
+		y, err := d.Yaml()
+		if err != nil {
+			return nil, err
+		}
 		chart.Templates[d.Filename()] = &ChartTemplate{
 			Content:     y,
 			Servicename: d.service.Name,
@@ -386,47 +394,55 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 		}
 	}
 
-	// add the bound configMaps files to the deployment containers
-	for _, d := range deployments {
-		container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
-		if container == nil { // may append for the same-pod services
-			break
-		}
-		for volumeName, config := range d.configMaps {
-			var y []byte
-			var err error
-			if y, err = config.configMap.Yaml(); err != nil {
-				log.Fatal(err)
-			}
-			// add the configmap to the chart
-			d.chart.Templates[config.configMap.Filename()] = &ChartTemplate{
-				Content:     y,
-				Servicename: d.service.Name,
-			}
-			// add the moint path to the container
-			for _, m := range config.mountPath {
-				container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-					Name:      utils.PathToName(volumeName),
-					MountPath: m.mountPath,
-					SubPath:   m.subPath,
-				})
-			}
+	return nil
+}
 
-			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: utils.PathToName(volumeName),
-				VolumeSource: corev1.VolumeSource{
-					ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: config.configMap.Name,
-						},
-					},
-				},
+func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceConfig) {
+	// add the bound configMaps files to the deployment containers
+	var d *Deployment
+	var ok bool
+	if d, ok = deployments[service.Name]; !ok {
+		log.Printf("service %s not found in deployments", service.Name)
+		return
+	}
+
+	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	if container == nil { // may append for the same-pod services
+		return
+	}
+	for volumeName, config := range d.configMaps {
+		var y []byte
+		var err error
+		if y, err = config.configMap.Yaml(); err != nil {
+			log.Fatal(err)
+		}
+		// add the configmap to the chart
+		d.chart.Templates[config.configMap.Filename()] = &ChartTemplate{
+			Content:     y,
+			Servicename: d.service.Name,
+		}
+		// add the moint path to the container
+		for _, m := range config.mountPath {
+			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+				Name:      utils.PathToName(volumeName),
+				MountPath: m.mountPath,
+				SubPath:   m.subPath,
 			})
 		}
 
-		d.Spec.Template.Spec.Containers[index] = *container
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: utils.PathToName(volumeName),
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: config.configMap.Name,
+					},
+				},
+			},
+		})
 	}
-	return nil
+
+	d.Spec.Template.Spec.Containers[index] = *container
 }
 
 // generateConfigMapsAndSecrets creates the configmaps and secrets from the environment variables.

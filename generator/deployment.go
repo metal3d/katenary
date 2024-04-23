@@ -89,7 +89,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 				},
 			},
 		},
-		configMaps: map[string]*ConfigMapMount{},
+		configMaps: make(map[string]*ConfigMapMount),
 	}
 
 	// add containers
@@ -204,6 +204,10 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	}
 
 	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	defer func(d *Deployment, container *corev1.Container, index int) {
+		d.Spec.Template.Spec.Containers[index] = *container
+	}(d, container, index)
+
 	for _, volume := range service.Volumes {
 		// not declared as a bind volume, skip
 		if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
@@ -279,35 +283,35 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 				}
 			} else {
 				dirname := filepath.Dir(volume.Source)
-				pathnme := utils.PathToName(dirname)
+				pathname := utils.PathToName(dirname)
 				var cm *ConfigMap
-				if v, ok := d.configMaps[pathnme]; !ok {
+				if v, ok := d.configMaps[pathname]; !ok {
 					cm = NewConfigMap(*d.service, appName)
 					cm.usage = FileMapUsageFiles
 					cm.path = dirname
-					cm.Name = utils.TplName(service.Name, appName) + "-" + pathnme
-					d.configMaps[pathnme] = &ConfigMapMount{
+					cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
+					// assign a new mountPathConfig to the configMap
+					d.configMaps[pathname] = &ConfigMapMount{
 						configMap: cm,
-						mountPath: []mountPathConfig{},
+						mountPath: []mountPathConfig{{
+							mountPath: volume.Target,
+							subPath:   filepath.Base(volume.Source),
+						}},
 					}
 				} else {
 					cm = v.configMap
-				}
-
-				cm.AppendFile(volume.Source)
-				d.configMaps[pathnme] = &ConfigMapMount{
-					configMap: cm,
-					mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
+					mp := d.configMaps[pathname].mountPath
+					mp = append(mp, mountPathConfig{
 						mountPath: volume.Target,
 						subPath:   filepath.Base(volume.Source),
-					}),
+					})
+					d.configMaps[pathname].mountPath = mp
+
 				}
+				cm.AppendFile(volume.Source)
 			}
 		}
-
 	}
-
-	d.Spec.Template.Spec.Containers[index] = *container
 }
 
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
@@ -496,7 +500,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 			continue
 		}
 
-		if strings.Contains(volume, "- mountPath: ") {
+		if strings.Contains(volume, "mountPath: ") {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(volume))
 			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + volumeName + `.enabled }}` + "\n" + volume
 			changing = true
