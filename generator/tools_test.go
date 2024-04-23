@@ -1,29 +1,36 @@
 package generator
 
 import (
+	"log"
+	"os"
 	"os/exec"
 	"testing"
 
 	"katenary/parser"
 )
 
-type DeploymentTest struct {
-	Spec struct {
-		Replicas int `yaml:"replicas"`
-		Template struct {
-			Spec struct {
-				Containers []struct {
-					Image string `yaml:"image"`
-				} `yaml:"containers"`
-			} `yaml:"spec"`
-		} `yaml:"template"`
-	} `yaml:"spec"`
+func setup(content string) string {
+	// write the _compose_file in temporary directory
+	tmpDir, err := os.MkdirTemp("", "katenary")
+	if err != nil {
+		panic(err)
+	}
+	os.WriteFile(tmpDir+"/compose.yml", []byte(content), 0o644)
+	return tmpDir
 }
 
-func _compile_test(t *testing.T) string {
+func teardown(tmpDir string) {
+	// remove the temporary directory
+	log.Println("Removing temporary directory: ", tmpDir)
+	if err := os.RemoveAll(tmpDir); err != nil {
+		panic(err)
+	}
+}
+
+func _compile_test(t *testing.T, options ...string) string {
 	_, err := parser.Parse(nil, "compose.yml")
 	if err != nil {
-		t.Errorf("Failed to parse the project: %s", err)
+		t.Fatalf("Failed to parse the project: %s", err)
 	}
 
 	force := false
@@ -47,15 +54,18 @@ func _compile_test(t *testing.T) string {
 	}
 	// try with helm template
 	var output string
-	if output, err = helmTemplate(convertOptions); err != nil {
+	if output, err = helmTemplate(convertOptions, options...); err != nil {
 		t.Errorf("Failed to template the generated chart")
-		t.Errorf("Output: %s", output)
+		t.Fatalf("Output %s", output)
 	}
 	return output
 }
 
-func helmTemplate(options ConvertOptions) (string, error) {
-	cmd := exec.Command("helm", "template", options.OutputDir)
+func helmTemplate(options ConvertOptions, arguments ...string) (string, error) {
+	args := []string{"template", options.OutputDir}
+	args = append(args, arguments...)
+
+	cmd := exec.Command("helm", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return string(output), err
