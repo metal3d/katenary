@@ -1,8 +1,8 @@
 module katenary // github.com/metal3d/katenary
 
-go 1.21
+go 1.22
 
-toolchain go1.21.8
+toolchain go1.22.2
 
 require (
 	github.com/compose-spec/compose-go v1.20.2
