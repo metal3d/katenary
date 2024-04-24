@@ -19,7 +19,7 @@ services:
         - 443:443
         labels:
             %s/ingress: |-
-                host: my.test.tld
+                hostname: my.test.tld
                 port: 80
 `
 	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)

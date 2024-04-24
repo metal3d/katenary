@@ -2,10 +2,11 @@ package labelStructs
 
 import "gopkg.in/yaml.v3"
 
-type ConfigMapFile []string
+type Ports []uint32
 
-func ConfigMapFileFrom(data string) (ConfigMapFile, error) {
-	var mapping ConfigMapFile
+// PortsFrom returns a Ports from the given string.
+func PortsFrom(data string) (Ports, error) {
+	var mapping Ports
 	if err := yaml.Unmarshal([]byte(data), &mapping); err != nil {
 		return nil, err
 	}

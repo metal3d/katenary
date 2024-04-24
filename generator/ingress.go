@@ -4,10 +4,10 @@ import (
 	"log"
 	"strings"
 
+	"katenary/generator/labelStructs"
 	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
-	goyaml "gopkg.in/yaml.v3"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -33,49 +33,35 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		return nil
 	}
 
-	mapping := map[string]interface{}{
-		"enabled": false,
-		"host":    service.Name + ".tld",
-		"path":    "/",
-		"class":   "-",
-	}
-	if err := goyaml.Unmarshal([]byte(label), &mapping); err != nil {
+	mapping, err := labelStructs.IngressFrom(label)
+	if err != nil {
 		log.Fatalf("Failed to parse ingress label: %s\n", err)
+	}
+	if mapping.Hostname == "" {
+		mapping.Hostname = service.Name + ".tld"
 	}
 
 	// create the ingress
 	pathType := networkv1.PathTypeImplementationSpecific
 	serviceName := `{{ include "` + appName + `.fullname" . }}-` + service.Name
-	if v, ok := mapping["port"]; ok {
-		if port, ok := v.(int); ok {
-			mapping["port"] = int32(port)
-		}
-	} else {
-		log.Fatalf("No port provided for ingress target in service %s\n", service.Name)
-	}
 
 	// Add the ingress host to the values.yaml
 	if Chart.Values[service.Name] == nil {
 		Chart.Values[service.Name] = &Value{}
 	}
 
-	// fix the ingress host => hostname
-	if hostname, ok := mapping["host"]; ok && hostname != "" {
-		mapping["hostname"] = hostname
-	}
-
 	Chart.Values[service.Name].(*Value).Ingress = &IngressValue{
-		Enabled:     mapping["enabled"].(bool),
-		Path:        mapping["path"].(string),
-		Host:        mapping["hostname"].(string),
-		Class:       mapping["class"].(string),
-		Annotations: map[string]string{},
+		Enabled:     mapping.Enabled,
+		Path:        mapping.Path,
+		Host:        mapping.Hostname,
+		Class:       mapping.Class,
+		Annotations: mapping.Annotations,
 	}
 
 	// ingressClassName := `{{ .Values.` + service.Name + `.ingress.class }}`
 	ingressClassName := utils.TplValue(service.Name, "ingress.class")
 
-	servicePortName := utils.GetServiceNameByPort(int(mapping["port"].(int32)))
+	servicePortName := utils.GetServiceNameByPort(int(*mapping.Port))
 	ingressService := &networkv1.IngressServiceBackend{
 		Name: serviceName,
 		Port: networkv1.ServiceBackendPort{},
@@ -83,7 +69,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	if servicePortName != "" {
 		ingressService.Port.Name = servicePortName
 	} else {
-		ingressService.Port.Number = mapping["port"].(int32)
+		ingressService.Port.Number = *mapping.Port
 	}
 
 	ing := &Ingress{

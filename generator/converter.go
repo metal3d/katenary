@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"katenary/generator/extrafiles"
+	"katenary/generator/labelStructs"
 	"katenary/parser"
 	"katenary/utils"
 
@@ -363,7 +364,7 @@ func addDescriptions(values []byte, project types.Project) []byte {
 	return values
 }
 
-func addDependencyDescription(values []byte, dependencies []Dependency) []byte {
+func addDependencyDescription(values []byte, dependencies []labelStructs.Dependency) []byte {
 	for _, d := range dependencies {
 		name := d.Name
 		if d.Alias != "" {

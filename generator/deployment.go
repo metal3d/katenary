@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"katenary/generator/labelStructs"
 	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
@@ -187,8 +188,8 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	tobind := map[string]bool{}
 	if v, ok := service.Labels[LabelConfigMapFiles]; ok {
-		binds := []string{}
-		if err := yaml.Unmarshal([]byte(v), &binds); err != nil {
+		binds, err := labelStructs.ConfigMapFileFrom(v)
+		if err != nil {
 			log.Fatal(err)
 		}
 		for _, bind := range binds {
@@ -353,12 +354,9 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	secrets := []string{}
 
 	// secrets from label
-	labelSecrets := []string{}
-	if v, ok := service.Labels[LabelSecrets]; ok {
-		err := yaml.Unmarshal([]byte(v), &labelSecrets)
-		if err != nil {
-			log.Fatal(err)
-		}
+	labelSecrets, err := labelStructs.SecretsFrom(service.Labels[LabelSecrets])
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// values from label
@@ -442,11 +440,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
 	// get the label for healthcheck
 	if v, ok := service.Labels[LabelHealthCheck]; ok {
-		probes := struct {
-			LivenessProbe  *corev1.Probe `yaml:"livenessProbe"`
-			ReadinessProbe *corev1.Probe `yaml:"readinessProbe"`
-		}{}
-		err := yaml.Unmarshal([]byte(v), &probes)
+		probes, err := labelStructs.ProbeFrom(v)
 		if err != nil {
 			log.Fatal(err)
 		}

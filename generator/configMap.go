@@ -7,10 +7,10 @@ import (
 	"regexp"
 	"strings"
 
+	"katenary/generator/labelStructs"
 	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
-	goyaml "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
@@ -56,7 +56,6 @@ type ConfigMap struct {
 func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	done := map[string]bool{}
 	drop := map[string]bool{}
-	secrets := []string{}
 	labelValues := []string{}
 
 	cm := &ConfigMap{
@@ -76,11 +75,9 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	}
 
 	// get the secrets from the labels
-	if v, ok := service.Labels[LabelSecrets]; ok {
-		err := yaml.Unmarshal([]byte(v), &secrets)
-		if err != nil {
-			log.Fatal(err)
-		}
+	if secrets, err := labelStructs.SecretsFrom(service.Labels[LabelSecrets]); err != nil {
+		log.Fatal(err)
+	} else {
 		// drop the secrets from the environment
 		for _, secret := range secrets {
 			drop[secret] = true
@@ -105,8 +102,8 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 
 	// remove the variables that are already defined in the environment
 	if l, ok := service.Labels[LabelMapEnv]; ok {
-		envmap := make(map[string]string)
-		if err := goyaml.Unmarshal([]byte(l), &envmap); err != nil {
+		envmap, err := labelStructs.MapEnvFrom(l)
+		if err != nil {
 			log.Fatal("Error parsing map-env", err)
 		}
 		for key, value := range envmap {

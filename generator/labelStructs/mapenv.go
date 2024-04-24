@@ -2,10 +2,11 @@ package labelStructs
 
 import "gopkg.in/yaml.v3"
 
-type ConfigMapFile []string
+type MapEnv map[string]string
 
-func ConfigMapFileFrom(data string) (ConfigMapFile, error) {
-	var mapping ConfigMapFile
+// MapEnvFrom returns a MapEnv from the given string.
+func MapEnvFrom(data string) (MapEnv, error) {
+	var mapping MapEnv
 	if err := yaml.Unmarshal([]byte(data), &mapping); err != nil {
 		return nil, err
 	}

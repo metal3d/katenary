@@ -1,13 +1,6 @@
 package generator
 
-// Dependency is a dependency of a chart to other charts.
-type Dependency struct {
-	Name       string         `yaml:"name"`
-	Version    string         `yaml:"version"`
-	Repository string         `yaml:"repository"`
-	Alias      string         `yaml:"alias,omitempty"`
-	Values     map[string]any `yaml:"-"` // do not export to Chart.yaml
-}
+import "katenary/generator/labelStructs"
 
 // ChartTemplate is a template of a chart. It contains the content of the template and the name of the service.
 // This is used internally to generate the templates.
@@ -26,7 +19,7 @@ type HelmChart struct {
 	Version      string                    `yaml:"version"`
 	AppVersion   string                    `yaml:"appVersion"`
 	Description  string                    `yaml:"description"`
-	Dependencies []Dependency              `yaml:"dependencies,omitempty"`
+	Dependencies []labelStructs.Dependency `yaml:"dependencies,omitempty"`
 	Templates    map[string]*ChartTemplate `yaml:"-"` // do not export to yaml
 	Helper       string                    `yaml:"-"` // do not export to yaml
 	Values       map[string]any            `yaml:"-"` // do not export to yaml

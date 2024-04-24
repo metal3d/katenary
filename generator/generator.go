@@ -10,12 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	"katenary/generator/labelStructs"
 	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
-	goyaml "gopkg.in/yaml.v3"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
 )
 
 // Generate a chart from a compose project.
@@ -275,8 +274,8 @@ func setChartVersion(chart *HelmChart, service types.ServiceConfig) {
 func fixPorts(service *types.ServiceConfig) error {
 	// check the "ports" label from container and add it to the service
 	if portsLabel, ok := service.Labels[LabelPorts]; ok {
-		ports := []uint32{}
-		if err := goyaml.Unmarshal([]byte(portsLabel), &ports); err != nil {
+		ports, err := labelStructs.PortsFrom(portsLabel)
+		if err != nil {
 			// maybe it's a string, comma separated
 			parts := strings.Split(portsLabel, ",")
 			for _, part := range parts {
@@ -337,8 +336,8 @@ func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *
 func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error) {
 	// helm dependency
 	if v, ok := service.Labels[LabelDependencies]; ok {
-		d := []Dependency{}
-		if err := yaml.Unmarshal([]byte(v), &d); err != nil {
+		d, err := labelStructs.DependenciesFrom(v)
+		if err != nil {
 			return false, err
 		}
 
@@ -462,8 +461,8 @@ func generateConfigMapsAndSecrets(project *types.Project, chart *HelmChart) erro
 		}
 
 		if v, ok := s.Labels[LabelSecrets]; ok {
-			list := []string{}
-			if err := yaml.Unmarshal([]byte(v), &list); err != nil {
+			list, err := labelStructs.SecretsFrom(v)
+			if err != nil {
 				log.Fatal("error unmarshaling secrets label:", err)
 			}
 			for _, secret := range list {
@@ -558,8 +557,8 @@ func setSharedConf(service types.ServiceConfig, chart *HelmChart, deployments ma
 	if _, ok := service.Labels[LabelEnvFrom]; !ok {
 		return
 	}
-	fromservices := []string{}
-	if err := yaml.Unmarshal([]byte(service.Labels[LabelEnvFrom]), &fromservices); err != nil {
+	fromservices, err := labelStructs.EnvFromFrom(service.Labels[LabelEnvFrom])
+	if err != nil {
 		log.Fatal("error unmarshaling env-from label:", err)
 	}
 	// find the configmap in the chart templates

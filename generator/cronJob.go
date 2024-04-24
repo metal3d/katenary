@@ -4,11 +4,10 @@ import (
 	"log"
 	"strings"
 
-	labelstructs "katenary/generator/labelStructs"
+	"katenary/generator/labelStructs"
 	"katenary/utils"
 
 	"github.com/compose-spec/compose-go/types"
-	goyaml "gopkg.in/yaml.v3"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,19 +31,8 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 	if !ok {
 		return nil, nil
 	}
-	//mapping := struct {
-	//	Image    string `yaml:"image,omitempty"`
-	//	Command  string `yaml:"command"`
-	//	Schedule string `yaml:"schedule"`
-	//	Rbac     bool   `yaml:"rbac"`
-	//}{
-	//	Image:    "",
-	//	Command:  "",
-	//	Schedule: "",
-	//	Rbac:     false,
-	//}
-	var mapping labelstructs.CronJob
-	if err := goyaml.Unmarshal([]byte(labels), &mapping); err != nil {
+	mapping, err := labelStructs.CronJobFrom(labels)
+	if err != nil {
 		log.Fatalf("Error parsing cronjob labels: %s", err)
 		return nil, nil
 	}
