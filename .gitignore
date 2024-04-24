@@ -15,7 +15,6 @@ docker-compose*
 .credentials
 release.id
 configs/
-cover.html
-cover.out
+cover.*
 .sq
 katenary
