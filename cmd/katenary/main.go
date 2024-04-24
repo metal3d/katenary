@@ -22,7 +22,11 @@ Each [command] and subcommand has got an "help" and "--help" flag to show more i
 `
 
 func main() {
-	// The base command
+	rootCmd := buildRootCmd()
+	rootCmd.Execute()
+}
+
+func buildRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "katenary",
 		Long:  longHelp,
@@ -42,7 +46,7 @@ func main() {
 		generateLabelHelpCommand(),
 	)
 
-	rootCmd.Execute()
+	return rootCmd
 }
 
 const completionHelp = `To load completions:
