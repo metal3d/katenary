@@ -257,16 +257,18 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	f.Write([]byte(notes))
 	f.Close()
 
-	if config.HelmUpdate {
-		if err := helmUpdate(config); err != nil {
+	executeAndHandleError := func(fn func(ConvertOptions) error, config ConvertOptions, message string) {
+		if err := fn(config); err != nil {
 			fmt.Println(utils.IconFailure, err)
 			os.Exit(1)
-		} else if err := helmLint(config); err != nil {
-			fmt.Println(utils.IconFailure, err)
-			os.Exit(1)
-		} else {
-			fmt.Println(utils.IconSuccess, "Helm chart created successfully")
 		}
+		fmt.Println(utils.IconSuccess, message)
+	}
+
+	if config.HelmUpdate {
+		executeAndHandleError(helmUpdate, config, "Helm dependencies updated")
+		executeAndHandleError(helmLint, config, "Helm chart linted")
+		fmt.Println(utils.IconSuccess, "Helm chart created successfully")
 	}
 }
 
