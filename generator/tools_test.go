@@ -38,7 +38,7 @@ func _compile_test(t *testing.T, options ...string) string {
 	force := false
 	outputDir := "./chart"
 	profiles := make([]string, 0)
-	helmdepUpdate := false
+	helmdepUpdate := true
 	var appVersion *string
 	chartVersion := "0.1.0"
 	convertOptions := ConvertOptions{
@@ -50,6 +50,7 @@ func _compile_test(t *testing.T, options ...string) string {
 		ChartVersion: chartVersion,
 	}
 	Convert(convertOptions, "compose.yml")
+
 	// launch helm lint to check the generated chart
 	if helmLint(convertOptions) != nil {
 		t.Errorf("Failed to lint the generated chart")
