@@ -33,22 +33,6 @@ type IngressValue struct {
 }
 
 // Value will be saved in values.yaml. It contains configuraiton for all deployment and services.
-// The content will be lile:
-//
-//	name_of_component:
-//	  repository:
-//	    image: image_name
-//	    tag: image_tag
-//	  persistence:
-//	    enabled: true
-//	    storageClass: storage_class_name
-//	  ingress:
-//	    enabled: true
-//	    host: host_name
-//	    path: path_name
-//	  environment:
-//	    ENV_VAR_1: value_1
-//	    ENV_VAR_2: value_2
 type Value struct {
 	Repository      *RepositoryValue             `yaml:"repository,omitempty"`
 	Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`

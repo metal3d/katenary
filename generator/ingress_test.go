@@ -18,11 +18,11 @@ services:
         - 80:80
         - 443:443
         labels:
-            %singress: |-
+            %s/ingress: |-
                 host: my.test.tld
                 port: 80
 `
-	composeFile = fmt.Sprintf(composeFile, KATENARY_PREFIX)
+	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 

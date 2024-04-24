@@ -178,7 +178,7 @@ func generateLabelHelpCommand() *cobra.Command {
 If no label is specified, the help for all labels is printed.
 If a label is specified, the help for this label is printed.
 
-The name of the label must be specified without the prefix ` + generator.KATENARY_PREFIX + `.
+The name of the label must be specified without the prefix ` + generator.Prefix() + `.
 
 e.g. 
   kanetary help-labels

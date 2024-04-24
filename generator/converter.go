@@ -339,7 +339,7 @@ func addModeline(values []byte) []byte {
 // of the service definition.
 func addDescriptions(values []byte, project types.Project) []byte {
 	for _, service := range project.Services {
-		if description, ok := service.Labels[LABEL_DESCRIPTION]; ok {
+		if description, ok := service.Labels[LabelDescription]; ok {
 			// set it as comment
 			description = "\n# " + strings.ReplaceAll(description, "\n", "\n# ")
 
@@ -500,7 +500,7 @@ func addVariablesDoc(values []byte, project *types.Project) []byte {
 
 	currentService := ""
 	for _, service := range project.Services {
-		variables := utils.GetValuesFromLabel(service, LABEL_VALUES)
+		variables := utils.GetValuesFromLabel(service, LabelValues)
 		for i, line := range lines {
 			if regexp.MustCompile(`(?m)^` + service.Name + `:`).MatchString(line) {
 				currentService = service.Name
@@ -535,7 +535,7 @@ func addMainTagAppDoc(values []byte, project *types.Project) []byte {
 		inService := false
 		inRegistry := false
 		// read the label LabelMainApp
-		if v, ok := service.Labels[LABEL_MAIN_APP]; !ok {
+		if v, ok := service.Labels[LabelMainApp]; !ok {
 			continue
 		} else if v == "false" || v == "no" || v == "0" {
 			continue
@@ -609,7 +609,7 @@ func checkOldLabels(project *types.Project) error {
 	badServices := make([]string, 0)
 	for _, service := range project.Services {
 		for label := range service.Labels {
-			if strings.Contains(label, "katenary.") && !strings.Contains(label, KATENARY_PREFIX) {
+			if strings.Contains(label, "katenary.") && !strings.Contains(label, katenaryLabelPrefix) {
 				badServices = append(badServices, fmt.Sprintf("- %s: %s", service.Name, label))
 			}
 		}
@@ -625,7 +625,7 @@ func checkOldLabels(project *types.Project) error {
   Services to upgrade:
 %s`,
 			project.Name,
-			KATENARY_PREFIX[0:len(KATENARY_PREFIX)-1],
+			katenaryLabelPrefix[0:len(katenaryLabelPrefix)-1],
 			strings.Join(badServices, "\n"),
 		)
 

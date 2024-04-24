@@ -24,13 +24,12 @@ type Ingress struct {
 func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	appName := Chart.Name
 
-	// parse the KATENARY_PREFIX/ingress label from the service
 	if service.Labels == nil {
 		service.Labels = make(map[string]string)
 	}
 	var label string
 	var ok bool
-	if label, ok = service.Labels[LABEL_INGRESS]; !ok {
+	if label, ok = service.Labels[LabelIngress]; !ok {
 		return nil
 	}
 

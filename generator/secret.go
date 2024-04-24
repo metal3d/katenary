@@ -46,7 +46,7 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 
 	// check if the value should be in values.yaml
 	valueList := []string{}
-	varDescriptons := utils.GetValuesFromLabel(service, LABEL_VALUES)
+	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
 	for value := range varDescriptons {
 		valueList = append(valueList, value)
 	}

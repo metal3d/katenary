@@ -76,7 +76,7 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	}
 
 	// get the secrets from the labels
-	if v, ok := service.Labels[LABEL_SECRETS]; ok {
+	if v, ok := service.Labels[LabelSecrets]; ok {
 		err := yaml.Unmarshal([]byte(v), &secrets)
 		if err != nil {
 			log.Fatal(err)
@@ -87,7 +87,7 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 		}
 	}
 	// get the label values from the labels
-	varDescriptons := utils.GetValuesFromLabel(service, LABEL_VALUES)
+	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
 	for value := range varDescriptons {
 		labelValues = append(labelValues, value)
 	}
@@ -104,7 +104,7 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	}
 
 	// remove the variables that are already defined in the environment
-	if l, ok := service.Labels[LABEL_MAP_ENV]; ok {
+	if l, ok := service.Labels[LabelMapEnv]; ok {
 		envmap := make(map[string]string)
 		if err := goyaml.Unmarshal([]byte(l), &envmap); err != nil {
 			log.Fatal("Error parsing map-env", err)

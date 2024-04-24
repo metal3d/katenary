@@ -36,30 +36,38 @@ type Help struct {
 	Type    string `yaml:"type"`
 }
 
-const KATENARY_PREFIX = "katenary.v3/"
+const katenaryLabelPrefix = "katenary.v3"
+
+func Prefix() string {
+	return katenaryLabelPrefix
+}
 
 // Known labels.
 const (
-	LABEL_MAIN_APP     Label = KATENARY_PREFIX + "main-app"
-	LABEL_VALUES       Label = KATENARY_PREFIX + "values"
-	LABEL_SECRETS      Label = KATENARY_PREFIX + "secrets"
-	LABEL_PORTS        Label = KATENARY_PREFIX + "ports"
-	LABEL_INGRESS      Label = KATENARY_PREFIX + "ingress"
-	LABEL_MAP_ENV      Label = KATENARY_PREFIX + "map-env"
-	LABEL_HEALTHCHECK  Label = KATENARY_PREFIX + "health-check"
-	LABEL_SAME_POD     Label = KATENARY_PREFIX + "same-pod"
-	LABEL_DESCRIPTION  Label = KATENARY_PREFIX + "description"
-	LABEL_IGNORE       Label = KATENARY_PREFIX + "ignore"
-	LABEL_DEPENDENCIES Label = KATENARY_PREFIX + "dependencies"
-	LABEL_CM_FILES     Label = KATENARY_PREFIX + "configmap-files"
-	LABEL_CRONJOB      Label = KATENARY_PREFIX + "cronjob"
-	LABEL_ENV_FROM     Label = KATENARY_PREFIX + "env-from"
+	LabelMainApp        Label = katenaryLabelPrefix + "/main-app"
+	LabelValues         Label = katenaryLabelPrefix + "/values"
+	LabelSecrets        Label = katenaryLabelPrefix + "/secrets"
+	LabelPorts          Label = katenaryLabelPrefix + "/ports"
+	LabelIngress        Label = katenaryLabelPrefix + "/ingress"
+	LabelMapEnv         Label = katenaryLabelPrefix + "/map-env"
+	LabelHealthCheck    Label = katenaryLabelPrefix + "/health-check"
+	LabelSamePod        Label = katenaryLabelPrefix + "/same-pod"
+	LabelDescription    Label = katenaryLabelPrefix + "/description"
+	LabelIgnore         Label = katenaryLabelPrefix + "/ignore"
+	LabelDependencies   Label = katenaryLabelPrefix + "/dependencies"
+	LabelConfigMapFiles Label = katenaryLabelPrefix + "/configmap-files"
+	LabelCronJob        Label = katenaryLabelPrefix + "/cronjob"
+	LabelEnvFrom        Label = katenaryLabelPrefix + "/env-from"
 )
 
 func init() {
 	if err := yaml.Unmarshal(labelFullHelpYAML, &labelFullHelp); err != nil {
 		panic(err)
 	}
+}
+
+func labelName(name string) Label {
+	return Label(katenaryLabelPrefix + "/" + name)
 }
 
 // Generate the help for the labels.
@@ -75,7 +83,7 @@ func generatePlainHelp(names []string) string {
 	var builder strings.Builder
 	for _, name := range names {
 		help := labelFullHelp[name]
-		fmt.Fprintf(&builder, "%s%s:\t%s\t%s\n", KATENARY_PREFIX, name, help.Type, help.Short)
+		fmt.Fprintf(&builder, "%s:\t%s\t%s\n", labelName(name), help.Type, help.Short)
 	}
 
 	// use tabwriter to align the help text
@@ -100,7 +108,7 @@ func generateMarkdownHelp(names []string) string {
 	}
 	for _, name := range names {
 		help := labelFullHelp[name]
-		maxNameLength = max(maxNameLength, len(name)+2+len(KATENARY_PREFIX))
+		maxNameLength = max(maxNameLength, len(name)+2+len(katenaryLabelPrefix))
 		maxDescriptionLength = max(maxDescriptionLength, len(help.Short))
 		maxTypeLength = max(maxTypeLength, len(help.Type))
 	}
@@ -111,7 +119,7 @@ func generateMarkdownHelp(names []string) string {
 	for _, name := range names {
 		help := labelFullHelp[name]
 		fmt.Fprintf(&builder, "| %-*s | %-*s | %-*s |\n",
-			maxNameLength, "`"+KATENARY_PREFIX+name+"`", // enclose in backticks
+			maxNameLength, "`"+labelName(name)+"`", // enclose in backticks
 			maxDescriptionLength, help.Short,
 			maxTypeLength, help.Type,
 		)
@@ -166,29 +174,29 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 
 	var buf bytes.Buffer
 	template.Must(template.New("shorthelp").Parse(help.Long)).Execute(&buf, struct {
-		KATENARY_PREFIX string
+		KatenaryPrefix string
 	}{
-		KATENARY_PREFIX: KATENARY_PREFIX,
+		KatenaryPrefix: katenaryLabelPrefix,
 	})
 	help.Long = buf.String()
 	buf.Reset()
 
 	template.Must(template.New("example").Parse(help.Example)).Execute(&buf, struct {
-		KATENARY_PREFIX string
+		KatenaryPrefix string
 	}{
-		KATENARY_PREFIX: KATENARY_PREFIX,
+		KatenaryPrefix: katenaryLabelPrefix,
 	})
 	help.Example = buf.String()
 	buf.Reset()
 
 	template.Must(template.New("complete").Parse(helpTemplate)).Execute(&buf, struct {
-		Name            string
-		Help            Help
-		KATENARY_PREFIX string
+		Name           string
+		Help           Help
+		KatenaryPrefix string
 	}{
-		Name:            labelname,
-		Help:            help,
-		KATENARY_PREFIX: KATENARY_PREFIX,
+		Name:           labelname,
+		Help:           help,
+		KatenaryPrefix: katenaryLabelPrefix,
 	})
 
 	return buf.String()
@@ -206,7 +214,7 @@ func GetLabelNames() []string {
 
 func getHelpTemplate(asMarkdown bool) string {
 	if asMarkdown {
-		return `## {{ .KATENARY_PREFIX }}{{ .Name }}
+		return `## {{ .KatenaryPrefix }}/{{ .Name }}
 
 {{ .Help.Short }}
 
@@ -217,7 +225,7 @@ func getHelpTemplate(asMarkdown bool) string {
 **Example:**` + "\n\n```yaml\n" + `{{ .Help.Example }}` + "\n```\n"
 	}
 
-	return `{{ .KATENARY_PREFIX }}{{ .Name }}: {{ .Help.Short }}
+	return `{{ .KatenaryPrefix }}/{{ .Name }}: {{ .Help.Short }}
 Type: {{ .Help.Type }}
 
 {{ .Help.Long }}

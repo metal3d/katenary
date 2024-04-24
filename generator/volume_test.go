@@ -47,10 +47,10 @@ services:
         volumes:
         - ./static:/var/www
         labels:
-            %sconfigmap-files: |-
+            %s/configmap-files: |-
                 - ./static
 `
-	_compose_file = fmt.Sprintf(_compose_file, KATENARY_PREFIX)
+	_compose_file = fmt.Sprintf(_compose_file, katenaryLabelPrefix)
 	tmpDir := setup(_compose_file)
 	defer teardown(tmpDir)
 

@@ -44,7 +44,7 @@ type Deployment struct {
 // It also creates the Values map that will be used to create the values.yaml file.
 func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 	isMainApp := false
-	if mainLabel, ok := service.Labels[LABEL_MAIN_APP]; ok {
+	if mainLabel, ok := service.Labels[LabelMainApp]; ok {
 		main := strings.ToLower(mainLabel)
 		isMainApp = main == "true" || main == "yes" || main == "1"
 	}
@@ -83,7 +83,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 					},
 					Spec: corev1.PodSpec{
 						NodeSelector: map[string]string{
-							"katenary.v3/node-selector": "replace",
+							labelName("node-selector"): "replace",
 						},
 					},
 				},
@@ -112,7 +112,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
 	for _, container := range to.Spec.Template.Spec.Containers {
 		commands := []string{}
 		if len(container.Ports) == 0 {
-			utils.Warn("No ports found for service ", servicename, ". You should declare a port in the service or use "+LABEL_PORTS+" label.")
+			utils.Warn("No ports found for service ", servicename, ". You should declare a port in the service or use "+LabelPorts+" label.")
 			os.Exit(1)
 		}
 		for _, port := range container.Ports {
@@ -186,7 +186,7 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 // If the volume is a bind volume it will warn the user that it is not supported yet.
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	tobind := map[string]bool{}
-	if v, ok := service.Labels[LABEL_CM_FILES]; ok {
+	if v, ok := service.Labels[LabelConfigMapFiles]; ok {
 		binds := []string{}
 		if err := yaml.Unmarshal([]byte(v), &binds); err != nil {
 			log.Fatal(err)
@@ -197,7 +197,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	}
 
 	isSamePod := false
-	if v, ok := service.Labels[LABEL_SAME_POD]; !ok {
+	if v, ok := service.Labels[LabelSamePod]; !ok {
 		isSamePod = false
 	} else {
 		isSamePod = v != ""
@@ -214,7 +214,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 			utils.Warn(
 				"Bind volumes are not supported yet, " +
 					"excepting for those declared as " +
-					LABEL_CM_FILES +
+					LabelConfigMapFiles +
 					", skipping volume " + volume.Source +
 					" from service " + service.Name,
 			)
@@ -242,7 +242,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 			})
 			// Add volume to values.yaml only if it the service is not in the same pod that another service.
 			// If it is in the same pod, the volume will be added to the other service later
-			if _, ok := service.Labels[LABEL_SAME_POD]; !ok {
+			if _, ok := service.Labels[LabelSamePod]; !ok {
 				d.chart.Values[service.Name].(*Value).AddPersistence(volume.Source)
 			}
 			// Add volume to deployment
@@ -354,7 +354,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 
 	// secrets from label
 	labelSecrets := []string{}
-	if v, ok := service.Labels[LABEL_SECRETS]; ok {
+	if v, ok := service.Labels[LabelSecrets]; ok {
 		err := yaml.Unmarshal([]byte(v), &labelSecrets)
 		if err != nil {
 			log.Fatal(err)
@@ -362,7 +362,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	}
 
 	// values from label
-	varDescriptons := utils.GetValuesFromLabel(service, LABEL_VALUES)
+	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
 	labelValues := []string{}
 	for v := range varDescriptons {
 		labelValues = append(labelValues, v)
@@ -441,7 +441,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
 	// get the label for healthcheck
-	if v, ok := service.Labels[LABEL_HEALTHCHECK]; ok {
+	if v, ok := service.Labels[LabelHealthCheck]; ok {
 		probes := struct {
 			LivenessProbe  *corev1.Probe `yaml:"livenessProbe"`
 			ReadinessProbe *corev1.Probe `yaml:"readinessProbe"`
@@ -576,7 +576,6 @@ func (d *Deployment) Yaml() ([]byte, error) {
 			post := spaces + "{{- end }}"
 			ns := spaces + "nodeSelector:\n"
 			ns += spaces + `  {{- .Values.` + serviceName + `.nodeSelector | toYaml | nindent __indent__ }}`
-			//line = strings.Replace(line, "katenary.v3/node-selector: replace", ns, 1)
 			line = pre + "\n" + ns + "\n" + post
 		}
 		// manage replicas
@@ -608,7 +607,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 	// find the katenary.v3/node-selector line, and remove it
 	for i, line := range content {
-		if strings.Contains(line, "katenary.v3/node-selector") {
+		if strings.Contains(line, labelName("node-selector")) {
 			content = append(content[:i], content[i+1:]...)
 			continue
 		}

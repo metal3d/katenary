@@ -22,15 +22,15 @@
 {{- define "__APP__.labels" -}}
 {{ include "__APP__.selectorLabels" .}}
 {{ if .Chart.Version -}}
-{{ printf "__PREFIX__chart-version: '%s'" .Chart.Version }}
+{{ printf "__PREFIX__/chart-version: '%s'" .Chart.Version }}
 {{- end }}
 {{ if .Chart.AppVersion -}}
-{{ printf "__PREFIX__app-version: '%s'" .Chart.AppVersion }}
+{{ printf "__PREFIX__/app-version: '%s'" .Chart.AppVersion }}
 {{- end }}
 {{- end -}}
 
 {{- define "__APP__.selectorLabels" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
-{{ printf "__PREFIX__name: %s" $name }}
-{{ printf "__PREFIX__instance: %s" .Release.Name }}
+{{ printf "__PREFIX__/name: %s" $name }}
+{{ printf "__PREFIX__/instance: %s" .Release.Name }}
 {{- end -}}

@@ -22,7 +22,7 @@ and let the magic happen.
 
 # What is it?
 
-Katenary is a tool made to help you to transform "compose" files (`docker-compose.yml`, `podman-compose.yml`...) to
+Katenary is a tool made to help you to transform "compose" files (`compose.yaml`, `docker-compose.yml`, `podman-compose.yml`...) to
 complete and production ready [Helm Chart](https://helm.sh).
 
 You'll be able to deploy your project in [:material-kubernetes: Kubernetes](https://kubernetes.io) in a few seconds 
@@ -30,7 +30,19 @@ You'll be able to deploy your project in [:material-kubernetes: Kubernetes](http
 
 It uses your current file and optionnaly labels to configure the result.
 
-It's an opensource project, under MIT licence, partially developped at [Smile](https://www.smile.eu). The project source 
+It's an opensource project, under MIT licence, originally partially developped at [Smile](https://www.smile.eu).  
+
+Today, it's partially developped in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
+and **will stay an opensource and free (as freedom) project**. We are convinced that the best way to make it better is to
+share it with the community.
+
+<div id="klee">
+![](./statics/klee.svg)
+</div>
+
+The main developer is [Patrice FERLET](https://github.com/metal3d).
+
+The project source 
 code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/metal3d/katenary).
 
 ## Install Katenary

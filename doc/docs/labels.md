@@ -7,22 +7,22 @@ Katenary will try to Unmarshal these labels.
 ## Label list and types
 
 <!-- START_LABEL_DOC : do not remove this tag !-->
-| Label name                    | Description                                            | Type                  |
-| ----------------------------- | ------------------------------------------------------ | --------------------- |
+| Label name                   | Description                                            | Type                  |
+| ---------------------------- | ------------------------------------------------------ | --------------------- |
 | `katenary.v3/configmap-files` | Add files to the configmap.                            | list of strings       |
-| `katenary.v3/cronjob`         | Create a cronjob from the service.                     | object                |
-| `katenary.v3/dependencies`    | Add Helm dependencies to the service.                  | list of objects       |
-| `katenary.v3/description`     | Description of the service                             | string                |
-| `katenary.v3/env-from`        | Add environment variables from antoher service.        | list of strings       |
-| `katenary.v3/health-check`    | Health check to be added to the deployment.            | object                |
-| `katenary.v3/ignore`          | Ignore the service                                     | bool                  |
-| `katenary.v3/ingress`         | Ingress rules to be added to the service.              | object                |
-| `katenary.v3/main-app`        | Mark the service as the main app.                      | bool                  |
-| `katenary.v3/map-env`         | Map env vars from the service to the deployment.       | object                |
-| `katenary.v3/ports`           | Ports to be added to the service.                      | list of uint32        |
-| `katenary.v3/same-pod`        | Move the same-pod deployment to the target deployment. | string                |
-| `katenary.v3/secrets`         | Env vars to be set as secrets.                         | list of string        |
-| `katenary.v3/values`          | Environment variables to be added to the values.yaml   | list of string or map |
+| `katenary.v3/cronjob`        | Create a cronjob from the service.                     | object                |
+| `katenary.v3/dependencies`   | Add Helm dependencies to the service.                  | list of objects       |
+| `katenary.v3/description`    | Description of the service                             | string                |
+| `katenary.v3/env-from`       | Add environment variables from antoher service.        | list of strings       |
+| `katenary.v3/health-check`   | Health check to be added to the deployment.            | object                |
+| `katenary.v3/ignore`         | Ignore the service                                     | bool                  |
+| `katenary.v3/ingress`        | Ingress rules to be added to the service.              | object                |
+| `katenary.v3/main-app`       | Mark the service as the main app.                      | bool                  |
+| `katenary.v3/map-env`        | Map env vars from the service to the deployment.       | object                |
+| `katenary.v3/ports`          | Ports to be added to the service.                      | list of uint32        |
+| `katenary.v3/same-pod`       | Move the same-pod deployment to the target deployment. | string                |
+| `katenary.v3/secrets`        | Env vars to be set as secrets.                         | list of string        |
+| `katenary.v3/values`         | Environment variables to be added to the values.yaml   | list of string or map |
 
 <!-- STOP_LABEL_DOC : do not remove this tag !-->
 

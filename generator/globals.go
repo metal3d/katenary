@@ -11,6 +11,6 @@ var (
 
 	// Standard annotationss
 	Annotations = map[string]string{
-		KATENARY_PREFIX + "version": Version,
+		labelName("version"): Version,
 	}
 )

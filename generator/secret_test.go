@@ -18,10 +18,10 @@ services:
         - FOO=bar
         - BAR=baz
         labels:
-            %ssecrets: |-
+            %s/secrets: |-
                 - BAR
 `
-	composeFile = fmt.Sprintf(composeFile, KATENARY_PREFIX)
+	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 

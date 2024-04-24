@@ -19,7 +19,7 @@
 #   This is an {{ "{{ example }}" }}.
 #
 #   This will display "This is an {{ exemple }}" in the output.
-# - Use {{ .KATENARY_PREFIX }} to let Katenary replace it with the label prefix (e.g. "katenary.v3/")
+# - Use {{ .KatenaryPrefix }} to let Katenary replace it with the label prefix (e.g. "katenary.v3")
 
 "main-app": 
   short: "Mark the service as the main app."
@@ -40,7 +40,7 @@
         # The chart is now named ghost, and the appVersion is 1.25.5.
         # In Deployment, the image attribute is set to ghost:1.25.5 if 
         # you don't change the "tag" attribute in values.yaml
-        {{ .KATENARY_PREFIX }}main-app: true
+        {{ .KatenaryPrefix }}/main-app: true
   type: "bool"
 
 "values": 
@@ -63,7 +63,7 @@
       TO_CONFIGURE: something that can be changed in values.yaml
       A_COMPLEX_VALUE: example
     labels:
-      {{ .KATENARY_PREFIX }}values: |-
+      {{ .KatenaryPrefix }}/values: |-
         # simple values, set as is in values.yaml
         - TO_CONFIGURE
         # complex values, set as a template in values.yaml with a documentation
@@ -79,14 +79,14 @@
     This label allows setting the environment variables as secrets. The variable 
     is removed from the environment and added to a secret object.
 
-    The variable can be set to the {{ printf "%s%s" .KATENARY_PREFIX "values"}} too,
+    The variable can be set to the {{ printf "%s/%s" .KatenaryPrefix "values"}} too,
     so the secret value can be configured in values.yaml
   example: |-
     env:
       PASSWORD: a very secret password
       NOT_A_SECRET: a public value
     labels:
-      {{ .KATENARY_PREFIX }}secrets: |-
+      {{ .KatenaryPrefix }}/secrets: |-
         - PASSWORD
   type: "list of string"
 
@@ -97,7 +97,7 @@
     service is a dependency of another service.
   example: |-
     labels:
-      {{ .KATENARY_PREFIX }}ports: |-
+      {{ .KatenaryPrefix }}/ports: |-
         - 8080
         - 8081
   type: "list of uint32"
@@ -106,10 +106,10 @@
   short: "Ingress rules to be added to the service."
   long: |-
     Declare an ingress rule for the service. The port should be exposed or 
-    declared with {{ printf "%s%s" .KATENARY_PREFIX "ports" }}.
+    declared with {{ printf "%s/%s" .KatenaryPrefix "ports" }}.
   example: |-
     labels:
-      {{ .KATENARY_PREFIX }}ingress: |-
+      {{ .KatenaryPrefix }}/ingress: |-
         port: 80
         hostname: mywebsite.com (optional)
   type: "object"
@@ -130,7 +130,7 @@
       RUNNING: docker
       OTHER: value
     labels:
-      {{ .KATENARY_PREFIX }}map-env: |-
+      {{ .KatenaryPrefix }}/map-env: |-
         RUNNING: kubernetes
         DB_HOST: '{{ "{{ include \"__APP__.fullname\" . }}" }}-database'
   type: "object"
@@ -140,7 +140,7 @@
   long:    "Health check to be added to the deployment."
   example: |-
     labels:
-      {{ .KATENARY_PREFIX }}health-check: |-
+      {{ .KatenaryPrefix }}/health-check: |-
         httpGet:
           path: /health
           port: 8080
@@ -161,7 +161,7 @@
     php:
       image: php:7.4-fpm
       labels:
-        {{ .KATENARY_PREFIX }}same-pod: web
+        {{ .KatenaryPrefix }}/same-pod: web
   type: "string"
 
 "description":
@@ -173,7 +173,7 @@
     The value can be set with a documentation in multiline format.
   example: |-
     labels:
-      {{ .KATENARY_PREFIX }}description: |-
+      {{ .KatenaryPrefix }}/description: |-
         This is a description of the service.
         It can be multiline.
   type: "string"
@@ -181,7 +181,7 @@
 "ignore":
   short:   "Ignore the service"
   long:    "Ingoring a service to not be exported in helm chart."
-  example: "labels:\n  {{ .KATENARY_PREFIX }}ignore: \"true\""
+  example: "labels:\n  {{ .KatenaryPrefix }}/ignore: \"true\""
   type:    "bool"
 
 "dependencies": 
@@ -209,7 +209,7 @@
     in values.yaml.
   example: |-
     labels:
-      {{ .KATENARY_PREFIX }}dependencies: |-
+      {{ .KatenaryPrefix }}/dependencies: |-
         - name: mariadb
           repository: oci://registry-1.docker.io/bitnamicharts
 
@@ -244,7 +244,7 @@
     volumes
       - ./conf.d:/etc/nginx/conf.d
     labels:
-      {{ .KATENARY_PREFIX }}configmap-files: |-
+      {{ .KatenaryPrefix }}/configmap-files: |-
         - ./conf.d
   type: "list of strings"
 
@@ -261,7 +261,7 @@
       a serviceaccount to make your cronjob able to connect the Kubernetes API
   example: |-
     labels:
-        {{ .KATENARY_PREFIX }}cronjob: |-
+        {{ .KatenaryPrefix }}/cronjob: |-
             command: echo "hello world"
             schedule: "* */1 * * *" # or @hourly for example
   type: "object"
@@ -282,6 +282,6 @@
       labels:
         # get the congigMap from service1 where FOO is 
         # defined inside this service too
-        {{ .KATENARY_PREFIX }}env-from: |-
+        {{ .KatenaryPrefix }}/env-from: |-
             - myservice1
 # vim: ft=gotmpl.yaml

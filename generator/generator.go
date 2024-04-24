@@ -45,7 +45,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	if err != nil {
 		return nil, err
 	}
-	Annotations[KATENARY_PREFIX+"compose-hash"] = hash
+	Annotations[labelName("compose-hash")] = hash
 	chart.composeHash = &hash
 
 	// find the "main-app" label, and set chart.AppVersion to the tag if exists
@@ -92,7 +92,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 		// get the same-pod label if exists, add it to the list.
 		// We later will copy some parts to the target deployment and remove this one.
-		if samePod, ok := service.Labels[LABEL_SAME_POD]; ok && samePod != "" {
+		if samePod, ok := service.Labels[LabelSamePod]; ok && samePod != "" {
 			podToMerge[samePod] = &service
 		}
 
@@ -127,14 +127,14 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
 	for _, service := range podToMerge {
-		if samepod, ok := service.Labels[LABEL_SAME_POD]; ok && samepod != "" {
+		if samepod, ok := service.Labels[LabelSamePod]; ok && samepod != "" {
 			// move this deployment volumes to the target deployment
 			if target, ok := deployments[samepod]; ok {
 				target.AddContainer(*service)
 				target.BindFrom(*service, deployments[service.Name])
 				delete(deployments, service.Name)
 			} else {
-				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, LABEL_SAME_POD)
+				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, LabelSamePod)
 			}
 		}
 	}
@@ -252,7 +252,7 @@ func removeReplaceString(b []byte) []byte {
 
 // serviceIsMain returns true if the service is the main app.
 func serviceIsMain(service types.ServiceConfig) bool {
-	if main, ok := service.Labels[LABEL_MAIN_APP]; ok {
+	if main, ok := service.Labels[LabelMainApp]; ok {
 		return main == "true" || main == "yes" || main == "1"
 	}
 	return false
@@ -274,7 +274,7 @@ func setChartVersion(chart *HelmChart, service types.ServiceConfig) {
 // fixPorts checks the "ports" label from container and add it to the service.
 func fixPorts(service *types.ServiceConfig) error {
 	// check the "ports" label from container and add it to the service
-	if portsLabel, ok := service.Labels[LABEL_PORTS]; ok {
+	if portsLabel, ok := service.Labels[LabelPorts]; ok {
 		ports := []uint32{}
 		if err := goyaml.Unmarshal([]byte(portsLabel), &ports); err != nil {
 			// maybe it's a string, comma separated
@@ -302,7 +302,7 @@ func fixPorts(service *types.ServiceConfig) error {
 
 // setCronJob creates a cronjob from the service labels.
 func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *CronJob {
-	if _, ok := service.Labels[LABEL_CRONJOB]; !ok {
+	if _, ok := service.Labels[LabelCronJob]; !ok {
 		return nil
 	}
 	cronjob, rbac := NewCronJob(service, chart, appName)
@@ -336,7 +336,7 @@ func setCronJob(service types.ServiceConfig, chart *HelmChart, appName string) *
 // setDependencies sets the dependencies from the service labels.
 func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error) {
 	// helm dependency
-	if v, ok := service.Labels[LABEL_DEPENDENCIES]; ok {
+	if v, ok := service.Labels[LabelDependencies]; ok {
 		d := []Dependency{}
 		if err := yaml.Unmarshal([]byte(v), &d); err != nil {
 			return false, err
@@ -360,7 +360,7 @@ func setDependencies(chart *HelmChart, service types.ServiceConfig) (bool, error
 
 // isIgnored returns true if the service is ignored.
 func isIgnored(service types.ServiceConfig) bool {
-	if v, ok := service.Labels[LABEL_IGNORE]; ok {
+	if v, ok := service.Labels[LabelIgnore]; ok {
 		return v == "true" || v == "yes" || v == "1"
 	}
 	return false
@@ -381,7 +381,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 
 			// if the service is integrated in another deployment, we need to add the volume
 			// to the target deployment
-			if override, ok := service.Labels[LABEL_SAME_POD]; ok {
+			if override, ok := service.Labels[LabelSamePod]; ok {
 				pvc.nameOverride = override
 				pvc.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
 				chart.Values[override].(*Value).AddPersistence(v.Source)
@@ -461,7 +461,7 @@ func generateConfigMapsAndSecrets(project *types.Project, chart *HelmChart) erro
 			originalEnv[k] = v
 		}
 
-		if v, ok := s.Labels[LABEL_SECRETS]; ok {
+		if v, ok := s.Labels[LabelSecrets]; ok {
 			list := []string{}
 			if err := yaml.Unmarshal([]byte(v), &list); err != nil {
 				log.Fatal("error unmarshaling secrets label:", err)
@@ -523,7 +523,7 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 	}
 
 	targetDeployment := ""
-	if targetName, ok := service.Labels[LABEL_SAME_POD]; !ok {
+	if targetName, ok := service.Labels[LabelSamePod]; !ok {
 		return false
 	} else {
 		targetDeployment = targetName
@@ -555,11 +555,11 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 func setSharedConf(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) {
 	// if the service has the "shared-conf" label, we need to add the configmap
 	// to the chart and add the env vars to the service
-	if _, ok := service.Labels[LABEL_ENV_FROM]; !ok {
+	if _, ok := service.Labels[LabelEnvFrom]; !ok {
 		return
 	}
 	fromservices := []string{}
-	if err := yaml.Unmarshal([]byte(service.Labels[LABEL_ENV_FROM]), &fromservices); err != nil {
+	if err := yaml.Unmarshal([]byte(service.Labels[LabelEnvFrom]), &fromservices); err != nil {
 		log.Fatal("error unmarshaling env-from label:", err)
 	}
 	// find the configmap in the chart templates
