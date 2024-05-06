@@ -17,7 +17,7 @@ func NotesFile(services []string) string
 NotesFile returns the content of the note.txt file.
 
 <a name="ReadMeFile"></a>
-## func [ReadMeFile](<https://github.com/metal3d/katenary/blob/develop/generator/extrafiles/readme.go#L25>)
+## func [ReadMeFile](<https://github.com/metal3d/katenary/blob/develop/generator/extrafiles/readme.go#L24>)
 
 ```go
 func ReadMeFile(charname, description string, values map[string]any) string

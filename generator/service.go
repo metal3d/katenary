@@ -4,13 +4,13 @@ import (
 	"regexp"
 	"strings"
 
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
+
+	"katenary/utils"
 )
 
 var _ Yaml = (*Service)(nil)

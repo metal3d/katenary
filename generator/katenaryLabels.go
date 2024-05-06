@@ -10,9 +10,9 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	"katenary/utils"
-
 	"sigs.k8s.io/yaml"
+
+	"katenary/utils"
 )
 
 var (

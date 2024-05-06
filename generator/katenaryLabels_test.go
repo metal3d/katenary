@@ -8,6 +8,8 @@ import (
 
 var testingKatenaryPrefix = Prefix()
 
+const mainAppLabel = "main-app"
+
 func TestPrefix(t *testing.T) {
 	tests := []struct {
 		name string
@@ -27,7 +29,7 @@ func TestPrefix(t *testing.T) {
 	}
 }
 
-func Test_labelName(t *testing.T) {
+func TestLabelName(t *testing.T) {
 	type args struct {
 		name string
 	}
@@ -39,9 +41,9 @@ func Test_labelName(t *testing.T) {
 		{
 			name: "Test_labelName",
 			args: args{
-				name: "main-app",
+				name: mainAppLabel,
 			},
-			want: testingKatenaryPrefix + "/main-app",
+			want: testingKatenaryPrefix + "/" + mainAppLabel,
 		},
 	}
 	for _, tt := range tests {
@@ -65,7 +67,7 @@ func TestGetLabelHelp(t *testing.T) {
 }
 
 func TestGetLabelHelpFor(t *testing.T) {
-	help := GetLabelHelpFor("main-app", false)
+	help := GetLabelHelpFor(mainAppLabel, false)
 	if help == "" {
 		t.Errorf("GetLabelHelpFor() = %v, want %v", help, "Help")
 	}

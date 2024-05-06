@@ -1,7 +1,5 @@
 package generator
 
-// TODO: configmap from files 20%
-
 import (
 	"bytes"
 	"fmt"
@@ -10,11 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"katenary/generator/labelStructs"
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
+
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 )
 
 // Generate a chart from a compose project.
@@ -388,7 +386,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 			y, _ := pvc.Yaml()
 			chart.Templates[pvc.Filename()] = &ChartTemplate{
 				Content:     y,
-				Servicename: service.Name, // TODO, use name
+				Servicename: service.Name,
 			}
 		}
 	}

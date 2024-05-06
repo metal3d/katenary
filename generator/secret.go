@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"katenary/utils"
 )
 
 var (
@@ -84,7 +84,7 @@ func (s *Secret) SetData(data map[string]string) {
 }
 
 // AddData adds a key value pair to the secret.
-func (s *Secret) AddData(key string, value string) {
+func (s *Secret) AddData(key, value string) {
 	if value == "" {
 		return
 	}

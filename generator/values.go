@@ -6,9 +6,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 )
 
-// Values is a map of all values for all services. Written to values.yaml.
-// var Values = map[string]any{}
-
 // RepositoryValue is a docker repository image and tag that will be saved in values.yaml.
 type RepositoryValue struct {
 	Image string `yaml:"image"`
@@ -17,19 +14,19 @@ type RepositoryValue struct {
 
 // PersistenceValue is a persistence configuration that will be saved in values.yaml.
 type PersistenceValue struct {
-	Enabled      bool     `yaml:"enabled"`
 	StorageClass string   `yaml:"storageClass"`
 	Size         string   `yaml:"size"`
 	AccessMode   []string `yaml:"accessMode"`
+	Enabled      bool     `yaml:"enabled"`
 }
 
 // IngressValue is a ingress configuration that will be saved in values.yaml.
 type IngressValue struct {
-	Enabled     bool              `yaml:"enabled"`
+	Annotations map[string]string `yaml:"annotations"`
 	Host        string            `yaml:"host"`
 	Path        string            `yaml:"path"`
 	Class       string            `yaml:"class"`
-	Annotations map[string]string `yaml:"annotations"`
+	Enabled     bool              `yaml:"enabled"`
 }
 
 // Value will be saved in values.yaml. It contains configuraiton for all deployment and services.
@@ -37,13 +34,13 @@ type Value struct {
 	Repository      *RepositoryValue             `yaml:"repository,omitempty"`
 	Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`
 	Ingress         *IngressValue                `yaml:"ingress,omitempty"`
-	ImagePullPolicy string                       `yaml:"imagePullPolicy,omitempty"`
 	Environment     map[string]any               `yaml:"environment,omitempty"`
 	Replicas        *uint32                      `yaml:"replicas,omitempty"`
 	CronJob         *CronJobValue                `yaml:"cronjob,omitempty"`
 	NodeSelector    map[string]string            `yaml:"nodeSelector"`
-	ServiceAccount  string                       `yaml:"serviceAccount"`
 	Resources       map[string]any               `yaml:"resources"`
+	ImagePullPolicy string                       `yaml:"imagePullPolicy,omitempty"`
+	ServiceAccount  string                       `yaml:"serviceAccount"`
 }
 
 // CronJobValue is a cronjob configuration that will be saved in values.yaml.

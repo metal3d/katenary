@@ -3,16 +3,18 @@ package generator
 import (
 	"strings"
 
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"katenary/utils"
 )
 
 var _ Yaml = (*VolumeClaim)(nil)
+
+const persistenceKey = "persistence"
 
 // VolumeClaim is a kubernetes VolumeClaim. This is a PersistentVolumeClaim.
 type VolumeClaim struct {
@@ -41,7 +43,12 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 				AccessModes: []v1.PersistentVolumeAccessMode{
 					v1.ReadWriteOnce,
 				},
-				StorageClassName: utils.StrPtr(`{{ .Values.` + service.Name + `.persistence.` + volumeName + `.storageClass }}`),
+				StorageClassName: utils.StrPtr(
+					`{{ .Values.` +
+						service.Name +
+						"." + persistenceKey +
+						"." + volumeName + `.storageClass }}`,
+				),
 				Resources: v1.VolumeResourceRequirements{
 					Requests: v1.ResourceList{
 						v1.ResourceStorage: resource.MustParse("1Gi"),
@@ -69,7 +76,7 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 		strings.Replace(
 			string(out),
 			"1Gi",
-			utils.TplValue(serviceName, "persistence."+volumeName+".size"),
+			utils.TplValue(serviceName, persistenceKey+"."+volumeName+".size"),
 			1,
 		),
 	)
@@ -80,8 +87,8 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 			"- ReadWriteOnce",
 			"{{- .Values."+
 				serviceName+
-				".persistence."+
-				volumeName+
+				"."+persistenceKey+
+				"."+volumeName+
 				".accessMode | toYaml | nindent __indent__ }}",
 			1,
 		),
@@ -92,7 +99,10 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 		if strings.Contains(line, "storageClass") {
 			lines[i] = utils.Wrap(
 				line,
-				"{{- if ne .Values."+serviceName+".persistence."+volumeName+".storageClass \"-\" }}",
+				"{{- if ne .Values."+
+					serviceName+
+					"."+persistenceKey+
+					"."+volumeName+".storageClass \"-\" }}",
 				"{{- end }}",
 			)
 		}
@@ -103,8 +113,8 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 	out = []byte(
 		"{{- if .Values." +
 			serviceName +
-			".persistence." +
-			volumeName +
+			"." + persistenceKey +
+			"." + volumeName +
 			".enabled }}\n" +
 			string(out) +
 			"\n{{- end }}",

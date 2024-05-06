@@ -10,20 +10,22 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const webTemplateOutput = `templates/web/deployment.yaml`
+
 func TestGenerate(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
 `
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 
 	// dt := DeploymentTest{}
 	dt := v1.Deployment{}
@@ -42,7 +44,7 @@ services:
 }
 
 func TestGenerateOneDeploymentWithSamePod(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -57,14 +59,15 @@ services:
             katenary.v3/same-pod: web
 `
 
-	tmpDir := setup(compose_file)
+	outDir := "./chart"
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -76,8 +79,8 @@ services:
 	// endsure that the fpm service is not created
 
 	var err error
-	output, err = helmTemplate(ConvertOptions{
-		OutputDir: "./chart",
+	_, err = helmTemplate(ConvertOptions{
+		OutputDir: outDir,
 	}, "-s", "templates/fpm/deployment.yaml")
 	if err == nil {
 		t.Errorf("Expected error, got nil")
@@ -85,7 +88,7 @@ services:
 
 	// ensure that the web service is created and has got 2 ports
 	output, err = helmTemplate(ConvertOptions{
-		OutputDir: "./chart",
+		OutputDir: outDir,
 	}, "-s", "templates/web/service.yaml")
 	if err != nil {
 		t.Errorf("Error: %s", err)
@@ -101,7 +104,7 @@ services:
 }
 
 func TestDependsOn(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -115,14 +118,14 @@ services:
         ports:
         - 3306:3306
 `
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -138,7 +141,7 @@ services:
 }
 
 func TestHelmDependencies(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -156,15 +159,15 @@ services:
                   version: 18.x.X
 
     `
-	compose_file = fmt.Sprintf(compose_file, Prefix())
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, Prefix())
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -198,7 +201,7 @@ services:
 }
 
 func TestLivenessProbesFromHealthCheck(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -210,14 +213,14 @@ services:
             timeout: 3s
             retries: 3
         `
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -229,7 +232,7 @@ services:
 }
 
 func TestProbesFromLabels(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -246,15 +249,15 @@ services:
                         path: /ready
                         port: 80
     `
-	compose_file = fmt.Sprintf(compose_file, Prefix())
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, Prefix())
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -280,7 +283,7 @@ services:
 }
 
 func TestSetValues(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -292,15 +295,15 @@ services:
                 - FOO
 `
 
-	compose_file = fmt.Sprintf(compose_file, Prefix())
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, Prefix())
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := _compile_test(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)

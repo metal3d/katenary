@@ -7,13 +7,13 @@ import (
 	"regexp"
 	"strings"
 
-	"katenary/generator/labelStructs"
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 )
 
 // only used to check interface implementation
@@ -23,7 +23,7 @@ var (
 )
 
 // NewFileMap creates a new DataMap from a compose service. The appName is the name of the application taken from the project name.
-func NewFileMap(service types.ServiceConfig, appName string, kind string) DataMap {
+func NewFileMap(service types.ServiceConfig, appName, kind string) DataMap {
 	switch kind {
 	case "configmap":
 		return NewConfigMap(service, appName)
@@ -47,8 +47,8 @@ const (
 type ConfigMap struct {
 	*corev1.ConfigMap
 	service *types.ServiceConfig
-	usage   FileMapUsage
 	path    string
+	usage   FileMapUsage
 }
 
 // NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name.
@@ -75,13 +75,13 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 	}
 
 	// get the secrets from the labels
-	if secrets, err := labelStructs.SecretsFrom(service.Labels[LabelSecrets]); err != nil {
+	secrets, err := labelStructs.SecretsFrom(service.Labels[LabelSecrets])
+	if err != nil {
 		log.Fatal(err)
-	} else {
-		// drop the secrets from the environment
-		for _, secret := range secrets {
-			drop[secret] = true
-		}
+	}
+	// drop the secrets from the environment
+	for _, secret := range secrets {
+		drop[secret] = true
 	}
 	// get the label values from the labels
 	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
@@ -95,7 +95,6 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 			done[value] = true
 			continue
 		}
-		// val := `{{ tpl .Values.` + service.Name + `.environment.` + value + ` $ }}`
 		val := utils.TplValue(service.Name, "environment."+value)
 		service.Environment[value] = &val
 	}
@@ -112,10 +111,9 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 		}
 	}
 	for key, env := range service.Environment {
-		if _, ok := done[key]; ok {
-			continue
-		}
-		if _, ok := drop[key]; ok {
+		_, isDropped := drop[key]
+		_, isDone := done[key]
+		if isDropped || isDone {
 			continue
 		}
 		cm.AddData(key, *env)
@@ -127,7 +125,7 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 // NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the
 // file or directory. If the path is a directory, all files in the directory are added to the ConfigMap.
 // Each subdirectory are ignored. Note that the Generate() function will create the subdirectories ConfigMaps.
-func NewConfigMapFromDirectory(service types.ServiceConfig, appName string, path string) *ConfigMap {
+func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap {
 	normalized := path
 	normalized = strings.TrimLeft(normalized, ".")
 	normalized = strings.TrimLeft(normalized, "/")
@@ -163,7 +161,7 @@ func (c *ConfigMap) SetData(data map[string]string) {
 }
 
 // AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
-func (c *ConfigMap) AddData(key string, value string) {
+func (c *ConfigMap) AddData(key, value string) {
 	c.Data[key] = value
 }
 

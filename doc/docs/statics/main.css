@@ -77,11 +77,6 @@ h3[id*="katenaryio"] {
 }
 
 /*Zoomable images*/
-
-/*[data-md-color-scheme="slate"] #logo {
-  background-image: url("logo-bright.svg");
-}*/
-
 .zoomable svg {
   background-color: var(--md-default-bg-color);
   padding: 1rem;

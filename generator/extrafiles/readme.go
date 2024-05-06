@@ -2,12 +2,11 @@ package extrafiles
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"sort"
 	"strings"
 	"text/template"
-
-	_ "embed"
 
 	"gopkg.in/yaml.v3"
 )

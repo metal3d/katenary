@@ -35,7 +35,7 @@ var Version = "master" // changed at compile time
 ```
 
 <a name="Convert"></a>
-## func [Convert](<https://github.com/metal3d/katenary/blob/develop/generator/converter.go#L38>)
+## func [Convert](<https://github.com/metal3d/katenary/blob/develop/generator/converter.go#L37>)
 
 ```go
 func Convert(config ConvertOptions, dockerComposeFile ...string)
@@ -116,16 +116,14 @@ func Prefix() string
 
 
 <a name="ChartTemplate"></a>
-## type [ChartTemplate](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L9-L12>)
+## type [ChartTemplate](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L25-L28>)
 
 ChartTemplate is a template of a chart. It contains the content of the template and the name of the service. This is used internally to generate the templates.
 
-TODO: maybe we can set it private.
-
 ```go
 type ChartTemplate struct {
-    Content     []byte
     Servicename string
+    Content     []byte
 }
 ```
 
@@ -151,25 +149,25 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap
 NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name. The ConfigMap is filled by environment variables and labels "map\-env".
 
 <a name="NewConfigMapFromDirectory"></a>
-### func [NewConfigMapFromDirectory](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L130>)
+### func [NewConfigMapFromDirectory](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L128>)
 
 ```go
-func NewConfigMapFromDirectory(service types.ServiceConfig, appName string, path string) *ConfigMap
+func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap
 ```
 
 NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the file or directory. If the path is a directory, all files in the directory are added to the ConfigMap. Each subdirectory are ignored. Note that the Generate\(\) function will create the subdirectories ConfigMaps.
 
 <a name="ConfigMap.AddData"></a>
-### func \(\*ConfigMap\) [AddData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L166>)
+### func \(\*ConfigMap\) [AddData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L164>)
 
 ```go
-func (c *ConfigMap) AddData(key string, value string)
+func (c *ConfigMap) AddData(key, value string)
 ```
 
 AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
 
 <a name="ConfigMap.AppendDir"></a>
-### func \(\*ConfigMap\) [AppendDir](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L172>)
+### func \(\*ConfigMap\) [AppendDir](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L170>)
 
 ```go
 func (c *ConfigMap) AppendDir(path string)
@@ -178,7 +176,7 @@ func (c *ConfigMap) AppendDir(path string)
 AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
 
 <a name="ConfigMap.AppendFile"></a>
-### func \(\*ConfigMap\) [AppendFile](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L208>)
+### func \(\*ConfigMap\) [AppendFile](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L206>)
 
 ```go
 func (c *ConfigMap) AppendFile(path string)
@@ -187,7 +185,7 @@ func (c *ConfigMap) AppendFile(path string)
 
 
 <a name="ConfigMap.Filename"></a>
-### func \(\*ConfigMap\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L226>)
+### func \(\*ConfigMap\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L224>)
 
 ```go
 func (c *ConfigMap) Filename() string
@@ -196,7 +194,7 @@ func (c *ConfigMap) Filename() string
 Filename returns the filename of the configmap. If the configmap is used for files, the filename contains the path.
 
 <a name="ConfigMap.SetData"></a>
-### func \(\*ConfigMap\) [SetData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L161>)
+### func \(\*ConfigMap\) [SetData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L159>)
 
 ```go
 func (c *ConfigMap) SetData(data map[string]string)
@@ -205,7 +203,7 @@ func (c *ConfigMap) SetData(data map[string]string)
 SetData sets the data of the configmap. It replaces the entire data.
 
 <a name="ConfigMap.Yaml"></a>
-### func \(\*ConfigMap\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L236>)
+### func \(\*ConfigMap\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L234>)
 
 ```go
 func (c *ConfigMap) Yaml() ([]byte, error)
@@ -225,18 +223,18 @@ type ConfigMapMount struct {
 ```
 
 <a name="ConvertOptions"></a>
-## type [ConvertOptions](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L46-L53>)
+## type [ConvertOptions](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L14-L21>)
 
 ConvertOptions are the options to convert a compose project to a helm chart.
 
 ```go
 type ConvertOptions struct {
-    Force        bool     // Force the chart directory deletion if it already exists.
-    OutputDir    string   // The output directory of the chart.
-    Profiles     []string // Profile to use for the conversion.
-    HelmUpdate   bool     // If true, the "helm dep update" command will be run after the chart generation.
-    AppVersion   *string  // Set the chart "appVersion" field. If nil, the version will be set to 0.1.0.
-    ChartVersion string   // Set the chart "version" field.
+    AppVersion   *string
+    OutputDir    string
+    ChartVersion string
+    Profiles     []string
+    Force        bool
+    HelmUpdate   bool
 }
 ```
 
@@ -275,7 +273,7 @@ Yaml returns the yaml representation of the cronjob.
 Implements the Yaml interface.
 
 <a name="CronJobValue"></a>
-## type [CronJobValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L50-L55>)
+## type [CronJobValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L47-L52>)
 
 CronJobValue is a cronjob configuration that will be saved in values.yaml.
 
@@ -304,7 +302,7 @@ type DataMap interface {
 ### func [NewFileMap](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L26>)
 
 ```go
-func NewFileMap(service types.ServiceConfig, appName string, kind string) DataMap
+func NewFileMap(service types.ServiceConfig, appName, kind string) DataMap
 ```
 
 NewFileMap creates a new DataMap from a compose service. The appName is the name of the application taken from the project name.
@@ -340,7 +338,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig)
 AddContainer adds a container to the deployment.
 
 <a name="Deployment.AddHealthCheck"></a>
-### func \(\*Deployment\) [AddHealthCheck](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L440>)
+### func \(\*Deployment\) [AddHealthCheck](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L450>)
 
 ```go
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container)
@@ -367,7 +365,7 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string)
 AddVolumes adds a volume to the deployment. It does not create the PVC, it only adds the volumes to the deployment. If the volume is a bind volume it will warn the user that it is not supported yet.
 
 <a name="Deployment.BindFrom"></a>
-### func \(\*Deployment\) [BindFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L320>)
+### func \(\*Deployment\) [BindFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L330>)
 
 ```go
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment)
@@ -385,7 +383,7 @@ func (d *Deployment) DependsOn(to *Deployment, servicename string) error
 DependsOn adds a initContainer to the deployment that will wait for the service to be up.
 
 <a name="Deployment.Filename"></a>
-### func \(\*Deployment\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L618>)
+### func \(\*Deployment\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L628>)
 
 ```go
 func (d *Deployment) Filename() string
@@ -394,7 +392,7 @@ func (d *Deployment) Filename() string
 Filename returns the filename of the deployment.
 
 <a name="Deployment.SetEnvFrom"></a>
-### func \(\*Deployment\) [SetEnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L348>)
+### func \(\*Deployment\) [SetEnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L358>)
 
 ```go
 func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string)
@@ -403,7 +401,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string)
 SetEnvFrom sets the environment variables to a configmap. The configmap is created.
 
 <a name="Deployment.Yaml"></a>
-### func \(\*Deployment\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L469>)
+### func \(\*Deployment\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/deployment.go#L479>)
 
 ```go
 func (d *Deployment) Yaml() ([]byte, error)
@@ -430,28 +428,29 @@ const (
 ```
 
 <a name="HelmChart"></a>
-## type [HelmChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L16-L28>)
+## type [HelmChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L32-L44>)
 
 HelmChart is a Helm Chart representation. It contains all the tempaltes, values, versions, helpers...
 
 ```go
 type HelmChart struct {
+    Templates    map[string]*ChartTemplate `yaml:"-"`
+    Values       map[string]any            `yaml:"-"`
+    VolumeMounts map[string]any            `yaml:"-"`
+
     Name         string                    `yaml:"name"`
     ApiVersion   string                    `yaml:"apiVersion"`
     Version      string                    `yaml:"version"`
     AppVersion   string                    `yaml:"appVersion"`
     Description  string                    `yaml:"description"`
+    Helper       string                    `yaml:"-"`
     Dependencies []labelStructs.Dependency `yaml:"dependencies,omitempty"`
-    Templates    map[string]*ChartTemplate `yaml:"-"` // do not export to yaml
-    Helper       string                    `yaml:"-"` // do not export to yaml
-    Values       map[string]any            `yaml:"-"` // do not export to yaml
-    VolumeMounts map[string]any            `yaml:"-"` // do not export to yaml
     // contains filtered or unexported fields
 }
 ```
 
 <a name="Generate"></a>
-### func [Generate](<https://github.com/metal3d/katenary/blob/develop/generator/generator.go#L33>)
+### func [Generate](<https://github.com/metal3d/katenary/blob/develop/generator/generator.go#L31>)
 
 ```go
 func Generate(project *types.Project) (*HelmChart, error)
@@ -471,13 +470,22 @@ The Generate function will create the HelmChart object this way:
 - Merge the same\-pod services.
 
 <a name="NewChart"></a>
-### func [NewChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L31>)
+### func [NewChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L47>)
 
 ```go
 func NewChart(name string) *HelmChart
 ```
 
 NewChart creates a new empty chart with the given name.
+
+<a name="HelmChart.SaveTemplates"></a>
+### func \(\*HelmChart\) [SaveTemplates](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L62>)
+
+```go
+func (chart *HelmChart) SaveTemplates(templateDir string)
+```
+
+SaveTemplates the templates of the chart to the given directory.
 
 <a name="Help"></a>
 ## type [Help](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryLabels.go#L32-L37>)
@@ -533,17 +541,17 @@ func (ingress *Ingress) Yaml() ([]byte, error)
 
 
 <a name="IngressValue"></a>
-## type [IngressValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L27-L33>)
+## type [IngressValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L24-L30>)
 
 IngressValue is a ingress configuration that will be saved in values.yaml.
 
 ```go
 type IngressValue struct {
-    Enabled     bool              `yaml:"enabled"`
+    Annotations map[string]string `yaml:"annotations"`
     Host        string            `yaml:"host"`
     Path        string            `yaml:"path"`
     Class       string            `yaml:"class"`
-    Annotations map[string]string `yaml:"annotations"`
+    Enabled     bool              `yaml:"enabled"`
 }
 ```
 
@@ -578,16 +586,16 @@ const (
 ```
 
 <a name="PersistenceValue"></a>
-## type [PersistenceValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L19-L24>)
+## type [PersistenceValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L16-L21>)
 
 PersistenceValue is a persistence configuration that will be saved in values.yaml.
 
 ```go
 type PersistenceValue struct {
-    Enabled      bool     `yaml:"enabled"`
     StorageClass string   `yaml:"storageClass"`
     Size         string   `yaml:"size"`
     AccessMode   []string `yaml:"accessMode"`
+    Enabled      bool     `yaml:"enabled"`
 }
 ```
 
@@ -614,7 +622,7 @@ func NewRBAC(service types.ServiceConfig, appName string) *RBAC
 NewRBAC creates a new RBAC from a compose service. The appName is the name of the application taken from the project name.
 
 <a name="RepositoryValue"></a>
-## type [RepositoryValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L13-L16>)
+## type [RepositoryValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L10-L13>)
 
 RepositoryValue is a docker repository image and tag that will be saved in values.yaml.
 
@@ -712,7 +720,7 @@ NewSecret creates a new Secret from a compose service
 ### func \(\*Secret\) [AddData](<https://github.com/metal3d/katenary/blob/develop/generator/secret.go#L87>)
 
 ```go
-func (s *Secret) AddData(key string, value string)
+func (s *Secret) AddData(key, value string)
 ```
 
 AddData adds a key value pair to the secret.
@@ -823,7 +831,7 @@ func (r *ServiceAccount) Yaml() ([]byte, error)
 
 
 <a name="Value"></a>
-## type [Value](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L36-L47>)
+## type [Value](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L33-L44>)
 
 Value will be saved in values.yaml. It contains configuraiton for all deployment and services.
 
@@ -832,18 +840,18 @@ type Value struct {
     Repository      *RepositoryValue             `yaml:"repository,omitempty"`
     Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`
     Ingress         *IngressValue                `yaml:"ingress,omitempty"`
-    ImagePullPolicy string                       `yaml:"imagePullPolicy,omitempty"`
     Environment     map[string]any               `yaml:"environment,omitempty"`
     Replicas        *uint32                      `yaml:"replicas,omitempty"`
     CronJob         *CronJobValue                `yaml:"cronjob,omitempty"`
     NodeSelector    map[string]string            `yaml:"nodeSelector"`
-    ServiceAccount  string                       `yaml:"serviceAccount"`
     Resources       map[string]any               `yaml:"resources"`
+    ImagePullPolicy string                       `yaml:"imagePullPolicy,omitempty"`
+    ServiceAccount  string                       `yaml:"serviceAccount"`
 }
 ```
 
 <a name="NewValue"></a>
-### func [NewValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L62>)
+### func [NewValue](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L59>)
 
 ```go
 func NewValue(service types.ServiceConfig, main ...bool) *Value
@@ -854,7 +862,7 @@ NewValue creates a new Value from a compose service. The value contains the nece
 If \`main\` is true, the tag will be empty because it will be set in the helm chart appVersion.
 
 <a name="Value.AddIngress"></a>
-### func \(\*Value\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L101>)
+### func \(\*Value\) [AddIngress](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L98>)
 
 ```go
 func (v *Value) AddIngress(host, path string)
@@ -863,7 +871,7 @@ func (v *Value) AddIngress(host, path string)
 
 
 <a name="Value.AddPersistence"></a>
-### func \(\*Value\) [AddPersistence](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L89>)
+### func \(\*Value\) [AddPersistence](<https://github.com/metal3d/katenary/blob/develop/generator/values.go#L86>)
 
 ```go
 func (v *Value) AddPersistence(volumeName string)
@@ -872,7 +880,7 @@ func (v *Value) AddPersistence(volumeName string)
 AddPersistence adds persistence configuration to the Value.
 
 <a name="VolumeClaim"></a>
-## type [VolumeClaim](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L18-L23>)
+## type [VolumeClaim](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L20-L25>)
 
 VolumeClaim is a kubernetes VolumeClaim. This is a PersistentVolumeClaim.
 
@@ -884,7 +892,7 @@ type VolumeClaim struct {
 ```
 
 <a name="NewVolumeClaim"></a>
-### func [NewVolumeClaim](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L26>)
+### func [NewVolumeClaim](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L28>)
 
 ```go
 func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *VolumeClaim
@@ -893,7 +901,7 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 NewVolumeClaim creates a new VolumeClaim from a compose service.
 
 <a name="VolumeClaim.Filename"></a>
-### func \(\*VolumeClaim\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L117>)
+### func \(\*VolumeClaim\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L127>)
 
 ```go
 func (v *VolumeClaim) Filename() string
@@ -902,7 +910,7 @@ func (v *VolumeClaim) Filename() string
 Filename returns the suggested filename for a VolumeClaim.
 
 <a name="VolumeClaim.Yaml"></a>
-### func \(\*VolumeClaim\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L56>)
+### func \(\*VolumeClaim\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/volume.go#L63>)
 
 ```go
 func (v *VolumeClaim) Yaml() ([]byte, error)

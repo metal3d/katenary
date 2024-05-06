@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"katenary/generator/labelStructs"
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 )
 
 var _ Yaml = (*Deployment)(nil)
@@ -204,117 +204,127 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 		isSamePod = v != ""
 	}
 
+	for _, volume := range service.Volumes {
+		d.bindVolumes(volume, isSamePod, tobind, service, appName)
+	}
+}
+
+func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container
 	}(d, container, index)
+	if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
+		utils.Warn(
+			"Bind volumes are not supported yet, " +
+				"excepting for those declared as " +
+				LabelConfigMapFiles +
+				", skipping volume " + volume.Source +
+				" from service " + service.Name,
+		)
+		return
+	}
 
-	for _, volume := range service.Volumes {
-		// not declared as a bind volume, skip
-		if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
-			utils.Warn(
-				"Bind volumes are not supported yet, " +
-					"excepting for those declared as " +
-					LabelConfigMapFiles +
-					", skipping volume " + volume.Source +
-					" from service " + service.Name,
-			)
-			continue
-		}
+	if container == nil {
+		utils.Warn("Container not found for volume", volume.Source)
+		return
+	}
 
-		if container == nil {
-			utils.Warn("Container not found for volume", volume.Source)
-			continue
-		}
-
-		// ensure that the volume is not already present in the container
-		for _, vm := range container.VolumeMounts {
-			if vm.Name == volume.Source {
-				continue
-			}
-		}
-
-		switch volume.Type {
-		case "volume":
-			// Add volume to container
-			container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-				Name:      volume.Source,
-				MountPath: volume.Target,
-			})
-			// Add volume to values.yaml only if it the service is not in the same pod that another service.
-			// If it is in the same pod, the volume will be added to the other service later
-			if _, ok := service.Labels[LabelSamePod]; !ok {
-				d.chart.Values[service.Name].(*Value).AddPersistence(volume.Source)
-			}
-			// Add volume to deployment
-			d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-				Name: volume.Source,
-				VolumeSource: corev1.VolumeSource{
-					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-						ClaimName: utils.TplName(service.Name, appName, volume.Source),
-					},
-				},
-			})
-		case "bind":
-			// Add volume to container
-			stat, err := os.Stat(volume.Source)
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			if stat.IsDir() {
-				pathnme := utils.PathToName(volume.Source)
-				if _, ok := d.configMaps[pathnme]; !ok {
-					d.configMaps[pathnme] = &ConfigMapMount{
-						mountPath: []mountPathConfig{},
-					}
-				}
-
-				// TODO: make it recursive to add all files in the directory and subdirectories
-				_, err := os.ReadDir(volume.Source)
-				if err != nil {
-					log.Fatal(err)
-				}
-				cm := NewConfigMapFromDirectory(service, appName, volume.Source)
-				d.configMaps[pathnme] = &ConfigMapMount{
-					configMap: cm,
-					mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
-						mountPath: volume.Target,
-					}),
-				}
-			} else {
-				// In case of a file, add it to the configmap and use "subPath" to mount it
-				// Note that the volumes and volume mounts are not added to the deployment yet, they will be added later
-				// in generate.go
-				dirname := filepath.Dir(volume.Source)
-				pathname := utils.PathToName(dirname)
-				var cm *ConfigMap
-				if v, ok := d.configMaps[pathname]; !ok {
-					cm = NewConfigMap(*d.service, appName)
-					cm.usage = FileMapUsageFiles
-					cm.path = dirname
-					cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
-					d.configMaps[pathname] = &ConfigMapMount{
-						configMap: cm,
-						mountPath: []mountPathConfig{{
-							mountPath: volume.Target,
-							subPath:   filepath.Base(volume.Source),
-						}},
-					}
-				} else {
-					cm = v.configMap
-					mp := d.configMaps[pathname].mountPath
-					mp = append(mp, mountPathConfig{
-						mountPath: volume.Target,
-						subPath:   filepath.Base(volume.Source),
-					})
-					d.configMaps[pathname].mountPath = mp
-
-				}
-				cm.AppendFile(volume.Source)
-			}
+	// ensure that the volume is not already present in the container
+	for _, vm := range container.VolumeMounts {
+		if vm.Name == volume.Source {
+			return
 		}
 	}
+
+	switch volume.Type {
+	case "volume":
+		// Add volume to container
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      volume.Source,
+			MountPath: volume.Target,
+		})
+		// Add volume to values.yaml only if it the service is not in the same pod that another service.
+		// If it is in the same pod, the volume will be added to the other service later
+		if _, ok := service.Labels[LabelSamePod]; !ok {
+			d.chart.Values[service.Name].(*Value).AddPersistence(volume.Source)
+		}
+		// Add volume to deployment
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: volume.Source,
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: utils.TplName(service.Name, appName, volume.Source),
+				},
+			},
+		})
+	case "bind":
+		// Add volume to container
+		stat, err := os.Stat(volume.Source)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if stat.IsDir() {
+			d.appendDirectoryToConfigMap(service, appName, volume)
+		} else {
+			d.appendFileToConfigMap(service, appName, volume)
+		}
+	}
+}
+
+func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
+	pathnme := utils.PathToName(volume.Source)
+	if _, ok := d.configMaps[pathnme]; !ok {
+		d.configMaps[pathnme] = &ConfigMapMount{
+			mountPath: []mountPathConfig{},
+		}
+	}
+
+	// TODO: make it recursive to add all files in the directory and subdirectories
+	_, err := os.ReadDir(volume.Source)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cm := NewConfigMapFromDirectory(service, appName, volume.Source)
+	d.configMaps[pathnme] = &ConfigMapMount{
+		configMap: cm,
+		mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
+			mountPath: volume.Target,
+		}),
+	}
+}
+
+func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
+	// In case of a file, add it to the configmap and use "subPath" to mount it
+	// Note that the volumes and volume mounts are not added to the deployment yet, they will be added later
+	// in generate.go
+	dirname := filepath.Dir(volume.Source)
+	pathname := utils.PathToName(dirname)
+	var cm *ConfigMap
+	if v, ok := d.configMaps[pathname]; !ok {
+		cm = NewConfigMap(*d.service, appName)
+		cm.usage = FileMapUsageFiles
+		cm.path = dirname
+		cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
+		d.configMaps[pathname] = &ConfigMapMount{
+			configMap: cm,
+			mountPath: []mountPathConfig{{
+				mountPath: volume.Target,
+				subPath:   filepath.Base(volume.Source),
+			}},
+		}
+	} else {
+		cm = v.configMap
+		mp := d.configMaps[pathname].mountPath
+		mp = append(mp, mountPathConfig{
+			mountPath: volume.Target,
+			subPath:   filepath.Base(volume.Source),
+		})
+		d.configMaps[pathname].mountPath = mp
+
+	}
+	cm.AppendFile(volume.Source)
 }
 
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {

@@ -158,7 +158,7 @@ func PortsFrom(data string) (Ports, error)
 PortsFrom returns a Ports from the given string.
 
 <a name="Probe"></a>
-## type [Probe](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/probes.go#L8-L11>)
+## type [Probe](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/probes.go#L11-L14>)
 
 
 
@@ -170,7 +170,7 @@ type Probe struct {
 ```
 
 <a name="ProbeFrom"></a>
-### func [ProbeFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/probes.go#L13>)
+### func [ProbeFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/probes.go#L16>)
 
 ```go
 func ProbeFrom(data string) (*Probe, error)

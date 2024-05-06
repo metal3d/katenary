@@ -4,13 +4,13 @@ import (
 	"log"
 	"strings"
 
-	"katenary/generator/labelStructs"
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/types"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
+
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 )
 
 var _ Yaml = (*Ingress)(nil)

@@ -9,11 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"katenary/generator"
-	"katenary/utils"
-
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"
+
+	"katenary/generator"
+	"katenary/utils"
 )
 
 const longHelp = `Katenary is a tool to convert compose files to Helm Charts.

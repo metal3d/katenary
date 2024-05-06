@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"bytes"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strings"
@@ -114,8 +116,8 @@ func PathToName(path string) string {
 
 // EnvConfig is a struct to hold the description of an environment variable.
 type EnvConfig struct {
-	Description string
 	Service     types.ServiceConfig
+	Description string
 }
 
 // GetValuesFromLabel returns a map of values from a label.
@@ -159,4 +161,28 @@ func MapKeys(m map[string]interface{}) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+// Confirm asks a question and returns true if the answer is y.
+func Confirm(question string, icon ...Icon) bool {
+	if len(icon) > 0 {
+		fmt.Printf("%s %s [y/N] ", icon[0], question)
+	} else {
+		fmt.Print(question + " [y/N] ")
+	}
+	var response string
+	fmt.Scanln(&response)
+	return strings.ToLower(response) == "y"
+}
+
+// EncodeBasicYaml encodes a basic yaml from an interface.
+func EncodeBasicYaml(data any) ([]byte, error) {
+	buf := bytes.NewBuffer(nil)
+	enc := yaml.NewEncoder(buf)
+	enc.SetIndent(2)
+	err := enc.Encode(data)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

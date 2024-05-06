@@ -12,7 +12,7 @@ import (
 )
 
 func TestBasicCronJob(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     cron:
         image: fedora
@@ -23,7 +23,7 @@ services:
                 schedule: "*/1 * * * *"
                 rbac: false
 `
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
@@ -64,7 +64,7 @@ services:
 }
 
 func TestCronJobbWithRBAC(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     cron:
         image: fedora
@@ -76,7 +76,7 @@ services:
                 rbac: true
 `
 
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
