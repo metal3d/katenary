@@ -162,86 +162,12 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	return chart, nil
 }
 
-// computeNIndentm replace all __indent__ labels with the number of spaces before the label.
-func computeNIndent(b []byte) []byte {
-	lines := bytes.Split(b, []byte("\n"))
-	for i, line := range lines {
-		if !bytes.Contains(line, []byte("__indent__")) {
-			continue
-		}
-		startSpaces := ""
-		spaces := regexp.MustCompile(`^\s+`).FindAllString(string(line), -1)
-		if len(spaces) > 0 {
-			startSpaces = spaces[0]
-		}
-		line = []byte(startSpaces + strings.TrimLeft(string(line), " "))
-		line = bytes.ReplaceAll(line, []byte("__indent__"), []byte(fmt.Sprintf("%d", len(startSpaces))))
-		lines[i] = line
-	}
-	return bytes.Join(lines, []byte("\n"))
-}
-
-// removeReplaceString replace all __replace_ labels with the value of the
-// capture group and remove all new lines and repeated spaces.
-//
-// we created:
-//
-//	__replace_bar: '{{ include "foo.labels" .
-//	   }}'
-//
-// note the new line and spaces...
-//
-// we now want to replace it with {{ include "foo.labels" . }}, without the label name.
-func removeReplaceString(b []byte) []byte {
-	// replace all matches with the value of the capture group
-	// and remove all new lines and repeated spaces
-	b = replaceLabelRegexp.ReplaceAllFunc(b, func(b []byte) []byte {
-		inc := replaceLabelRegexp.FindSubmatch(b)[1]
-		inc = bytes.ReplaceAll(inc, []byte("\n"), []byte(""))
-		inc = bytes.ReplaceAll(inc, []byte("\r"), []byte(""))
-		inc = regexp.MustCompile(`\s+`).ReplaceAll(inc, []byte(" "))
-		return inc
-	})
-	return b
-}
-
 // serviceIsMain returns true if the service is the main app.
 func serviceIsMain(service types.ServiceConfig) bool {
 	if main, ok := service.Labels[LabelMainApp]; ok {
 		return main == "true" || main == "yes" || main == "1"
 	}
 	return false
-}
-
-// buildVolumes creates the volumes for the service.
-func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) error {
-	appName := chart.Name
-	for _, v := range service.Volumes {
-		// Do not add volumes if the pod is injected in a deployments
-		// via "same-pod" and the volume in destination deployment exists
-		if samePodVolume(service, v, deployments) {
-			continue
-		}
-		switch v.Type {
-		case "volume":
-			pvc := NewVolumeClaim(service, v.Source, appName)
-
-			// if the service is integrated in another deployment, we need to add the volume
-			// to the target deployment
-			if override, ok := service.Labels[LabelSamePod]; ok {
-				pvc.nameOverride = override
-				pvc.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
-				chart.Values[override].(*Value).AddPersistence(v.Source)
-			}
-			y, _ := pvc.Yaml()
-			chart.Templates[pvc.Filename()] = &ChartTemplate{
-				Content:     y,
-				Servicename: service.Name,
-			}
-		}
-	}
-
-	return nil
 }
 
 func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceConfig) {
@@ -290,6 +216,80 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 	}
 
 	d.Spec.Template.Spec.Containers[index] = *container
+}
+
+// computeNIndentm replace all __indent__ labels with the number of spaces before the label.
+func computeNIndent(b []byte) []byte {
+	lines := bytes.Split(b, []byte("\n"))
+	for i, line := range lines {
+		if !bytes.Contains(line, []byte("__indent__")) {
+			continue
+		}
+		startSpaces := ""
+		spaces := regexp.MustCompile(`^\s+`).FindAllString(string(line), -1)
+		if len(spaces) > 0 {
+			startSpaces = spaces[0]
+		}
+		line = []byte(startSpaces + strings.TrimLeft(string(line), " "))
+		line = bytes.ReplaceAll(line, []byte("__indent__"), []byte(fmt.Sprintf("%d", len(startSpaces))))
+		lines[i] = line
+	}
+	return bytes.Join(lines, []byte("\n"))
+}
+
+// removeReplaceString replace all __replace_ labels with the value of the
+// capture group and remove all new lines and repeated spaces.
+//
+// we created:
+//
+//	__replace_bar: '{{ include "foo.labels" .
+//	   }}'
+//
+// note the new line and spaces...
+//
+// we now want to replace it with {{ include "foo.labels" . }}, without the label name.
+func removeReplaceString(b []byte) []byte {
+	// replace all matches with the value of the capture group
+	// and remove all new lines and repeated spaces
+	b = replaceLabelRegexp.ReplaceAllFunc(b, func(b []byte) []byte {
+		inc := replaceLabelRegexp.FindSubmatch(b)[1]
+		inc = bytes.ReplaceAll(inc, []byte("\n"), []byte(""))
+		inc = bytes.ReplaceAll(inc, []byte("\r"), []byte(""))
+		inc = regexp.MustCompile(`\s+`).ReplaceAll(inc, []byte(" "))
+		return inc
+	})
+	return b
+}
+
+// buildVolumes creates the volumes for the service.
+func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map[string]*Deployment) error {
+	appName := chart.Name
+	for _, v := range service.Volumes {
+		// Do not add volumes if the pod is injected in a deployments
+		// via "same-pod" and the volume in destination deployment exists
+		if samePodVolume(service, v, deployments) {
+			continue
+		}
+		switch v.Type {
+		case "volume":
+			pvc := NewVolumeClaim(service, v.Source, appName)
+
+			// if the service is integrated in another deployment, we need to add the volume
+			// to the target deployment
+			if override, ok := service.Labels[LabelSamePod]; ok {
+				pvc.nameOverride = override
+				pvc.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
+				chart.Values[override].(*Value).AddPersistence(v.Source)
+			}
+			y, _ := pvc.Yaml()
+			chart.Templates[pvc.Filename()] = &ChartTemplate{
+				Content:     y,
+				Servicename: service.Name,
+			}
+		}
+	}
+
+	return nil
 }
 
 // samePodVolume returns true if the volume is already in the target deployment.

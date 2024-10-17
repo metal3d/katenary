@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,27 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
-
-// only used to check interface implementation
-var (
-	_ DataMap = (*ConfigMap)(nil)
-	_ Yaml    = (*ConfigMap)(nil)
-)
-
-// NewFileMap creates a new DataMap from a compose service. The appName is the name of the application taken from the project name.
-func NewFileMap(service types.ServiceConfig, appName, kind string) DataMap {
-	switch kind {
-	case "configmap":
-		return NewConfigMap(service, appName)
-	default:
-		log.Fatalf("Unknown filemap kind: %s", kind)
-	}
-	return nil
-}
 
 // FileMapUsage is the usage of the filemap.
 type FileMapUsage uint8
@@ -40,6 +22,23 @@ type FileMapUsage uint8
 const (
 	FileMapUsageConfigMap FileMapUsage = iota // pure configmap for key:values.
 	FileMapUsageFiles                         // files in a configmap.
+)
+
+// NewFileMap creates a new DataMap from a compose service. The appName is the name of the application taken from the project name.
+func NewFileMap(service types.ServiceConfig, appName, kind string) DataMap {
+	switch kind {
+	case "configmap":
+		return NewConfigMap(service, appName, true)
+	default:
+		log.Fatalf("Unknown filemap kind: %s", kind)
+	}
+	return nil
+}
+
+// only used to check interface implementation
+var (
+	_ DataMap = (*ConfigMap)(nil)
+	_ Yaml    = (*ConfigMap)(nil)
 )
 
 // ConfigMap is a kubernetes ConfigMap.
@@ -53,7 +52,7 @@ type ConfigMap struct {
 
 // NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name.
 // The ConfigMap is filled by environment variables and labels "map-env".
-func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
+func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *ConfigMap {
 	done := map[string]bool{}
 	drop := map[string]bool{}
 	labelValues := []string{}
@@ -99,6 +98,10 @@ func NewConfigMap(service types.ServiceConfig, appName string) *ConfigMap {
 		service.Environment[value] = &val
 	}
 
+	if forFile {
+		// do not bind env variables to the configmap
+		return cm
+	}
 	// remove the variables that are already defined in the environment
 	if l, ok := service.Labels[LabelMapEnv]; ok {
 		envmap, err := labelStructs.MapEnvFrom(l)
@@ -153,11 +156,6 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 	path = filepath.Clean(path)
 	cm.AppendDir(path)
 	return cm
-}
-
-// SetData sets the data of the configmap. It replaces the entire data.
-func (c *ConfigMap) SetData(data map[string]string) {
-	c.Data = data
 }
 
 // AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
@@ -228,6 +226,11 @@ func (c *ConfigMap) Filename() string {
 	default:
 		return c.service.Name + ".configmap.yaml"
 	}
+}
+
+// SetData sets the data of the configmap. It replaces the entire data.
+func (c *ConfigMap) SetData(data map[string]string) {
+	c.Data = data
 }
 
 // Yaml returns the yaml representation of the configmap

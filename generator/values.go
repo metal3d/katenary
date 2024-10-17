@@ -43,14 +43,6 @@ type Value struct {
 	ServiceAccount  string                       `yaml:"serviceAccount"`
 }
 
-// CronJobValue is a cronjob configuration that will be saved in values.yaml.
-type CronJobValue struct {
-	Repository      *RepositoryValue `yaml:"repository,omitempty"`
-	Environment     map[string]any   `yaml:"environment,omitempty"`
-	ImagePullPolicy string           `yaml:"imagePullPolicy,omitempty"`
-	Schedule        string           `yaml:"schedule"`
-}
-
 // NewValue creates a new Value from a compose service.
 // The value contains the necessary information to deploy the service (image, tag, replicas, etc.).
 //
@@ -64,15 +56,22 @@ func NewValue(service types.ServiceConfig, main ...bool) *Value {
 
 	// find the image tag
 	tag := ""
+
 	split := strings.Split(service.Image, ":")
-	v.Repository = &RepositoryValue{
-		Image: split[0],
+	if len(split) == 1 {
+		v.Repository = &RepositoryValue{
+			Image: service.Image,
+		}
+	} else {
+		v.Repository = &RepositoryValue{
+			Image: strings.Join(split[:len(split)-1], ":"),
+		}
 	}
 
 	// for main service, the tag should the appVersion. So here we set it to empty.
 	if len(main) > 0 && !main[0] {
 		if len(split) > 1 {
-			tag = split[1]
+			tag = split[len(split)-1]
 		}
 		v.Repository.Tag = tag
 	} else {
@@ -80,6 +79,15 @@ func NewValue(service types.ServiceConfig, main ...bool) *Value {
 	}
 
 	return v
+}
+
+func (v *Value) AddIngress(host, path string) {
+	v.Ingress = &IngressValue{
+		Enabled: true,
+		Host:    host,
+		Path:    path,
+		Class:   "-",
+	}
 }
 
 // AddPersistence adds persistence configuration to the Value.
@@ -95,11 +103,10 @@ func (v *Value) AddPersistence(volumeName string) {
 	}
 }
 
-func (v *Value) AddIngress(host, path string) {
-	v.Ingress = &IngressValue{
-		Enabled: true,
-		Host:    host,
-		Path:    path,
-		Class:   "-",
-	}
+// CronJobValue is a cronjob configuration that will be saved in values.yaml.
+type CronJobValue struct {
+	Repository      *RepositoryValue `yaml:"repository,omitempty"`
+	Environment     map[string]any   `yaml:"environment,omitempty"`
+	ImagePullPolicy string           `yaml:"imagePullPolicy,omitempty"`
+	Schedule        string           `yaml:"schedule"`
 }

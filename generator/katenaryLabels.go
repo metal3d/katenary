@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"katenary/utils"
 	"regexp"
 	"sort"
 	"strings"
@@ -11,36 +12,9 @@ import (
 	"text/template"
 
 	"sigs.k8s.io/yaml"
-
-	"katenary/utils"
 )
-
-var (
-	// Set the documentation of labels here
-	//
-	//go:embed katenaryLabelsDoc.yaml
-	labelFullHelpYAML []byte
-
-	// parsed yaml
-	labelFullHelp map[string]Help
-)
-
-// Label is a katenary label to find in compose files.
-type Label = string
-
-// Help is the documentation of a label.
-type Help struct {
-	Short   string `yaml:"short"`
-	Long    string `yaml:"long"`
-	Example string `yaml:"example"`
-	Type    string `yaml:"type"`
-}
 
 const katenaryLabelPrefix = "katenary.v3"
-
-func Prefix() string {
-	return katenaryLabelPrefix
-}
 
 // Known labels.
 const (
@@ -60,14 +34,45 @@ const (
 	LabelEnvFrom        Label = katenaryLabelPrefix + "/env-from"
 )
 
+var (
+	// Set the documentation of labels here
+	//
+	//go:embed katenaryLabelsDoc.yaml
+	labelFullHelpYAML []byte
+
+	// parsed yaml
+	labelFullHelp map[string]Help
+)
+
+// Label is a katenary label to find in compose files.
+type Label = string
+
+func labelName(name string) Label {
+	return Label(katenaryLabelPrefix + "/" + name)
+}
+
+// Help is the documentation of a label.
+type Help struct {
+	Short   string `yaml:"short"`
+	Long    string `yaml:"long"`
+	Example string `yaml:"example"`
+	Type    string `yaml:"type"`
+}
+
+// GetLabelNames returns a sorted list of all katenary label names.
+func GetLabelNames() []string {
+	var names []string
+	for name := range labelFullHelp {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 func init() {
 	if err := yaml.Unmarshal(labelFullHelpYAML, &labelFullHelp); err != nil {
 		panic(err)
 	}
-}
-
-func labelName(name string) Label {
-	return Label(katenaryLabelPrefix + "/" + name)
 }
 
 // Generate the help for the labels.
@@ -77,73 +82,6 @@ func GetLabelHelp(asMarkdown bool) string {
 		return generatePlainHelp(names)
 	}
 	return generateMarkdownHelp(names)
-}
-
-func generatePlainHelp(names []string) string {
-	var builder strings.Builder
-	for _, name := range names {
-		help := labelFullHelp[name]
-		fmt.Fprintf(&builder, "%s:\t%s\t%s\n", labelName(name), help.Type, help.Short)
-	}
-
-	// use tabwriter to align the help text
-	buf := new(strings.Builder)
-	w := tabwriter.NewWriter(buf, 0, 8, 0, '\t', tabwriter.AlignRight)
-	fmt.Fprintln(w, builder.String())
-	w.Flush()
-
-	head := "To get more information about a label, use `katenary help-label <name_without_prefix>\ne.g. katenary help-label dependencies\n\n"
-	return head + buf.String()
-}
-
-func generateMarkdownHelp(names []string) string {
-	var builder strings.Builder
-	var maxNameLength, maxDescriptionLength, maxTypeLength int
-
-	max := func(a, b int) int {
-		if a > b {
-			return a
-		}
-		return b
-	}
-	for _, name := range names {
-		help := labelFullHelp[name]
-		maxNameLength = max(maxNameLength, len(name)+2+len(katenaryLabelPrefix))
-		maxDescriptionLength = max(maxDescriptionLength, len(help.Short))
-		maxTypeLength = max(maxTypeLength, len(help.Type))
-	}
-
-	fmt.Fprintf(&builder, "%s\n", generateTableHeader(maxNameLength, maxDescriptionLength, maxTypeLength))
-	fmt.Fprintf(&builder, "%s\n", generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLength))
-
-	for _, name := range names {
-		help := labelFullHelp[name]
-		fmt.Fprintf(&builder, "| %-*s | %-*s | %-*s |\n",
-			maxNameLength, "`"+labelName(name)+"`", // enclose in backticks
-			maxDescriptionLength, help.Short,
-			maxTypeLength, help.Type,
-		)
-	}
-
-	return builder.String()
-}
-
-func generateTableHeader(maxNameLength, maxDescriptionLength, maxTypeLength int) string {
-	return fmt.Sprintf(
-		"| %-*s | %-*s | %-*s |",
-		maxNameLength, "Label name",
-		maxDescriptionLength, "Description",
-		maxTypeLength, "Type",
-	)
-}
-
-func generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLength int) string {
-	return fmt.Sprintf(
-		"| %s | %s | %s |",
-		strings.Repeat("-", maxNameLength),
-		strings.Repeat("-", maxDescriptionLength),
-		strings.Repeat("-", maxTypeLength),
-	)
 }
 
 // GetLabelHelpFor returns the help for a specific label.
@@ -202,14 +140,71 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	return buf.String()
 }
 
-// GetLabelNames returns a sorted list of all katenary label names.
-func GetLabelNames() []string {
-	var names []string
-	for name := range labelFullHelp {
-		names = append(names, name)
+func generateMarkdownHelp(names []string) string {
+	var builder strings.Builder
+	var maxNameLength, maxDescriptionLength, maxTypeLength int
+
+	max := func(a, b int) int {
+		if a > b {
+			return a
+		}
+		return b
 	}
-	sort.Strings(names)
-	return names
+	for _, name := range names {
+		help := labelFullHelp[name]
+		maxNameLength = max(maxNameLength, len(name)+2+len(katenaryLabelPrefix))
+		maxDescriptionLength = max(maxDescriptionLength, len(help.Short))
+		maxTypeLength = max(maxTypeLength, len(help.Type))
+	}
+
+	fmt.Fprintf(&builder, "%s\n", generateTableHeader(maxNameLength, maxDescriptionLength, maxTypeLength))
+	fmt.Fprintf(&builder, "%s\n", generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLength))
+
+	for _, name := range names {
+		help := labelFullHelp[name]
+		fmt.Fprintf(&builder, "| %-*s | %-*s | %-*s |\n",
+			maxNameLength, "`"+labelName(name)+"`", // enclose in backticks
+			maxDescriptionLength, help.Short,
+			maxTypeLength, help.Type,
+		)
+	}
+
+	return builder.String()
+}
+
+func generatePlainHelp(names []string) string {
+	var builder strings.Builder
+	for _, name := range names {
+		help := labelFullHelp[name]
+		fmt.Fprintf(&builder, "%s:\t%s\t%s\n", labelName(name), help.Type, help.Short)
+	}
+
+	// use tabwriter to align the help text
+	buf := new(strings.Builder)
+	w := tabwriter.NewWriter(buf, 0, 8, 0, '\t', tabwriter.AlignRight)
+	fmt.Fprintln(w, builder.String())
+	w.Flush()
+
+	head := "To get more information about a label, use `katenary help-label <name_without_prefix>\ne.g. katenary help-label dependencies\n\n"
+	return head + buf.String()
+}
+
+func generateTableHeader(maxNameLength, maxDescriptionLength, maxTypeLength int) string {
+	return fmt.Sprintf(
+		"| %-*s | %-*s | %-*s |",
+		maxNameLength, "Label name",
+		maxDescriptionLength, "Description",
+		maxTypeLength, "Type",
+	)
+}
+
+func generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLength int) string {
+	return fmt.Sprintf(
+		"| %s | %s | %s |",
+		strings.Repeat("-", maxNameLength),
+		strings.Repeat("-", maxDescriptionLength),
+		strings.Repeat("-", maxTypeLength),
+	)
 }
 
 func getHelpTemplate(asMarkdown bool) string {
@@ -233,4 +228,8 @@ Type: {{ .Help.Type }}
 Example:
 {{ .Help.Example }}
 `
+}
+
+func Prefix() string {
+	return katenaryLabelPrefix
 }

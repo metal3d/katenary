@@ -76,19 +76,24 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 	return secret
 }
 
-// SetData sets the data of the secret.
-func (s *Secret) SetData(data map[string]string) {
-	for key, value := range data {
-		s.AddData(key, value)
-	}
-}
-
 // AddData adds a key value pair to the secret.
 func (s *Secret) AddData(key, value string) {
 	if value == "" {
 		return
 	}
 	s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
+}
+
+// Filename returns the filename of the secret.
+func (s *Secret) Filename() string {
+	return s.service.Name + ".secret.yaml"
+}
+
+// SetData sets the data of the secret.
+func (s *Secret) SetData(data map[string]string) {
+	for key, value := range data {
+		s.AddData(key, value)
+	}
 }
 
 // Yaml returns the yaml representation of the secret.
@@ -105,9 +110,4 @@ func (s *Secret) Yaml() ([]byte, error) {
 	}
 
 	return y, nil
-}
-
-// Filename returns the filename of the secret.
-func (s *Secret) Filename() string {
-	return s.service.Name + ".secret.yaml"
 }

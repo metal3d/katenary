@@ -2,6 +2,8 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,9 +16,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
 
 var _ Yaml = (*Deployment)(nil)
@@ -106,32 +105,6 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 	return dep
 }
 
-// DependsOn adds a initContainer to the deployment that will wait for the service to be up.
-func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
-	// Add a initContainer with busybox:latest using netcat to check if the service is up
-	// it will wait until the service responds to all ports
-	for _, container := range to.Spec.Template.Spec.Containers {
-		commands := []string{}
-		if len(container.Ports) == 0 {
-			utils.Warn("No ports found for service ", servicename, ". You should declare a port in the service or use "+LabelPorts+" label.")
-			os.Exit(1)
-		}
-		for _, port := range container.Ports {
-			command := fmt.Sprintf("until nc -z %s %d; do\n  sleep 1;\ndone", to.Name, port.ContainerPort)
-			commands = append(commands, command)
-		}
-
-		command := []string{"/bin/sh", "-c", strings.Join(commands, "\n")}
-		d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
-			Name:    "wait-for-" + to.service.Name,
-			Image:   "busybox:latest",
-			Command: command,
-		})
-	}
-
-	return nil
-}
-
 // AddContainer adds a container to the deployment.
 func (d *Deployment) AddContainer(service types.ServiceConfig) {
 	ports := []corev1.ContainerPort{}
@@ -178,6 +151,34 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 	d.Spec.Template.Spec.Containers = append(d.Spec.Template.Spec.Containers, container)
 }
 
+func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
+	// get the label for healthcheck
+	if v, ok := service.Labels[LabelHealthCheck]; ok {
+		probes, err := labelStructs.ProbeFrom(v)
+		if err != nil {
+			log.Fatal(err)
+		}
+		container.LivenessProbe = probes.LivenessProbe
+		container.ReadinessProbe = probes.ReadinessProbe
+		return
+	}
+
+	if service.HealthCheck != nil {
+		period := 30.0
+		if service.HealthCheck.Interval != nil {
+			period = time.Duration(*service.HealthCheck.Interval).Seconds()
+		}
+		container.LivenessProbe = &corev1.Probe{
+			ProbeHandler: corev1.ProbeHandler{
+				Exec: &corev1.ExecAction{
+					Command: service.HealthCheck.Test[1:],
+				},
+			},
+			PeriodSeconds: int32(period),
+		}
+	}
+}
+
 // AddIngress adds an ingress to the deployment. It creates the ingress object.
 func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *Ingress {
 	return NewIngress(service, d.chart)
@@ -209,124 +210,6 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	}
 }
 
-func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
-	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
-	defer func(d *Deployment, container *corev1.Container, index int) {
-		d.Spec.Template.Spec.Containers[index] = *container
-	}(d, container, index)
-	if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
-		utils.Warn(
-			"Bind volumes are not supported yet, " +
-				"excepting for those declared as " +
-				LabelConfigMapFiles +
-				", skipping volume " + volume.Source +
-				" from service " + service.Name,
-		)
-		return
-	}
-
-	if container == nil {
-		utils.Warn("Container not found for volume", volume.Source)
-		return
-	}
-
-	// ensure that the volume is not already present in the container
-	for _, vm := range container.VolumeMounts {
-		if vm.Name == volume.Source {
-			return
-		}
-	}
-
-	switch volume.Type {
-	case "volume":
-		// Add volume to container
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-			Name:      volume.Source,
-			MountPath: volume.Target,
-		})
-		// Add volume to values.yaml only if it the service is not in the same pod that another service.
-		// If it is in the same pod, the volume will be added to the other service later
-		if _, ok := service.Labels[LabelSamePod]; !ok {
-			d.chart.Values[service.Name].(*Value).AddPersistence(volume.Source)
-		}
-		// Add volume to deployment
-		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: volume.Source,
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: utils.TplName(service.Name, appName, volume.Source),
-				},
-			},
-		})
-	case "bind":
-		// Add volume to container
-		stat, err := os.Stat(volume.Source)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if stat.IsDir() {
-			d.appendDirectoryToConfigMap(service, appName, volume)
-		} else {
-			d.appendFileToConfigMap(service, appName, volume)
-		}
-	}
-}
-
-func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
-	pathnme := utils.PathToName(volume.Source)
-	if _, ok := d.configMaps[pathnme]; !ok {
-		d.configMaps[pathnme] = &ConfigMapMount{
-			mountPath: []mountPathConfig{},
-		}
-	}
-
-	// TODO: make it recursive to add all files in the directory and subdirectories
-	_, err := os.ReadDir(volume.Source)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cm := NewConfigMapFromDirectory(service, appName, volume.Source)
-	d.configMaps[pathnme] = &ConfigMapMount{
-		configMap: cm,
-		mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
-			mountPath: volume.Target,
-		}),
-	}
-}
-
-func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
-	// In case of a file, add it to the configmap and use "subPath" to mount it
-	// Note that the volumes and volume mounts are not added to the deployment yet, they will be added later
-	// in generate.go
-	dirname := filepath.Dir(volume.Source)
-	pathname := utils.PathToName(dirname)
-	var cm *ConfigMap
-	if v, ok := d.configMaps[pathname]; !ok {
-		cm = NewConfigMap(*d.service, appName)
-		cm.usage = FileMapUsageFiles
-		cm.path = dirname
-		cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
-		d.configMaps[pathname] = &ConfigMapMount{
-			configMap: cm,
-			mountPath: []mountPathConfig{{
-				mountPath: volume.Target,
-				subPath:   filepath.Base(volume.Source),
-			}},
-		}
-	} else {
-		cm = v.configMap
-		mp := d.configMaps[pathname].mountPath
-		mp = append(mp, mountPathConfig{
-			mountPath: volume.Target,
-			subPath:   filepath.Base(volume.Source),
-		})
-		d.configMaps[pathname].mountPath = mp
-
-	}
-	cm.AppendFile(volume.Source)
-}
-
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 	// find the volume in the binded deployment
 	for _, bindedVolume := range binded.Spec.Template.Spec.Volumes {
@@ -352,6 +235,37 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 		}
 		d.Spec.Template.Spec.Containers[ti] = *targetContainer
 	}
+}
+
+// DependsOn adds a initContainer to the deployment that will wait for the service to be up.
+func (d *Deployment) DependsOn(to *Deployment, servicename string) error {
+	// Add a initContainer with busybox:latest using netcat to check if the service is up
+	// it will wait until the service responds to all ports
+	for _, container := range to.Spec.Template.Spec.Containers {
+		commands := []string{}
+		if len(container.Ports) == 0 {
+			utils.Warn("No ports found for service ", servicename, ". You should declare a port in the service or use "+LabelPorts+" label.")
+			os.Exit(1)
+		}
+		for _, port := range container.Ports {
+			command := fmt.Sprintf("until nc -z %s %d; do\n  sleep 1;\ndone", to.Name, port.ContainerPort)
+			commands = append(commands, command)
+		}
+
+		command := []string{"/bin/sh", "-c", strings.Join(commands, "\n")}
+		d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
+			Name:    "wait-for-" + to.service.Name,
+			Image:   "busybox:latest",
+			Command: command,
+		})
+	}
+
+	return nil
+}
+
+// Filename returns the filename of the deployment.
+func (d *Deployment) Filename() string {
+	return d.service.Name + ".deployment.yaml"
 }
 
 // SetEnvFrom sets the environment variables to a configmap. The configmap is created.
@@ -447,34 +361,6 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	d.Spec.Template.Spec.Containers[index] = *container
 }
 
-func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
-	// get the label for healthcheck
-	if v, ok := service.Labels[LabelHealthCheck]; ok {
-		probes, err := labelStructs.ProbeFrom(v)
-		if err != nil {
-			log.Fatal(err)
-		}
-		container.LivenessProbe = probes.LivenessProbe
-		container.ReadinessProbe = probes.ReadinessProbe
-		return
-	}
-
-	if service.HealthCheck != nil {
-		period := 30.0
-		if service.HealthCheck.Interval != nil {
-			period = time.Duration(*service.HealthCheck.Interval).Seconds()
-		}
-		container.LivenessProbe = &corev1.Probe{
-			ProbeHandler: corev1.ProbeHandler{
-				Exec: &corev1.ExecAction{
-					Command: service.HealthCheck.Test[1:],
-				},
-			},
-			PeriodSeconds: int32(period),
-		}
-	}
-}
-
 // Yaml returns the yaml representation of the deployment.
 func (d *Deployment) Yaml() ([]byte, error) {
 	serviceName := d.service.Name
@@ -489,11 +375,13 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	spaces := ""
 	volumeName := ""
 
+	nameDirective := "name: "
+
 	// this loop add condition for each volume mount
 	for line, volume := range content {
 		// find the volume name
 		for i := line; i < len(content); i++ {
-			if strings.Contains(content[i], "name: ") {
+			if strings.Contains(content[i], nameDirective) {
 				volumeName = strings.TrimSpace(strings.Replace(content[i], "name: ", "", 1))
 				break
 			}
@@ -511,7 +399,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + volumeName + `.enabled }}` + "\n" + volume
 			changing = true
 		}
-		if strings.Contains(volume, "name: ") && changing {
+		if strings.Contains(volume, nameDirective) && changing {
 			content[line] = volume + "\n" + spaces + "{{- end }}"
 			changing = false
 		}
@@ -624,7 +512,120 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	return []byte(strings.Join(content, "\n")), nil
 }
 
-// Filename returns the filename of the deployment.
-func (d *Deployment) Filename() string {
-	return d.service.Name + ".deployment.yaml"
+func (d *Deployment) appendDirectoryToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
+	pathnme := utils.PathToName(volume.Source)
+	if _, ok := d.configMaps[pathnme]; !ok {
+		d.configMaps[pathnme] = &ConfigMapMount{
+			mountPath: []mountPathConfig{},
+		}
+	}
+
+	// TODO: make it recursive to add all files in the directory and subdirectories
+	_, err := os.ReadDir(volume.Source)
+	if err != nil {
+		log.Fatal(err)
+	}
+	cm := NewConfigMapFromDirectory(service, appName, volume.Source)
+	d.configMaps[pathnme] = &ConfigMapMount{
+		configMap: cm,
+		mountPath: append(d.configMaps[pathnme].mountPath, mountPathConfig{
+			mountPath: volume.Target,
+		}),
+	}
+}
+
+func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName string, volume types.ServiceVolumeConfig) {
+	// In case of a file, add it to the configmap and use "subPath" to mount it
+	// Note that the volumes and volume mounts are not added to the deployment yet, they will be added later
+	// in generate.go
+	dirname := filepath.Dir(volume.Source)
+	pathname := utils.PathToName(dirname)
+	var cm *ConfigMap
+	if v, ok := d.configMaps[pathname]; !ok {
+		cm = NewConfigMap(*d.service, appName, true)
+		cm.usage = FileMapUsageFiles
+		cm.path = dirname
+		cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
+		d.configMaps[pathname] = &ConfigMapMount{
+			configMap: cm,
+			mountPath: []mountPathConfig{{
+				mountPath: volume.Target,
+				subPath:   filepath.Base(volume.Source),
+			}},
+		}
+	} else {
+		cm = v.configMap
+		mp := d.configMaps[pathname].mountPath
+		mp = append(mp, mountPathConfig{
+			mountPath: volume.Target,
+			subPath:   filepath.Base(volume.Source),
+		})
+		d.configMaps[pathname].mountPath = mp
+
+	}
+	cm.AppendFile(volume.Source)
+}
+
+func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
+	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	defer func(d *Deployment, container *corev1.Container, index int) {
+		d.Spec.Template.Spec.Containers[index] = *container
+	}(d, container, index)
+	if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
+		utils.Warn(
+			"Bind volumes are not supported yet, " +
+				"excepting for those declared as " +
+				LabelConfigMapFiles +
+				", skipping volume " + volume.Source +
+				" from service " + service.Name,
+		)
+		return
+	}
+
+	if container == nil {
+		utils.Warn("Container not found for volume", volume.Source)
+		return
+	}
+
+	// ensure that the volume is not already present in the container
+	for _, vm := range container.VolumeMounts {
+		if vm.Name == volume.Source {
+			return
+		}
+	}
+
+	switch volume.Type {
+	case "volume":
+		// Add volume to container
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			Name:      volume.Source,
+			MountPath: volume.Target,
+		})
+		// Add volume to values.yaml only if it the service is not in the same pod that another service.
+		// If it is in the same pod, the volume will be added to the other service later
+		if _, ok := service.Labels[LabelSamePod]; !ok {
+			d.chart.Values[service.Name].(*Value).AddPersistence(volume.Source)
+		}
+		// Add volume to deployment
+		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: volume.Source,
+			VolumeSource: corev1.VolumeSource{
+				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+					ClaimName: utils.TplName(service.Name, appName, volume.Source),
+				},
+			},
+		})
+	case "bind":
+		// Add volume to container
+		stat, err := os.Stat(volume.Source)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if stat.IsDir() {
+			d.appendDirectoryToConfigMap(service, appName, volume)
+		} else {
+			d.appendFileToConfigMap(service, appName, volume)
+		}
+	}
 }

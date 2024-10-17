@@ -23,6 +23,7 @@ BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe d
 ASC_BINARIES=$(patsubst %,%.asc,$(BINARIES))
 
 # defaults
+BROWSER=$(shell command -v epiphany || echo xdg-open)
 SHELL := bash
 # strict mode
 .SHELLFLAGS := -eu -o pipefail -c
@@ -34,6 +35,7 @@ MAKEFLAGS += --no-builtin-rules
 .PHONY: help clean build install tests test
 
 all: build
+
 
 help:
 	@cat <<EOF | fold -s -w 80
@@ -166,7 +168,14 @@ serve-doc: __label_doc
 tests: test
 test:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
-	go test -v ./...
+	go test -coverprofile=cover.out ./...
+	go tool cover -func=cover.out | grep "total:"
+	go tool cover -html=cover.out -o cover.html
+	if [ "$(BROWSER)" = "xdg-open" ]; then
+		xdg-open cover.html
+	else
+		$(BROWSER) -i --new-window cover.html
+	fi
 
 push-release: build-all
 	@rm -f release.id

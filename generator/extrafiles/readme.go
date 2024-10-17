@@ -11,14 +11,35 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+//go:embed readme.tpl
+var readmeTemplate string
+
 type chart struct {
 	Name        string
 	Description string
 	Values      []string
 }
 
-//go:embed readme.tpl
-var readmeTemplate string
+func parseValues(prefix string, values map[string]interface{}, result map[string]string) {
+	for key, value := range values {
+		path := key
+		if prefix != "" {
+			path = prefix + "." + key
+		}
+
+		switch v := value.(type) {
+		case []interface{}:
+			for i, u := range v {
+				parseValues(fmt.Sprintf("%s[%d]", path, i), map[string]interface{}{"value": u}, result)
+			}
+		case map[string]interface{}:
+			parseValues(path, v, result)
+		default:
+			strValue := fmt.Sprintf("`%v`", value)
+			result["`"+path+"`"] = strValue
+		}
+	}
+}
 
 // ReadMeFile returns the content of the README.md file.
 func ReadMeFile(charname, description string, values map[string]any) string {
@@ -73,25 +94,4 @@ func ReadMeFile(charname, description string, values map[string]any) string {
 	}
 
 	return buf.String()
-}
-
-func parseValues(prefix string, values map[string]interface{}, result map[string]string) {
-	for key, value := range values {
-		path := key
-		if prefix != "" {
-			path = prefix + "." + key
-		}
-
-		switch v := value.(type) {
-		case []interface{}:
-			for i, u := range v {
-				parseValues(fmt.Sprintf("%s[%d]", path, i), map[string]interface{}{"value": u}, result)
-			}
-		case map[string]interface{}:
-			parseValues(path, v, result)
-		default:
-			strValue := fmt.Sprintf("`%v`", value)
-			result["`"+path+"`"] = strValue
-		}
-	}
 }

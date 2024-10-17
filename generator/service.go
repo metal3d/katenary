@@ -74,6 +74,11 @@ func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string) {
 	})
 }
 
+// Filename returns the filename of the service.
+func (s *Service) Filename() string {
+	return s.service.Name + ".service.yaml"
+}
+
 // Yaml returns the yaml representation of the service.
 func (s *Service) Yaml() ([]byte, error) {
 	y, err := yaml.Marshal(s)
@@ -87,9 +92,4 @@ func (s *Service) Yaml() ([]byte, error) {
 	y = []byte(strings.Join(lines, "\n"))
 
 	return y, err
-}
-
-// Filename returns the filename of the service.
-func (s *Service) Filename() string {
-	return s.service.Name + ".service.yaml"
 }

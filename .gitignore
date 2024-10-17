@@ -18,3 +18,7 @@ configs/
 cover*
 .sq
 ./katenary
+.aider*
+.python_history
+.bash_history
+katenary

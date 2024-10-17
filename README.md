@@ -8,10 +8,10 @@
 
 🚀 Unleash Productivity with Katenary! 🚀
 
-Tired of manual conversions? Katenary harnesses the labels from your "compose" file to craft complete Helm Charts 
+Tired of manual conversions? Katenary harnesses the labels from your "`compose`" file to craft complete Helm Charts
 effortlessly, saving you time and energy.
 
-🛠️ Simple autmated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding 
+🛠️ Simple automated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding
 and Helm Chart creation.
 
 💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call `katenary convert` and let the magic happen.
@@ -24,9 +24,8 @@ Katenary is a tool to help to transform `docker-compose` files to a working Helm
 > doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap"
 > tool and then to manually enhance the generated helm chart.
 
-
-Today, it's partially developped in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
-and **will stay an opensource and free (as freedom) project**. We are convinced that the best way to make it better is to
+Today, it's partially developed in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
+and **will stay an open source and free (as freedom) project**. We are convinced that the best way to make it better is to
 share it with the community.
 
 The main developer is [Patrice FERLET](https://github.com/metal3d).
@@ -45,7 +44,7 @@ You can use this commands on Linux:
 sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
 ```
 
-# Else... Build yourself
+# Or, build yourself
 
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
@@ -54,6 +53,7 @@ make build
 ```
 
 You can then install it with:
+
 ```bash
 make install
 ```
@@ -76,13 +76,12 @@ make build GO=local GOOS=linux GOARCH=arm64
 
 Then place the `katenary` binary file inside your PATH.
 
-
 # Tips
 
-We strongly recommand to add the "completion" call to you SHELL using the common bashrc, or whatever the profile file
+We strongly recommend adding the completion call to you SHELL using the common `bashrc`, or whatever the profile file
 you use.
 
-E.g.:
+E.g.,
 
 ```bash
 # bash in ~/.bashrc file
@@ -102,7 +101,7 @@ katenary completion fish | source
 
 # Usage
 
-```
+```text
 Katenary is a tool to convert compose files to Helm Charts.
 
 Each [command] and subcommand has got an "help" and "--help" flag to show more information.
@@ -134,22 +133,11 @@ Use "katenary [command] --help" for more information about a command.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
-  > To respect the ability to install the same application in the same namespace, Katenary will create "variable" names
+  > To respect the ability to install the same application in the same namespace, Katenary will create variable names
   > like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
-  > katenary to build a correct helm chart.
+  > Katenary to build a correct helm chart.
 
-  What can be interpreted by Katenary:
-
-  - Services with "image" section (cannot work with "build" section)
-  - **Named Volumes** are transformed to persistent volume claims - note that local volume will break the transformation
-to Helm Chart because there is (for now) no way to make it working (see below for resolution)
-  - if `ports` and/or `expose` section, katenary will create Services and bind the port to the corresponding container port
-- `depends_on` will add init containers to wait for the depending on service (using the first port)
-  - `env_file` list will create a configMap object per environemnt file (⚠ to-do: the "to-service" label doesn't work with
-      configMap for now)
-  - some labels can help to bind values, see examples below
-
-  Exemple of a possible `docker-compose.yaml` file:
+  Example of a possible `docker-compose.yaml` file:
 
 ```yaml
 services:
@@ -196,9 +184,9 @@ services:
 
 # Labels
 
-These labels could be found by `katenary help-labels`, and can be placed as "labels" inside your docker-compose file:
+These labels could be found by `katenary help-labels`, and can be placed as labels inside your docker-compose file:
 
-```
+```text
 To get more information about a label, use `katenary help-label <name_without_prefix>
 e.g. katenary help-label dependencies
 
@@ -218,11 +206,11 @@ katenary.v3/secrets:		list of string		Env vars to be set as secrets.
 katenary.v3/values:		list of string or map	Environment variables to be added to the values.yaml
 ```
 
-# What a name...
+# What a name…
 
 Katenary is the stylized name of the project that comes from the "catenary" word.
 
 A catenary is a curve formed by a wire, rope, or chain hanging freely from two points that are not in the same vertical
 line. For example, the anchor chain between a boat and the anchor.
 
-This "curved link" represents what we try to do, the project is a "streched link from docker-compose to helm chart".
+This curved link represents what we try to do, the project is a stretched link from docker-compose to helm chart.

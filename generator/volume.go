@@ -12,9 +12,9 @@ import (
 	"katenary/utils"
 )
 
-var _ Yaml = (*VolumeClaim)(nil)
-
 const persistenceKey = "persistence"
+
+var _ Yaml = (*VolumeClaim)(nil)
 
 // VolumeClaim is a kubernetes VolumeClaim. This is a PersistentVolumeClaim.
 type VolumeClaim struct {
@@ -57,6 +57,11 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 			},
 		},
 	}
+}
+
+// Filename returns the suggested filename for a VolumeClaim.
+func (v *VolumeClaim) Filename() string {
+	return v.service.Name + "." + v.volumeName + ".volumeclaim.yaml"
 }
 
 // Yaml marshals a VolumeClaim into yaml.
@@ -121,9 +126,4 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 	)
 
 	return out, nil
-}
-
-// Filename returns the suggested filename for a VolumeClaim.
-func (v *VolumeClaim) Filename() string {
-	return v.service.Name + "." + v.volumeName + ".volumeclaim.yaml"
 }

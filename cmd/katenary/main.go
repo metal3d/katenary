@@ -6,14 +6,13 @@ package main
 
 import (
 	"fmt"
+	"katenary/generator"
+	"katenary/utils"
 	"os"
 	"strings"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"
-
-	"katenary/generator"
-	"katenary/utils"
 )
 
 const longHelp = `Katenary is a tool to convert compose files to Helm Charts.
@@ -133,6 +132,8 @@ func generateConvertCommand() *cobra.Command {
 	var appVersion *string
 	givenAppVersion := ""
 	chartVersion := "0.1.0"
+	icon := ""
+	envFiles := []string{}
 
 	convertCmd := &cobra.Command{
 		Use:   "convert",
@@ -148,17 +149,79 @@ func generateConvertCommand() *cobra.Command {
 				HelmUpdate:   helmdepUpdate,
 				AppVersion:   appVersion,
 				ChartVersion: chartVersion,
+				Icon:         icon,
+				EnvFiles:     envFiles,
 			}, dockerComposeFile...)
 		},
 	}
 
-	convertCmd.Flags().BoolVarP(&force, "force", "f", force, "Force the overwrite of the chart directory")
-	convertCmd.Flags().BoolVarP(&helmdepUpdate, "helm-update", "u", helmdepUpdate, "Update helm dependencies if helm is installed")
-	convertCmd.Flags().StringSliceVarP(&profiles, "profile", "p", profiles, "Specify the profiles to use")
-	convertCmd.Flags().StringVarP(&outputDir, "output-dir", "o", outputDir, "Specify the output directory")
-	convertCmd.Flags().StringSliceVarP(&dockerComposeFile, "compose-file", "c", cli.DefaultFileNames, "Specify an alternate compose files - can be specified multiple times or use coma to separate them.\nNote that overides files are also used whatever the files you specify here.\nThe overides files are:\n"+strings.Join(cli.DefaultOverrideFileNames, ", \n")+"\n")
-	convertCmd.Flags().StringVarP(&givenAppVersion, "app-version", "a", "", "Specify the app version (in Chart.yaml)")
-	convertCmd.Flags().StringVarP(&chartVersion, "chart-version", "v", chartVersion, "Specify the chart version (in Chart.yaml)")
+	convertCmd.Flags().BoolVarP(
+		&force,
+		"force",
+		"f",
+		force,
+		"Force the overwrite of the chart directory",
+	)
+	convertCmd.Flags().BoolVarP(
+		&helmdepUpdate,
+		"helm-update",
+		"u",
+		helmdepUpdate,
+		"Update helm dependencies if helm is installed",
+	)
+	convertCmd.Flags().StringSliceVarP(
+		&profiles,
+		"profile",
+		"p",
+		profiles,
+		"Specify the profiles to use",
+	)
+	convertCmd.Flags().StringVarP(
+		&outputDir,
+		"output-dir",
+		"o",
+		outputDir,
+		"Specify the output directory",
+	)
+	convertCmd.Flags().StringSliceVarP(
+		&dockerComposeFile,
+		"compose-file",
+		"c",
+		cli.DefaultFileNames,
+		"Specify an alternate compose files - can be specified multiple times or use coma to separate them.\n"+
+			"Note that overides files are also used whatever the files you specify here.\nThe overides files are:\n"+
+			strings.Join(cli.DefaultOverrideFileNames, ", \n")+
+			"\n",
+	)
+	convertCmd.Flags().StringVarP(
+		&givenAppVersion,
+		"app-version",
+		"a",
+		"",
+		"Specify the app version (in Chart.yaml)",
+	)
+	convertCmd.Flags().StringVarP(
+		&chartVersion,
+		"chart-version",
+		"v",
+		chartVersion,
+		"Specify the chart version (in Chart.yaml)",
+	)
+	convertCmd.Flags().StringVarP(
+		&icon,
+		"icon",
+		"i",
+		"",
+		"Specify the icon (in Chart.yaml), use a valid URL, Helm does not support local files at this time.",
+	)
+	convertCmd.Flags().StringSliceVarP(
+		&envFiles,
+		"env-file",
+		"e",
+		envFiles,
+		"Specify the env file to use additonnaly to the .env file. Can be specified multiple times.",
+	)
+
 	return convertCmd
 }
 

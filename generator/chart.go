@@ -2,32 +2,33 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
-
-// ConvertOptions are the options to convert a compose project to a helm chart.
-type ConvertOptions struct {
-	AppVersion   *string
-	OutputDir    string
-	ChartVersion string
-	Profiles     []string
-	Force        bool
-	HelmUpdate   bool
-}
 
 // ChartTemplate is a template of a chart. It contains the content of the template and the name of the service.
 // This is used internally to generate the templates.
 type ChartTemplate struct {
 	Servicename string
 	Content     []byte
+}
+
+// ConvertOptions are the options to convert a compose project to a helm chart.
+type ConvertOptions struct {
+	AppVersion   *string
+	OutputDir    string
+	ChartVersion string
+	Icon         string
+	Profiles     []string
+	Force        bool
+	HelmUpdate   bool
+	EnvFiles     []string
 }
 
 // HelmChart is a Helm Chart representation. It contains all the
@@ -38,6 +39,7 @@ type HelmChart struct {
 	VolumeMounts map[string]any            `yaml:"-"`
 	composeHash  *string                   `yaml:"-"`
 	Name         string                    `yaml:"name"`
+	Icon         string                    `yaml:"icon,omitempty"`
 	ApiVersion   string                    `yaml:"apiVersion"`
 	Version      string                    `yaml:"version"`
 	AppVersion   string                    `yaml:"appVersion"`
@@ -67,7 +69,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		t := template.Content
 		t = removeNewlinesInsideBrackets(t)
 		t = removeUnwantedLines(t)
-		t = addModeline(t)
+		// t = addModeline(t)
 
 		kind := utils.GetKind(name)
 		var icon utils.Icon
@@ -168,7 +170,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 			delete(s.Environment, k)
 		}
 		if len(s.Environment) > 0 {
-			cm := NewConfigMap(s, appName)
+			cm := NewConfigMap(s, appName, false)
 			y, _ := cm.Yaml()
 			name := cm.service.Name
 			chart.Templates[name+".configmap.yaml"] = &ChartTemplate{

@@ -119,6 +119,10 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	return ing
 }
 
+func (ingress *Ingress) Filename() string {
+	return ingress.service.Name + ".ingress.yaml"
+}
+
 func (ingress *Ingress) Yaml() ([]byte, error) {
 	serviceName := ingress.service.Name
 	ret, err := yaml.Marshal(ingress)
@@ -158,8 +162,4 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	out = append(out, `{{- end -}}`)
 	ret = []byte(strings.Join(out, "\n"))
 	return ret, nil
-}
-
-func (ingress *Ingress) Filename() string {
-	return ingress.service.Name + ".ingress.yaml"
 }

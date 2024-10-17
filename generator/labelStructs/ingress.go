@@ -3,18 +3,12 @@ package labelStructs
 import "gopkg.in/yaml.v3"
 
 type Ingress struct {
-	// Hostname is the hostname to match against the request. It can contain wildcards.
-	Hostname string `yaml:"hostname"`
-	// Path is the path to match against the request. It can contain wildcards.
-	Path string `yaml:"path"`
-	// Enabled is a flag to enable or disable the ingress.
-	Enabled bool `yaml:"enabled"`
-	// Class is the ingress class to use.
-	Class string `yaml:"class"`
-	// Port is the port to use.
-	Port *int32 `yaml:"port,omitempty"`
-	// Annotations is a list of key-value pairs to add to the ingress.
+	Port        *int32            `yaml:"port,omitempty"`
 	Annotations map[string]string `yaml:"annotations,omitempty"`
+	Hostname    string            `yaml:"hostname"`
+	Path        string            `yaml:"path"`
+	Class       string            `yaml:"class"`
+	Enabled     bool              `yaml:"enabled"`
 }
 
 // IngressFrom creates a new Ingress from a compose service.

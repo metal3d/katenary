@@ -20,6 +20,11 @@ func TplName(serviceName, appname string, suffix ...string) string {
 	if len(suffix) > 0 {
 		suffix[0] = "-" + suffix[0]
 	}
+	for i, s := range suffix {
+		// replae all "_" with "-"
+		suffix[i] = strings.ReplaceAll(s, "_", "-")
+	}
+	serviceName = strings.ReplaceAll(serviceName, "_", "-")
 	return `{{ include "` + appname + `.fullname" . }}-` + serviceName + strings.Join(suffix, "-")
 }
 
@@ -109,8 +114,9 @@ func PathToName(path string) string {
 	if path[0] == '/' || path[0] == '.' {
 		path = path[1:]
 	}
-	path = strings.ReplaceAll(path, "/", "_")
-	path = strings.ReplaceAll(path, ".", "_")
+	path = strings.ReplaceAll(path, "_", "-")
+	path = strings.ReplaceAll(path, "/", "-")
+	path = strings.ReplaceAll(path, ".", "-")
 	return path
 }
 

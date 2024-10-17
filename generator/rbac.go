@@ -102,12 +102,12 @@ type RoleBinding struct {
 	service *types.ServiceConfig
 }
 
-func (r *RoleBinding) Yaml() ([]byte, error) {
-	return yaml.Marshal(r)
-}
-
 func (r *RoleBinding) Filename() string {
 	return r.service.Name + ".rolebinding.yaml"
+}
+
+func (r *RoleBinding) Yaml() ([]byte, error) {
+	return yaml.Marshal(r)
 }
 
 // Role is a kubernetes Role.
@@ -116,12 +116,12 @@ type Role struct {
 	service *types.ServiceConfig
 }
 
-func (r *Role) Yaml() ([]byte, error) {
-	return yaml.Marshal(r)
-}
-
 func (r *Role) Filename() string {
 	return r.service.Name + ".role.yaml"
+}
+
+func (r *Role) Yaml() ([]byte, error) {
+	return yaml.Marshal(r)
 }
 
 // ServiceAccount is a kubernetes ServiceAccount.
@@ -130,10 +130,10 @@ type ServiceAccount struct {
 	service *types.ServiceConfig
 }
 
-func (r *ServiceAccount) Yaml() ([]byte, error) {
-	return yaml.Marshal(r)
-}
-
 func (r *ServiceAccount) Filename() string {
 	return r.service.Name + ".serviceaccount.yaml"
+}
+
+func (r *ServiceAccount) Yaml() ([]byte, error) {
+	return yaml.Marshal(r)
 }
