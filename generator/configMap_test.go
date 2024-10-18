@@ -24,7 +24,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/configmap.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/configmap.yaml")
 	configMap := v1.ConfigMap{}
 	if err := yaml.Unmarshal([]byte(output), &configMap); err != nil {
 		t.Errorf(unmarshalError, err)

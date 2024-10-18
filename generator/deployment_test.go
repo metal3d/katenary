@@ -25,7 +25,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 
 	// dt := DeploymentTest{}
 	dt := v1.Deployment{}
@@ -67,7 +67,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -125,7 +125,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -167,7 +167,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -220,7 +220,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -257,7 +257,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -303,7 +303,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", webTemplateOutput)
+	output := internalCompileTest(t, "-s", webTemplateOutput)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)

@@ -1,12 +1,11 @@
 package generator
 
 import (
+	"katenary/parser"
 	"log"
 	"os"
 	"os/exec"
 	"testing"
-
-	"katenary/parser"
 )
 
 const unmarshalError = "Failed to unmarshal the output: %s"
@@ -29,8 +28,8 @@ func teardown(tmpDir string) {
 	}
 }
 
-func _compile_test(t *testing.T, options ...string) string {
-	_, err := parser.Parse(nil, "compose.yml")
+func internalCompileTest(t *testing.T, options ...string) string {
+	_, err := parser.Parse(nil, nil, "compose.yml")
 	if err != nil {
 		t.Fatalf("Failed to parse the project: %s", err)
 	}

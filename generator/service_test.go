@@ -24,7 +24,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/service.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/service.yaml")
 	service := v1.Service{}
 	if err := yaml.Unmarshal([]byte(output), &service); err != nil {
 		t.Errorf(unmarshalError, err)

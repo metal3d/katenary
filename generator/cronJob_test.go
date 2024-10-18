@@ -30,7 +30,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/cron/cronjob.yaml")
+	output := internalCompileTest(t, "-s", "templates/cron/cronjob.yaml")
 	cronJob := batchv1.CronJob{}
 	if err := yaml.Unmarshal([]byte(output), &cronJob); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -83,7 +83,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/cron/cronjob.yaml")
+	output := internalCompileTest(t, "-s", "templates/cron/cronjob.yaml")
 	cronJob := batchv1.CronJob{}
 	if err := yaml.Unmarshal([]byte(output), &cronJob); err != nil {
 		t.Errorf(unmarshalError, err)

@@ -10,8 +10,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const htmlContent = "<html><body><h1>Hello, World!</h1></body></html>"
+
 func TestGenerateWithBoundVolume(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -20,14 +22,14 @@ services:
 volumes:
     data:
 `
-	tmpDir := setup(compose_file)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
 
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
@@ -40,7 +42,7 @@ volumes:
 }
 
 func TestWithStaticFiles(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -50,8 +52,8 @@ services:
             %s/configmap-files: |-
                 - ./static
 `
-	compose_file = fmt.Sprintf(compose_file, katenaryLabelPrefix)
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	// create a static directory with an index.html file
@@ -61,14 +63,14 @@ services:
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
 	}
-	indexFile.WriteString("<html><body><h1>Hello, World!</h1></body></html>")
+	indexFile.WriteString(htmlContent)
 	indexFile.Close()
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -94,13 +96,13 @@ services:
 	if len(data) != 1 {
 		t.Errorf("Expected 1 data, got %d", len(data))
 	}
-	if data["index.html"] != "<html><body><h1>Hello, World!</h1></body></html>" {
-		t.Errorf("Expected index.html to be <html><body><h1>Hello, World!</h1></body></html>, got %s", data["index.html"])
+	if data["index.html"] != htmlContent {
+		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data["index.html"])
 	}
 }
 
 func TestWithFileMapping(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -110,8 +112,8 @@ services:
             %s/configmap-files: |-
                 - ./static/index.html
 `
-	compose_file = fmt.Sprintf(compose_file, katenaryLabelPrefix)
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	// create a static directory with an index.html file
@@ -121,14 +123,14 @@ services:
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
 	}
-	indexFile.WriteString("<html><body><h1>Hello, World!</h1></body></html>")
+	indexFile.WriteString(htmlContent)
 	indexFile.Close()
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -147,7 +149,7 @@ services:
 }
 
 func TestBindFrom(t *testing.T) {
-	compose_file := `
+	composeFile := `
 services:
     web:
         image: nginx:1.29
@@ -167,15 +169,15 @@ volumes:
     data:
 `
 
-	compose_file = fmt.Sprintf(compose_file, katenaryLabelPrefix)
-	tmpDir := setup(compose_file)
+	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
 	currentDir, _ := os.Getwd()
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)

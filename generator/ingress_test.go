@@ -30,7 +30,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/ingress.yaml", "--set", "web.ingress.enabled=true")
+	output := internalCompileTest(t, "-s", "templates/web/ingress.yaml", "--set", "web.ingress.enabled=true")
 	ingress := v1.Ingress{}
 	if err := yaml.Unmarshal([]byte(output), &ingress); err != nil {
 		t.Errorf(unmarshalError, err)

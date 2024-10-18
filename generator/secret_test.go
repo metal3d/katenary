@@ -29,7 +29,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := _compile_test(t, "-s", "templates/web/secret.yaml")
+	output := internalCompileTest(t, "-s", "templates/web/secret.yaml")
 	secret := v1.Secret{}
 	if err := yaml.Unmarshal([]byte(output), &secret); err != nil {
 		t.Errorf(unmarshalError, err)
