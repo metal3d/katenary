@@ -4,6 +4,7 @@ dist/*
 chart/*
 *.yaml
 *.yml
+!.markdownlint.yaml
 !generator/*.yaml
 doc/venv/*
 !doc/mkdocs.yaml

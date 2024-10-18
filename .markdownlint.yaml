@@ -1,0 +1,18 @@
+# markdownlint configuration file
+default: true
+
+MD013: # Line length
+  line_length: 240
+
+MD010: # Hard tabs
+  code_blocks: false
+
+# no inline HTML
+MD033: false
+
+# heading as first line element...
+MD041: false
+
+# list indentation
+MD007:
+  indent: 4
