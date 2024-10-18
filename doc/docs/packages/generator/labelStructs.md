@@ -55,11 +55,11 @@ Dependency is a dependency of a chart to other charts.
 
 ```go
 type Dependency struct {
+    Values     map[string]any `yaml:"-"`
     Name       string         `yaml:"name"`
     Version    string         `yaml:"version"`
     Repository string         `yaml:"repository"`
     Alias      string         `yaml:"alias,omitempty"`
-    Values     map[string]any `yaml:"-"` // do not export to Chart.yaml
 }
 ```
 
@@ -91,29 +91,23 @@ func EnvFromFrom(data string) (EnvFrom, error)
 EnvFromFrom returns a EnvFrom from the given string.
 
 <a name="Ingress"></a>
-## type [Ingress](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/ingress.go#L5-L18>)
+## type [Ingress](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/ingress.go#L5-L12>)
 
 
 
 ```go
 type Ingress struct {
-    // Hostname is the hostname to match against the request. It can contain wildcards.
-    Hostname string `yaml:"hostname"`
-    // Path is the path to match against the request. It can contain wildcards.
-    Path string `yaml:"path"`
-    // Enabled is a flag to enable or disable the ingress.
-    Enabled bool `yaml:"enabled"`
-    // Class is the ingress class to use.
-    Class string `yaml:"class"`
-    // Port is the port to use.
-    Port *int32 `yaml:"port,omitempty"`
-    // Annotations is a list of key-value pairs to add to the ingress.
+    Port        *int32            `yaml:"port,omitempty"`
     Annotations map[string]string `yaml:"annotations,omitempty"`
+    Hostname    string            `yaml:"hostname"`
+    Path        string            `yaml:"path"`
+    Class       string            `yaml:"class"`
+    Enabled     bool              `yaml:"enabled"`
 }
 ```
 
 <a name="IngressFrom"></a>
-### func [IngressFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/ingress.go#L21>)
+### func [IngressFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labelStructs/ingress.go#L15>)
 
 ```go
 func IngressFrom(data string) (*Ingress, error)

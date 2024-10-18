@@ -9,7 +9,7 @@ Katenary is developed in Go. The version currently supported is 1.20. For reason
 preferred to `interface{}`.
 
 Since version v3, Katenary uses, in addition to `go-compose`, the `k8s` library to generate objects that are guaranteed
-to work before transformation. Katenary adds Helm syntax entries to add loops, transformations and conditions.
+to work before transformation. Katenary adds Helm syntax entries to add loops, transformations, and conditions.
 
 We really try to follow best practices and code principles. But, Katenary needs a lot of workarounds and string
 manipulation during the process. There are, also, some drawbacks using standard k8s packages that makes a lot of type
@@ -25,6 +25,35 @@ During conversion, the `generator` package is primarily responsible for creating
 one `Deployment` per `compose` service. If the container coming from "compose" exposes ports (explicitly), then a
 service is created.
 
+```mermaid
+flowchart TD
+
+    D[Deployment]:::outputs@{shape: curv-trap}
+    C[Container List]@{shape: docs}
+    ConfigMap:::outputs@{shape: curv-trap}
+    Secrets:::outputs@{shape: curv-trap}
+    H[Helm Chart.yaml file]:::outputs@{shape: curv-trap}
+    Val[Values files]:::outputs@{shape: curv-trap}
+    PVC:::outputs@{shape: curv-trap}
+    S[Service]:::outputs@{shape: curv-trap}
+    
+    A[Compose file]:::inputs --> B[Compose parser]
+    B --> G[Generator]
+    G --> P[Ports exposed to services] ---> S
+    G ------> H
+    G --> C --> D
+    G ------> Val
+    G ....-> M[Merge Continainers if same-pod] 
+    M ..-> C
+    G --> E[Environment variables] ----> Secrets & ConfigMap
+    G--> V[Bind volumes] -------> PVC
+    V -----> CF[ Create ConfigMap\nfor static files as\nconfigmap-files] --> ConfigMap
+
+    Secrets & ConfigMap -- create envFrom --> D
+    V -- bind volumes --> D
+    
+```
+
 If the declaration of a container is to be integrated into another pod (via the `same-pod` label), this `Deployment` and
 its associated service are still created. They are deleted last, once the merge has been completed.
 
@@ -35,7 +64,6 @@ The `generator` package is where object struct are defined, and where the `Gener
 The generation is made by using a `HelmChart` object:
 
 ```golang
-```golang
 for _, service := range project.Services {
     dep := NewDeployment(service)
     y, _ := dep.Yaml()
@@ -44,6 +72,7 @@ for _, service := range project.Services {
         Servicename: service.Name,
     }
 }
+```
 
 **A lot** of string manipulations are made by each `Yaml()` methods. This is where you find the complex and impacting
 operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart Yaml content with template
