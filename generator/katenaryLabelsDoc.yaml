@@ -141,9 +141,10 @@
   example: |-
     labels:
       {{ .KatenaryPrefix }}/health-check: |-
-        httpGet:
-          path: /health
-          port: 8080
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
   type: "object"
 
 "same-pod":
