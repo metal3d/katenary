@@ -94,23 +94,20 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 			done[value] = true
 			continue
 		}
-		val := utils.TplValue(service.Name, "environment."+value)
-		service.Environment[value] = &val
 	}
 
-	if forFile {
+	if !forFile {
 		// do not bind env variables to the configmap
-		return cm
-	}
-	// remove the variables that are already defined in the environment
-	if l, ok := service.Labels[LabelMapEnv]; ok {
-		envmap, err := labelStructs.MapEnvFrom(l)
-		if err != nil {
-			log.Fatal("Error parsing map-env", err)
-		}
-		for key, value := range envmap {
-			cm.AddData(key, strings.ReplaceAll(value, "__APP__", appName))
-			done[key] = true
+		// remove the variables that are already defined in the environment
+		if l, ok := service.Labels[LabelMapEnv]; ok {
+			envmap, err := labelStructs.MapEnvFrom(l)
+			if err != nil {
+				log.Fatal("Error parsing map-env", err)
+			}
+			for key, value := range envmap {
+				cm.AddData(key, strings.ReplaceAll(value, "__APP__", appName))
+				done[key] = true
+			}
 		}
 	}
 	for key, env := range service.Environment {
