@@ -3,14 +3,13 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"katenary/utils"
 	"log"
 	"regexp"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
-
-	"katenary/utils"
 )
 
 // Generate a chart from a compose project.
