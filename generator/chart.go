@@ -26,9 +26,9 @@ type ConvertOptions struct {
 	ChartVersion string
 	Icon         string
 	Profiles     []string
+	EnvFiles     []string
 	Force        bool
 	HelmUpdate   bool
-	EnvFiles     []string
 }
 
 // HelmChart is a Helm Chart representation. It contains all the
