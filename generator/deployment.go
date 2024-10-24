@@ -35,6 +35,7 @@ type Deployment struct {
 	*appsv1.Deployment `yaml:",inline"`
 	chart              *HelmChart                 `yaml:"-"`
 	configMaps         map[string]*ConfigMapMount `yaml:"-"`
+	volumeMap          map[string]string          `yaml:"-"` // keep map of fixed named to original volume name
 	service            *types.ServiceConfig       `yaml:"-"`
 	defaultTag         string                     `yaml:"-"`
 	isMainApp          bool                       `yaml:"-"`
@@ -90,6 +91,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 			},
 		},
 		configMaps: make(map[string]*ConfigMapMount),
+		volumeMap:  make(map[string]string),
 	}
 
 	// add containers
@@ -396,7 +398,8 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 		if strings.Contains(volume, "mountPath: ") {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(volume))
-			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + volumeName + `.enabled }}` + "\n" + volume
+			varName := d.volumeMap[volumeName]
+			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + volume
 			changing = true
 		}
 		if strings.Contains(volume, nameDirective) && changing {
@@ -438,7 +441,8 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 		if strings.Contains(line, "- name: ") && inVolumes {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
-			content[i] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + volumeName + `.enabled }}` + "\n" + line
+			varName := d.volumeMap[volumeName]
+			content[i] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + line
 			changing = true
 		}
 		if strings.Contains(line, "claimName: ") && changing {
@@ -597,8 +601,10 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod boo
 	switch volume.Type {
 	case "volume":
 		// Add volume to container
+		fixedName := utils.FixedResourceName(volume.Source)
+		d.volumeMap[fixedName] = volume.Source
 		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
-			Name:      volume.Source,
+			Name:      fixedName,
 			MountPath: volume.Target,
 		})
 		// Add volume to values.yaml only if it the service is not in the same pod that another service.
@@ -608,7 +614,7 @@ func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod boo
 		}
 		// Add volume to deployment
 		d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: volume.Source,
+			Name: fixedName,
 			VolumeSource: corev1.VolumeSource{
 				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
 					ClaimName: utils.TplName(service.Name, appName, volume.Source),

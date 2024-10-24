@@ -117,6 +117,7 @@ func PathToName(path string) string {
 	path = strings.ReplaceAll(path, "_", "-")
 	path = strings.ReplaceAll(path, "/", "-")
 	path = strings.ReplaceAll(path, ".", "-")
+	path = strings.ToLower(path)
 	return path
 }
 
@@ -191,4 +192,9 @@ func EncodeBasicYaml(data any) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// FixedResourceName returns a resource name without underscores to respect the kubernetes naming convention.
+func FixedResourceName(name string) string {
+	return strings.ReplaceAll(name, "_", "-")
 }

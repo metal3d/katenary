@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"katenary/utils"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
@@ -8,8 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/utils"
 )
 
 const persistenceKey = "persistence"
@@ -26,6 +25,7 @@ type VolumeClaim struct {
 
 // NewVolumeClaim creates a new VolumeClaim from a compose service.
 func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *VolumeClaim {
+	fixedName := utils.FixedResourceName(volumeName)
 	return &VolumeClaim{
 		volumeName: volumeName,
 		service:    &service,
@@ -35,7 +35,7 @@ func NewVolumeClaim(service types.ServiceConfig, volumeName, appName string) *Vo
 				APIVersion: "v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName) + "-" + volumeName,
+				Name:        utils.TplName(service.Name, appName) + "-" + fixedName,
 				Labels:      GetLabels(service.Name, appName),
 				Annotations: Annotations,
 			},
