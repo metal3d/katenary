@@ -15,7 +15,7 @@ func NotesFile(services []string) string {
 	ingresses := make([]string, len(services))
 	for i, service := range services {
 		condition := fmt.Sprintf(`{{- if and .Values.%[1]s.ingress .Values.%[1]s.ingress.enabled }}`, service)
-		line := fmt.Sprintf(`{{- $count = add1 $count -}}{{- $listOfURL = printf "%%s\n- http://%%s" $listOfURL .Values.%s.ingress.host -}}`, service)
+		line := fmt.Sprintf(`{{- $count = add1 $count -}}{{- $listOfURL = printf "%%s\n- http://%%s" $listOfURL (tpl .Values.%s.ingress.host .) -}}`, service)
 		ingresses[i] = fmt.Sprintf("%s\n%s\n{{- end }}", condition, line)
 	}
 
