@@ -1,8 +1,12 @@
+.venv
 dist/*
 .cache/*
 chart/*
 *.yaml
 *.yml
+!.markdownlint.yaml
+!generator/*.yaml
+doc/venv/*
 !doc/mkdocs.yaml
 !.readthedocs.yaml
 ./katenary
@@ -12,3 +16,10 @@ docker-compose*
 .credentials
 release.id
 configs/
+cover*
+.sq
+./katenary
+.aider*
+.python_history
+.bash_history
+katenary

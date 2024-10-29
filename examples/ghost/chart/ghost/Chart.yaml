@@ -1,8 +1,0 @@
-# Create on 2022-05-05T14:16:27+02:00
-# Katenary command line: /tmp/go-build669507924/b001/exe/main convert
-apiVersion: v2
-appVersion: 0.0.1
-description: A helm chart for ghost
-name: ghost
-type: application
-version: 0.1.0

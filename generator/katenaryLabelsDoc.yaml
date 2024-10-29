@@ -1,0 +1,289 @@
+# Labels documentation.
+#
+# To create a label documentation:
+#
+# "labelname":
+#   type: the label type (bool, string, array, object...)
+#   short: a short description
+#   long: |-
+#     A multiline description to explain the label behavior
+#   example: |-
+#     yamlsyntax: here
+#
+# This file is embed in the Katenary binary and parsed in kanetaryLabels.go init() function.
+#
+# Note:
+# - The short and long texts are parsed with text/template, so you can use template syntax.
+#   That means that if you want to display double brackets, you need to enclose them to
+#   prevent template to try to expand the content, for example :
+#   This is an {{ "{{ example }}" }}.
+#
+#   This will display "This is an {{ exemple }}" in the output.
+# - Use {{ .KatenaryPrefix }} to let Katenary replace it with the label prefix (e.g. "katenary.v3")
+
+"main-app":
+  short: "Mark the service as the main app."
+  long: |-
+    This makes the service to be the main application. Its image tag is 
+    considered to be the 
+
+    Chart appVersion and to be the defaultvalue in Pod container 
+    image attribute.
+
+    !!! Warning
+        This label cannot be repeated in others services. If this label is
+        set in more than one service as true, Katenary will return an error.
+  example: |-
+    ghost:
+      image: ghost:1.25.5
+      labels:
+        # The chart is now named ghost, and the appVersion is 1.25.5.
+        # In Deployment, the image attribute is set to ghost:1.25.5 if 
+        # you don't change the "tag" attribute in values.yaml
+        {{ .KatenaryPrefix }}/main-app: true
+  type: "bool"
+
+"values":
+  short: "Environment variables to be added to the values.yaml"
+  long: |-
+    By default, all environment variables in the "env" and environment
+    files are added to configmaps with the static values set. This label
+    allows adding environment variables to the values.yaml file.
+
+    Note that the value inside the configmap is {{ "{{ tpl vaname . }}" }}, so 
+    you can set the value to a template that will be rendered with the 
+    values.yaml file.
+
+    The value can be set with a documentation. This may help to understand 
+    the purpose of the variable.
+  example: |-
+    env:
+      FOO: bar
+      DB_NAME: mydb
+      TO_CONFIGURE: something that can be changed in values.yaml
+      A_COMPLEX_VALUE: example
+    labels:
+      {{ .KatenaryPrefix }}/values: |-
+        # simple values, set as is in values.yaml
+        - TO_CONFIGURE
+        # complex values, set as a template in values.yaml with a documentation
+        - A_COMPLEX_VALUE: |-
+            This is the documentation for the variable to 
+            configure in values.yaml.
+            It can be, of course,  a multiline text.
+  type: "list of string or map"
+
+"secrets":
+  short: "Env vars to be set as secrets."
+  long: |-
+    This label allows setting the environment variables as secrets. The variable 
+    is removed from the environment and added to a secret object.
+
+    The variable can be set to the {{ printf "%s/%s" .KatenaryPrefix "values"}} too,
+    so the secret value can be configured in values.yaml
+  example: |-
+    env:
+      PASSWORD: a very secret password
+      NOT_A_SECRET: a public value
+    labels:
+      {{ .KatenaryPrefix }}/secrets: |-
+        - PASSWORD
+  type: "list of string"
+
+"ports":
+  short: "Ports to be added to the service."
+  long: |-
+    Only useful for services without exposed port. It is mandatory if the 
+    service is a dependency of another service.
+  example: |-
+    labels:
+      {{ .KatenaryPrefix }}/ports: |-
+        - 8080
+        - 8081
+  type: "list of uint32"
+
+"ingress":
+  short: "Ingress rules to be added to the service."
+  long: |-
+    Declare an ingress rule for the service. The port should be exposed or 
+    declared with {{ printf "%s/%s" .KatenaryPrefix "ports" }}.
+  example: |-
+    labels:
+      {{ .KatenaryPrefix }}/ingress: |-
+        port: 80
+        hostname: mywebsite.com (optional)
+  type: "object"
+
+"map-env":
+  short: "Map env vars from the service to the deployment."
+  long: |-
+    Because you may need to change the variable for Kubernetes, this label
+    forces the value to another. It is also particullary helpful to use a template 
+    value instead. For example, you could bind the value to a service name 
+    with Helm attributes:
+    {{ "{{ tpl .Release.Name . }}" }}.
+
+    If you use __APP__ in the value, it will be replaced by the Chart name.
+  example: |-
+    env:
+      DB_HOST: database
+      RUNNING: docker
+      OTHER: value
+    labels:
+      {{ .KatenaryPrefix }}/map-env: |-
+        RUNNING: kubernetes
+        DB_HOST: '{{ "{{ include \"__APP__.fullname\" . }}" }}-database'
+  type: "object"
+
+"health-check":
+  short: "Health check to be added to the deployment."
+  long: "Health check to be added to the deployment."
+  example: |-
+    labels:
+      {{ .KatenaryPrefix }}/health-check: |-
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+  type: "object"
+
+"same-pod":
+  short: "Move the same-pod deployment to the target deployment."
+  long: |-
+    This will make the service to be included in another service pod. Some services 
+    must work together in the same pod, like a sidecar or a proxy or nginx + php-fpm.
+
+    Note that volume and VolumeMount are copied from the source to the target 
+    deployment.
+  example: |-
+    web:
+      image: nginx:1.19
+
+    php:
+      image: php:7.4-fpm
+      labels:
+        {{ .KatenaryPrefix }}/same-pod: web
+  type: "string"
+
+"description":
+  short: "Description of the service"
+  long: |-
+    This replaces the default comment in values.yaml file to the given description. 
+    It is useful to document the service and configuration.
+
+    The value can be set with a documentation in multiline format.
+  example: |-
+    labels:
+      {{ .KatenaryPrefix }}/description: |-
+        This is a description of the service.
+        It can be multiline.
+  type: "string"
+
+"ignore":
+  short: "Ignore the service"
+  long: "Ingoring a service to not be exported in helm chart."
+  example: "labels:\n  {{ .KatenaryPrefix }}/ignore: \"true\""
+  type: "bool"
+
+"dependencies":
+  short: "Add Helm dependencies to the service."
+  long: |-
+    Set the service to be, actually, a Helm dependency. This means that the 
+    service will not be exported as template. The dependencies are added to 
+    the Chart.yaml file and the values are added to the values.yaml file.
+
+    It's a list of objects with the following attributes:
+
+    - name: the name of the dependency
+    - repository: the repository of the dependency
+    - alias: the name of the dependency in values.yaml (optional)
+    - values: the values to be set in values.yaml (optional)
+
+    !!! Info
+        Katenary doesn't update the helm depenedencies by default.
+        
+        Use `--helm-update` (or `-u`) flag to update the dependencies.
+        
+        example: <code>katenary convert -u</code>
+
+    By setting an alias, it is possible to change the name of the dependency 
+    in values.yaml.
+  example: |-
+    labels:
+      {{ .KatenaryPrefix }}/dependencies: |-
+        - name: mariadb
+          repository: oci://registry-1.docker.io/bitnamicharts
+
+          ## optional, it changes the name of the section in values.yaml
+          # alias: mydatabase
+
+          ## optional, it adds the values to values.yaml
+          values:
+            auth:
+              database: mydatabasename
+              username: myuser
+              password: the secret password
+  type: "list of objects"
+
+"configmap-files":
+  short: "Add files to the configmap."
+  long: |-
+    It makes a file or directory to be converted to one or more ConfigMaps 
+    and mounted in the pod. The file or directory is relative to the 
+    service directory.
+
+    If it is a directory, all files inside it are added to the ConfigMap.
+
+    If the directory as subdirectories, so one configmap per subpath are created.
+
+    !!! Warning
+        It is not intended to be used to store an entire project in configmaps.
+        It is intended to be used to store configuration files that are not managed 
+        by the application, like nginx configuration files. Keep in mind that your
+        project sources should be stored in an application image or in a storage.
+  example: |-
+    volumes
+      - ./conf.d:/etc/nginx/conf.d
+    labels:
+      {{ .KatenaryPrefix }}/configmap-files: |-
+        - ./conf.d
+  type: "list of strings"
+
+"cronjob":
+  short: "Create a cronjob from the service."
+  long: |-
+    This adds a cronjob to the chart.
+
+    The label value is a YAML object with the following attributes:
+    - command: the command to be executed 
+    - schedule: the cron schedule (cron format or @every where "every" is a 
+      duration like 1h30m, daily, hourly...)
+    - rbac: false (optionnal), if true, it will create a role, a rolebinding and
+      a serviceaccount to make your cronjob able to connect the Kubernetes API
+  example: |-
+    labels:
+        {{ .KatenaryPrefix }}/cronjob: |-
+            command: echo "hello world"
+            schedule: "* */1 * * *" # or @hourly for example
+  type: "object"
+
+"env-from":
+  short: "Add environment variables from antoher service."
+  type: "list of strings"
+  long: |-
+    It adds environment variables from another service to the current service.
+  example: |-
+    service1:
+      image: nginx:1.19
+      environment:
+          FOO: bar
+
+    service2:
+      image: php:7.4-fpm
+      labels:
+        # get the congigMap from service1 where FOO is 
+        # defined inside this service too
+        {{ .KatenaryPrefix }}/env-from: |-
+            - myservice1
+
+# vim: ft=gotmpl.yaml

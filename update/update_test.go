@@ -7,7 +7,6 @@ import (
 )
 
 func TestDownloadLatestRelease(t *testing.T) {
-
 	// Reset the version to test the latest release
 	Version = "0.0.0"
 
@@ -17,15 +16,14 @@ func TestDownloadLatestRelease(t *testing.T) {
 
 	// Now call the CheckLatestVersion function
 	version, assets, err := CheckLatestVersion()
-
 	if err != nil {
-		t.Errorf("Error: %s", err)
+		t.Errorf("Error getting latest version: %s", err)
 	}
 
 	fmt.Println("Version found", version)
 
 	// Touch exe binary
-	f, _ := os.OpenFile(exe, os.O_RDONLY|os.O_CREATE, 0755)
+	f, _ := os.OpenFile(exe, os.O_RDONLY|os.O_CREATE, 0o755)
 	f.Write(nil)
 	f.Close()
 
@@ -48,5 +46,4 @@ func TestAlreadyUpToDate(t *testing.T) {
 	}
 
 	t.Log("Version is already the most recent", version)
-
 }

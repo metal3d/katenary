@@ -1,9 +1,13 @@
 site_name: Katenary documentation
 docs_dir: ./docs
+plugins: 
+  - search
+  - inline-svg
 theme:
   name: material
   custom_dir: overrides
-  logo: statics/logo.png
+  logo: statics/logo-bright.svg
+  favicon: statics/icon.svg
   palette:
     - scheme: slate
       toggle:
@@ -16,19 +20,24 @@ theme:
         name: Switch to dark mode
 markdown_extensions:
   - admonition
+  - footnotes
   - attr_list
   - pymdownx.emoji:
-      emoji_generator: !!python/name:materialx.emoji.to_svg
-      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
       anchor_linenums: true
       use_pygments: false
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
 extra_css:
   - statics/main.css
 extra_javascript:
   - statics/addons.js
-copyright: Copyright &copy; 2021 - 2022 - Katenary authors
+copyright: Copyright &copy; 2021 - 2024 - Katenary authors
 extra:
   generator: false
   social:
@@ -38,3 +47,16 @@ nav:
   - "Home": index.md
   - usage.md
   - labels.md
+  - Behind the scene:
+    - coding.md
+    - dependencies.md
+  - FAQ: faq.md
+  - Go Packages:
+    - packages/cmd/katenary.md
+    - packages/parser.md
+    - packages/update.md
+    - packages/utils.md
+    - Generator: 
+      - Index: packages/generator.md
+      - ExtraFiles: packages/generator/extrafiles.md
+      - LabelStructs: packages/generator/labelStructs.md

@@ -1,358 +1,384 @@
-# Using labels
+# Labels documentation
 
-Katenary proposes labels to specify adaptation to provide to the Helm Chart. All labels are declared in the help message using:
+Katenary proposes labels to set in `compose.yaml` files (or override files) to configure the Helm Chart generation. Because it is sometimes needed to have structured values, it is necessary to use the Yaml syntax. While compose labels are string, we can use `|` to use Yaml multilines as value.
 
-```text
-$ katenary show-labels
+Katenary will try to Unmarshal these labels.
 
-# Labels
-katenary.io/ignore               : ignore the container, it will not yied any object in the helm chart (bool)
-katenary.io/secret-vars          : secret variables to push on a secret file (coma separated)
-katenary.io/secret-envfiles      : set the given file names as a secret instead of configmap (coma separated)
-katenary.io/mapenv               : map environment variable to a template string (yaml style, object)
-katenary.io/ports                : set the ports to assign on the container in pod + expose as a service (coma separated)
-katenary.io/container-ports      : set the ports to assign on the contaienr in pod but avoid service (coma separated)
-katenary.io/ingress              : set the port to expose in an ingress (coma separated)
-katenary.io/configmap-volumes    : specifies that the volumes points on a configmap (coma separated)
-katenary.io/same-pod             : specifies that the pod should be deployed in the same pod than the
-                                   given service name (string)
-katenary.io/volume-from          : specifies that the volumes to be mounted from the given service (yaml style)
-katenary.io/empty-dirs           : specifies that the given volume names should be "emptyDir" instead of
-                                   persistentVolumeClaim (coma separated)
-katenary.io/crontabs             : specifies a cronjobs to create (yaml style, array) - this will create a
-                                   cronjob, a service account, a role and a rolebinding to start the command with "kubectl"
-                                   The form is the following:
-                                   - command: the command to run
-                                     schedule: the schedule to run the command (e.g. "@daily" or "*/1 * * * *")
-                                     image: the image to use for the command (default to "bitnami/kubectl")
-                                     allPods: true if you want to run the command on all pods (default to false)
-katenary.io/healthcheck          : specifies that the container should be monitored by a healthcheck,
-                                   **it overrides the docker-compose healthcheck**. 
-                                   You can use these form of label values:
-                                     -> http://[ignored][:port][/path] to specify an http healthcheck
-                                     -> tcp://[ignored]:port to specify a tcp healthcheck
-                                     -> other string is condidered as a "command" healthcheck
-```
+## Label list and types
 
-## healthcheck
+<!-- START_LABEL_DOC : do not remove this tag !-->
+| Label name                   | Description                                            | Type                  |
+| ---------------------------- | ------------------------------------------------------ | --------------------- |
+| `katenary.v3/configmap-files` | Add files to the configmap.                            | list of strings       |
+| `katenary.v3/cronjob`        | Create a cronjob from the service.                     | object                |
+| `katenary.v3/dependencies`   | Add Helm dependencies to the service.                  | list of objects       |
+| `katenary.v3/description`    | Description of the service                             | string                |
+| `katenary.v3/env-from`       | Add environment variables from antoher service.        | list of strings       |
+| `katenary.v3/health-check`   | Health check to be added to the deployment.            | object                |
+| `katenary.v3/ignore`         | Ignore the service                                     | bool                  |
+| `katenary.v3/ingress`        | Ingress rules to be added to the service.              | object                |
+| `katenary.v3/main-app`       | Mark the service as the main app.                      | bool                  |
+| `katenary.v3/map-env`        | Map env vars from the service to the deployment.       | object                |
+| `katenary.v3/ports`          | Ports to be added to the service.                      | list of uint32        |
+| `katenary.v3/same-pod`       | Move the same-pod deployment to the target deployment. | string                |
+| `katenary.v3/secrets`        | Env vars to be set as secrets.                         | list of string        |
+| `katenary.v3/values`         | Environment variables to be added to the values.yaml   | list of string or map |
 
-HealthCheck label defines how to make LivenessProbe on Kubernetes.
+<!-- STOP_LABEL_DOC : do not remove this tag !-->
 
-!!! Warning
-    This overrides the compose file healthcheck
+## Detailed description
 
-!!! Info
-    The hostname is set to "localhost" by convention, but Katenary will ignore the hostname in tcp and http tests because it will create a LivenessProbe.
+<!-- START_DETAILED_DOC : do not remove this tag !-->
+### katenary.v3/configmap-files
 
-Some example of usage:
+Add files to the configmap.
 
-```yaml
-services:
-    mariadb:
-        image: mariadb
-        labels:
-            katenary.io/healthcheck: tcp://localhost:3306
+**Type**: `list of strings`
 
-    webapp:
-        image: nginx
-        labels:
-            katenary.io/healthcheck: http://localhost:80
+It makes a file or directory to be converted to one or more ConfigMaps 
+and mounted in the pod. The file or directory is relative to the 
+service directory.
 
-    example:
-        image: yourimage
-        labels:
-            katenary.io/healthcheck: "test -f /opt/installed"
-```
+If it is a directory, all files inside it are added to the ConfigMap.
 
-## crontabs
-
-Crontabs label proposes to create a complete CronTab object with needed RBAC to make it possible to run command inside the pod(s) with `kubectl`. Katenary will make the job for you. You only need to provide the command(s) to call.
-
-It's a YAML array in multiline label. 
-
-```yaml
-services:
-    mariadb:
-        image: mariadb
-        labels:
-            katenary.io/crontabs: |
-                - command: mysqldump -B myapp -uroot -p$${MYSQL_ROOT_PASSWORD} > dump.sql
-                  schedule: "@every 1h"
-```
-The object is:
-```
-command:  Command to run
-schedule: the cron form schedule string
-allPods:  boolean (default false) to activate the cront on each pod
-image:    image name to use (default is bitnami/kubectl) 
-          with corresponding tag to your kubernetes version
-```
-
-## empty-dirs
-
-You sometime don't need to create a PersistentVolumeClaim. For example when a volume in your compose file is actually made to share the data between 2 or more containers.
-
-In this case, an "emptyDir" volume is appreciated.
-
-```yaml
-services:
-    webapp:
-        image: nginx
-        volumes:
-        - websource:/var/www/html
-        labels:
-            # sources is actually an empty directory on the node
-            katenary.io/empty-dirs: websource
-
-    php:
-        image: php:7-fpm
-        volumes:
-        - sources:/var/www/html
-        labels:
-            # in the same pod than webapp
-            katenary.io/same-pod: webapp
-            # see the corresponding section, get the volume
-            # fro webapp
-            katenary.io/volume-from: |
-              sources:
-                webapp: websource
-```
-
-## volume-from
-
-We see this in the [empty-dir](#empty-dir) section, this label defines that the corresponding volume should be shared in this pod.
-
-```yaml
-services:
-    webapp:
-        image: nginx
-        volumes:
-        - datasource:/var/www/html
-
-    app:
-        image: php
-        volumes:
-        - data:/opt/data
-        labels:
-            katenary.io/volume-from: |
-              # data in this container...
-              data:
-                # ... correspond to "datasource" in "webapp" container
-                webapp: datasource
-```
-
-This implies that the declared volume in "webapp" will be mounted to "app" pods.
+If the directory as subdirectories, so one configmap per subpath are created.
 
 !!! Warning
-    This is possible with Kubernetes volumes restrictions. So, it works in these cases:
+    It is not intended to be used to store an entire project in configmaps.
+    It is intended to be used to store configuration files that are not managed 
+    by the application, like nginx configuration files. Keep in mind that your
+    project sources should be stored in an application image or in a storage.
 
-    - if the volume class is Read Write Many
-    - or if you mount the volume in the same pod (so in the same node)
-    - and/or the volume is an emptyDir
-
-
-## same-pod
-
-It's sometimes important and/or necessary to declare that 2 services are in the same pod. For example, using PHP-FPM and NGinx. In this case, you can declare that both services are in the same pod.
-
-You must declare this label only on "supplementary" services and always use the same master service for the entire pod declaration.
+**Example:**
 
 ```yaml
-services:
-    web:
-        image: nginx
-
-    php:
-        image: php:8-fpm
-        labels:
-            katenary.io/same-pod: web
+volumes
+  - ./conf.d:/etc/nginx/conf.d
+labels:
+  katenary.v3/configmap-files: |-
+    - ./conf.d
 ```
 
-The above example will create a `web` deployment, the PHP container is added in the `web` pod.
+### katenary.v3/cronjob
 
-## configmap-volumes
+Create a cronjob from the service.
 
-This label proposes to declare a file or directory where content is actually static and can be mounted as configMap volume.
+**Type**: `object`
 
-It's a comma separated label, you can declare several volumes.
+This adds a cronjob to the chart.
 
-For example, in `static/index.html`:
+The label value is a YAML object with the following attributes:
+- command: the command to be executed 
+- schedule: the cron schedule (cron format or @every where "every" is a 
+  duration like 1h30m, daily, hourly...)
+- rbac: false (optionnal), if true, it will create a role, a rolebinding and
+  a serviceaccount to make your cronjob able to connect the Kubernetes API
 
-```html
-<html>
-<body>Hello</body>
-</html>
-```
-
-And a compose file (snippet):
+**Example:**
 
 ```yaml
-serivces:
-    web:
-        image: nginx
-        volumes:
-        - ./static:/usr/share/nginx/html:z
-        labels:
-            katenary.io/configmap-volumes: ./statics
+labels:
+    katenary.v3/cronjob: |-
+        command: echo "hello world"
+        schedule: "* */1 * * *" # or @hourly for example
 ```
 
-What will make Katenary:
+### katenary.v3/dependencies
 
-- create a configmap containing the "index.html" file as data
-- declare the volume in the `web` deployment file
-- mount the configmap in `/usr/share/nginx/html` directory of the container
+Add Helm dependencies to the service.
 
-## ingress
+**Type**: `list of objects`
 
-Declare which port to use to create an ingress. The hostname will be declared in `values.yaml` file.
+Set the service to be, actually, a Helm dependency. This means that the 
+service will not be exported as template. The dependencies are added to 
+the Chart.yaml file and the values are added to the values.yaml file.
 
-```yaml
-serivces:
-    web:
-        image: nginx
-        ports:
-        - 8080:80
-        labels:
-            katenary.io/ingress: 80
-```
+It's a list of objects with the following attributes:
+
+- name: the name of the dependency
+- repository: the repository of the dependency
+- alias: the name of the dependency in values.yaml (optional)
+- values: the values to be set in values.yaml (optional)
 
 !!! Info
-    A port **must** be declared, in `ports` section or with `katenary.io/ports` label. This to force the creation of a `Service`.
+    Katenary doesn't update the helm depenedencies by default.
+    
+    Use `--helm-update` (or `-u`) flag to update the dependencies.
+    
+    example: <code>katenary convert -u</code>
 
-## ports and container-ports
+By setting an alias, it is possible to change the name of the dependency 
+in values.yaml.
 
-It's sometimes not mandatory to declare a port in compose file, or maybe you want to avoid to expose them in the compose file. But Katenary will sometimes need to know the ports to create service, for example to allow `depends_on` directive.
-
-In this case, you can declare the ports in the corresponding label:
-
-```yaml
-serivces:
-    web:
-        image: nginx
-        labels:
-            katenary.io/ports: 80,443
-```
-
-This will leave Katenary creating the service to open these ports to others pods.
-
-Sometimes, you need to have `containerPort` in pods but **avoid the service declaration**, so you can use this label:
+**Example:**
 
 ```yaml
-services:
-    php:
-        image: php:8-fpm
-        labels:
-            katenary.io/container-ports: 9000
+labels:
+  katenary.v3/dependencies: |-
+    - name: mariadb
+      repository: oci://registry-1.docker.io/bitnamicharts
+
+      ## optional, it changes the name of the section in values.yaml
+      # alias: mydatabase
+
+      ## optional, it adds the values to values.yaml
+      values:
+        auth:
+          database: mydatabasename
+          username: myuser
+          password: the secret password
 ```
 
-That will only declare the container port in the pod, but not in the service.
+### katenary.v3/description
 
-!!! Info
-    It's very useful when you need to declare ports in conjonction with `same-pod`. Katenary would create a service with all the pods ports inside. The `container-ports` label will make the ports to be ignored in the service creation.
+Description of the service
 
-## mapenv
+**Type**: `string`
 
-Environment variables are working great for your compose stack but you sometimes need to change them in Helm. This label allows you to remap the value for Helm.
+This replaces the default comment in values.yaml file to the given description. 
+It is useful to document the service and configuration.
 
-For example, when you use an environment variable to point on another service.
+The value can be set with a documentation in multiline format.
+
+**Example:**
 
 ```yaml
-serivces:
-    php:
-        image: php
-        environment:
-            DB_HOST: database
-
-    database:
-        image: mariadb
-        labels:
-            katenary.io/ports: 3306
+labels:
+  katenary.v3/description: |-
+    This is a description of the service.
+    It can be multiline.
 ```
 
-The above example will break when you'll start it in Kubernetes because the `database` service will not be named like this, it will be renamed to `{{ .Release.Name }}-database`. So, you can declare the rewrite:
+### katenary.v3/env-from
+
+Add environment variables from antoher service.
+
+**Type**: `list of strings`
+
+It adds environment variables from another service to the current service.
+
+**Example:**
 
 ```yaml
-services:
-    php:
-        image: php
-        environment:
-            DB_HOST: database
-        labels:
-            katenary.io/mapenv: |
-                DB_HOST: "{{ .Release.Name }}"-database
-    database:
-        image: mariadb
-        labels:
-            katenary.io/ports: 3306
+service1:
+  image: nginx:1.19
+  environment:
+      FOO: bar
 
+service2:
+  image: php:7.4-fpm
+  labels:
+    # get the congigMap from service1 where FOO is 
+    # defined inside this service too
+    katenary.v3/env-from: |-
+        - myservice1
 ```
 
-It's also useful when you want to change a variable value to another when you deploy on Kubernetes.
+### katenary.v3/health-check
 
-## secret-envfiles
+Health check to be added to the deployment.
 
-Katenary binds all "environemnt files" to config maps. But some of these files can be bound as sercrets.
+**Type**: `object`
 
-In this case, declare the files as is:
+Health check to be added to the deployment.
+
+**Example:**
 
 ```yaml
-services:
-    app:
-        image: #...
-        env_file:
-            - ./env/whatever
-            - ./env/sensitives
-        labels:
-            katenary.io/secret-envfiles: ./env/sensitives
+labels:
+  katenary.v3/health-check: |-
+    httpGet:
+      path: /health
+      port: 8080
 ```
 
-## secret-vars
+### katenary.v3/ignore
 
-If you have some environemnt variables to declare as secret, you can list them in the `secret-vars` label.
+Ignore the service
+
+**Type**: `bool`
+
+Ingoring a service to not be exported in helm chart.
+
+**Example:**
 
 ```yaml
-services:
-    database:
-        image: mariadb
-        environemnt:
-            MYSQL_PASSWORD: foobar
-            MYSQL_ROOT_PASSWORD: longpasswordhere
-            MYSQL_USER: john
-            MYSQL_DATABASE: appdb
-        labels:
-            katenary.io/secret-vars: MYSQL_ROOT_PASSWORD,MYSQL_PASSWORD
+labels:
+  katenary.v3/ignore: "true"
 ```
 
-## ignore
+### katenary.v3/ingress
 
-Simply ignore the service to not be exported in the Helm Chart.
+Ingress rules to be added to the service.
+
+**Type**: `object`
+
+Declare an ingress rule for the service. The port should be exposed or 
+declared with `katenary.v3/ports`.
+
+**Example:**
 
 ```yaml
-serivces:
-
-    # this service is able to answer HTTP
-    # on port 5000
-    webapp:
-        image: myapp
-        labels:
-            # declare the port
-            katenary.io/ports: 5000
-            # the ingress controller is a web proxy, so...
-            katenary.io/ingress: 5000
-
-
-    # with local Docker, I want to access my webapp
-    # with "myapp.locahost" so I use a nice proxy on
-    # port 80
-    proxy:
-        image: quay.io/pathwae/proxy
-        ports:
-        - 80:80
-        environemnt:
-            CONFIG: |
-                myapp.localhost: webapp:5000
-        labels:
-            # I don't need it in Helm, it's only
-            # for local test!
-            katenary.io/ignore: true
+labels:
+  katenary.v3/ingress: |-
+    port: 80
+    hostname: mywebsite.com (optional)
 ```
+
+### katenary.v3/main-app
+
+Mark the service as the main app.
+
+**Type**: `bool`
+
+This makes the service to be the main application. Its image tag is 
+considered to be the 
+
+Chart appVersion and to be the defaultvalue in Pod container 
+image attribute.
+
+!!! Warning
+    This label cannot be repeated in others services. If this label is
+    set in more than one service as true, Katenary will return an error.
+
+**Example:**
+
+```yaml
+ghost:
+  image: ghost:1.25.5
+  labels:
+    # The chart is now named ghost, and the appVersion is 1.25.5.
+    # In Deployment, the image attribute is set to ghost:1.25.5 if 
+    # you don't change the "tag" attribute in values.yaml
+    katenary.v3/main-app: true
+```
+
+### katenary.v3/map-env
+
+Map env vars from the service to the deployment.
+
+**Type**: `object`
+
+Because you may need to change the variable for Kubernetes, this label
+forces the value to another. It is also particullary helpful to use a template 
+value instead. For example, you could bind the value to a service name 
+with Helm attributes:
+`{{ tpl .Release.Name . }}`.
+
+If you use `__APP__` in the value, it will be replaced by the Chart name.
+
+**Example:**
+
+```yaml
+env:
+  DB_HOST: database
+  RUNNING: docker
+  OTHER: value
+labels:
+  katenary.v3/map-env: |-
+    RUNNING: kubernetes
+    DB_HOST: '{{ include "__APP__.fullname" . }}-database'
+```
+
+### katenary.v3/ports
+
+Ports to be added to the service.
+
+**Type**: `list of uint32`
+
+Only useful for services without exposed port. It is mandatory if the 
+service is a dependency of another service.
+
+**Example:**
+
+```yaml
+labels:
+  katenary.v3/ports: |-
+    - 8080
+    - 8081
+```
+
+### katenary.v3/same-pod
+
+Move the same-pod deployment to the target deployment.
+
+**Type**: `string`
+
+This will make the service to be included in another service pod. Some services 
+must work together in the same pod, like a sidecar or a proxy or nginx + php-fpm.
+
+Note that volume and VolumeMount are copied from the source to the target 
+deployment.
+
+**Example:**
+
+```yaml
+web:
+  image: nginx:1.19
+
+php:
+  image: php:7.4-fpm
+  labels:
+    katenary.v3/same-pod: web
+```
+
+### katenary.v3/secrets
+
+Env vars to be set as secrets.
+
+**Type**: `list of string`
+
+This label allows setting the environment variables as secrets. The variable 
+is removed from the environment and added to a secret object.
+
+The variable can be set to the `katenary.v3/values` too,
+so the secret value can be configured in values.yaml
+
+**Example:**
+
+```yaml
+env:
+  PASSWORD: a very secret password
+  NOT_A_SECRET: a public value
+labels:
+  katenary.v3/secrets: |-
+    - PASSWORD
+```
+
+### katenary.v3/values
+
+Environment variables to be added to the values.yaml
+
+**Type**: `list of string or map`
+
+By default, all environment variables in the "env" and environment
+files are added to configmaps with the static values set. This label
+allows adding environment variables to the values.yaml file.
+
+Note that the value inside the configmap is `{{ tpl vaname . }}`, so 
+you can set the value to a template that will be rendered with the 
+values.yaml file.
+
+The value can be set with a documentation. This may help to understand 
+the purpose of the variable.
+
+**Example:**
+
+```yaml
+env:
+  FOO: bar
+  DB_NAME: mydb
+  TO_CONFIGURE: something that can be changed in values.yaml
+  A_COMPLEX_VALUE: example
+labels:
+  katenary.v3/values: |-
+    # simple values, set as is in values.yaml
+    - TO_CONFIGURE
+    # complex values, set as a template in values.yaml with a documentation
+    - A_COMPLEX_VALUE: |-
+        This is the documentation for the variable to 
+        configure in values.yaml.
+        It can be, of course,  a multiline text.
+```
+
+<!-- STOP_DETAILED_DOC : do not remove this tag !-->

@@ -27,7 +27,7 @@ button.md-clipboard:hover::after {
 
 article a,
 article a:visited {
-  color: var(--md-code-hl-number-color);
+  color: var(--md-code-hl-number-color) !important;
 }
 
 .md-center {
@@ -52,4 +52,57 @@ article a:visited {
 pre code.hljs {
   background-color: var(--code-bg-color);
   color: var(--code-fg-color);
+}
+
+table tbody code {
+  text-align: left;
+  white-space: nowrap;
+  font-size: 1em !important;
+  background-color: transparent !important;
+  color: var(--md-code-hl-special-color) !important;
+}
+
+h3[id*="katenaryio"] {
+  color: var(--md-code-hl-special-color);
+}
+
+#logo {
+  background-image: url("logo-vertical.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  height: 8em;
+  width: 100%;
+  margin: 0 auto 2rem auto;
+}
+
+/*Zoomable images*/
+.zoomable svg {
+  background-color: var(--md-default-bg-color);
+  padding: 1rem;
+}
+
+[data-md-color-scheme="slate"] .zoomable svg {
+  background-color: var(--md-default-bg-color);
+}
+
+[data-md-color-scheme="slate"] .zoomable svg .colorize {
+  fill: var(--md-typeset-color) !important;
+}
+
+.zoomable input[type="checkbox"] {
+  display: none;
+}
+
+@media all and (min-width: 1399px) {
+  .zoomable label > * {
+    cursor: zoom-in;
+    transition: all 0.2s ease-in-out;
+  }
+  .zoomable input[type="checkbox"]:checked ~ label > * {
+    transform: scale(2);
+    cursor: zoom-out;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+  }
 }
