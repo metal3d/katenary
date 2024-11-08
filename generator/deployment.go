@@ -370,6 +370,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	y = UnWrapTPL(y)
 
 	// for each volume mount, add a condition "if values has persistence"
 	changing := false
@@ -399,6 +400,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 		if strings.Contains(volume, "mountPath: ") {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(volume))
 			varName := d.volumeMap[volumeName]
+			varName = strings.ReplaceAll(varName, "-", "_")
 			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + volume
 			changing = true
 		}
@@ -442,6 +444,7 @@ func (d *Deployment) Yaml() ([]byte, error) {
 		if strings.Contains(line, "- name: ") && inVolumes {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(line))
 			varName := d.volumeMap[volumeName]
+			varName = strings.ReplaceAll(varName, "-", "_")
 			content[i] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + line
 			changing = true
 		}

@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 	"log"
 	"strings"
 
@@ -9,9 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
 
 // only used to check interface implementation
@@ -120,5 +119,9 @@ func (c *CronJob) Filename() string {
 //
 // Implements the Yaml interface.
 func (c *CronJob) Yaml() ([]byte, error) {
-	return yaml.Marshal(c)
+	if o, err := yaml.Marshal(c); err != nil {
+		return nil, err
+	} else {
+		return UnWrapTPL(o), nil
+	}
 }

@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"katenary/utils"
 	"regexp"
 	"strings"
 
@@ -9,8 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
-
-	"katenary/utils"
 )
 
 var _ Yaml = (*Service)(nil)
@@ -82,6 +81,11 @@ func (s *Service) Filename() string {
 // Yaml returns the yaml representation of the service.
 func (s *Service) Yaml() ([]byte, error) {
 	y, err := yaml.Marshal(s)
+	if err != nil {
+		return nil, err
+	}
+	y = UnWrapTPL(y)
+
 	lines := []string{}
 	for _, line := range strings.Split(string(y), "\n") {
 		if regexp.MustCompile(`^\s*loadBalancer:\s*`).MatchString(line) {

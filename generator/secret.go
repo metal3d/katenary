@@ -3,14 +3,13 @@ package generator
 import (
 	"encoding/base64"
 	"fmt"
+	"katenary/utils"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/utils"
 )
 
 var (
@@ -102,6 +101,7 @@ func (s *Secret) Yaml() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	y = UnWrapTPL(y)
 
 	// replace the b64 value by the real value
 	for _, value := range s.Data {

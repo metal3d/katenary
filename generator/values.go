@@ -92,6 +92,7 @@ func (v *Value) AddIngress(host, path string) {
 
 // AddPersistence adds persistence configuration to the Value.
 func (v *Value) AddPersistence(volumeName string) {
+	volumeName = strings.ReplaceAll(volumeName, "-", "_")
 	if v.Persistence == nil {
 		v.Persistence = make(map[string]*PersistenceValue, 0)
 	}

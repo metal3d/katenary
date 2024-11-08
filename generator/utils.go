@@ -1,15 +1,17 @@
 package generator
 
 import (
+	"katenary/generator/labelStructs"
+	"katenary/utils"
+	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
+
+var regexpLineWrap = regexp.MustCompile(`\n\s+}}`)
 
 // findDeployment finds the corresponding target deployment for a service.
 func findDeployment(serviceName string, deployments map[string]*Deployment) *Deployment {
@@ -76,4 +78,9 @@ func isIgnored(service types.ServiceConfig) bool {
 		return v == "true" || v == "yes" || v == "1"
 	}
 	return false
+}
+
+// UnWrapTPL removes the line wrapping from a template.
+func UnWrapTPL(in []byte) []byte {
+	return regexpLineWrap.ReplaceAll(in, []byte(" }}"))
 }

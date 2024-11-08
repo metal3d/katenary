@@ -76,6 +76,8 @@ func (v *VolumeClaim) Yaml() ([]byte, error) {
 		return nil, err
 	}
 
+	out = UnWrapTPL(out)
+
 	// replace 1Gi to {{ .Values.serviceName.volume.size }}
 	out = []byte(
 		strings.Replace(

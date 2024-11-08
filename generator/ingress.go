@@ -1,6 +1,8 @@
 package generator
 
 import (
+	"katenary/generator/labelStructs"
+	"katenary/utils"
 	"log"
 	"strings"
 
@@ -8,9 +10,6 @@ import (
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/generator/labelStructs"
-	"katenary/utils"
 )
 
 var _ Yaml = (*Ingress)(nil)
@@ -129,6 +128,7 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	ret = UnWrapTPL(ret)
 
 	lines := strings.Split(string(ret), "\n")
 	out := []string{
