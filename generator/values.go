@@ -27,6 +27,9 @@ type IngressValue struct {
 	Path        string            `yaml:"path"`
 	Class       string            `yaml:"class"`
 	Enabled     bool              `yaml:"enabled"`
+	TLS         struct {
+		Enabled bool `yaml:"enabled"`
+	} `yaml:"tls"`
 }
 
 // Value will be saved in values.yaml. It contains configuraiton for all deployment and services.
