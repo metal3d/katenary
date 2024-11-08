@@ -232,5 +232,9 @@ func (c *ConfigMap) SetData(data map[string]string) {
 
 // Yaml returns the yaml representation of the configmap
 func (c *ConfigMap) Yaml() ([]byte, error) {
-	return yaml.Marshal(c)
+	if o, err := yaml.Marshal(c); err != nil {
+		return nil, err
+	} else {
+		return UnWrapTPL(o), nil
+	}
 }

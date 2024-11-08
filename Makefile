@@ -4,7 +4,7 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
-GOVERSION=1.22
+GOVERSION=1.23
 GO=container
 OUT=katenary
 BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary

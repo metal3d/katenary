@@ -187,9 +187,10 @@ Health check to be added to the deployment.
 ```yaml
 labels:
   katenary.v3/health-check: |-
-    httpGet:
-      path: /health
-      port: 8080
+    livenessProbe:
+      httpGet:
+        path: /health
+        port: 8080
 ```
 
 ### katenary.v3/ignore

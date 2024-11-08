@@ -1,13 +1,13 @@
 package generator
 
 import (
+	"katenary/utils"
+
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
-
-	"katenary/utils"
 )
 
 var (
@@ -121,7 +121,11 @@ func (r *Role) Filename() string {
 }
 
 func (r *Role) Yaml() ([]byte, error) {
-	return yaml.Marshal(r)
+	if o, err := yaml.Marshal(r); err != nil {
+		return nil, err
+	} else {
+		return UnWrapTPL(o), nil
+	}
 }
 
 // ServiceAccount is a kubernetes ServiceAccount.
