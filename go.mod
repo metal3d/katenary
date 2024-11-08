@@ -7,7 +7,7 @@ toolchain go1.22.2
 require (
 	github.com/compose-spec/compose-go v1.20.2
 	github.com/mitchellh/go-wordwrap v1.0.1
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/thediveo/netdb v1.0.2
 	golang.org/x/mod v0.17.0
 	gopkg.in/yaml.v3 v3.0.1
