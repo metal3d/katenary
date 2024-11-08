@@ -31,8 +31,6 @@ func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*
 		cli.DefaultOverrideFileNames = append(cli.DefaultOverrideFileNames, dockerComposeFile...)
 	}
 
-	log.Println("Loading compose files: ", cli.DefaultOverrideFileNames)
-
 	// resolve absolute paths of envFiles
 	for i := range envFiles {
 		var err error
@@ -41,7 +39,6 @@ func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*
 			log.Fatal(err)
 		}
 	}
-	log.Println("Loading env files: ", envFiles)
 
 	options, err := cli.NewProjectOptions(nil,
 		cli.WithProfiles(profiles),
