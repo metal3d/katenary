@@ -25,10 +25,8 @@
   short: "Mark the service as the main app."
   long: |-
     This makes the service to be the main application. Its image tag is 
-    considered to be the 
-
-    Chart appVersion and to be the defaultvalue in Pod container 
-    image attribute.
+    considered to be the Chart appVersion and to be the defaultvalue in Pod
+    container image attribute.
 
     !!! Warning
         This label cannot be repeated in others services. If this label is
