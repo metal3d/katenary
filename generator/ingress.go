@@ -9,7 +9,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var _ Yaml = (*Ingress)(nil)
@@ -124,8 +123,13 @@ func (ingress *Ingress) Filename() string {
 }
 
 func (ingress *Ingress) Yaml() ([]byte, error) {
+	var ret []byte
+	var err error
+	if ret, err = ToK8SYaml(ingress); err != nil {
+		return nil, err
+	}
+
 	serviceName := ingress.service.Name
-	ret, err := yaml.Marshal(ingress)
 	if err != nil {
 		return nil, err
 	}

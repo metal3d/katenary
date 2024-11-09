@@ -8,7 +8,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 const persistenceKey = "persistence"
@@ -66,17 +65,17 @@ func (v *VolumeClaim) Filename() string {
 
 // Yaml marshals a VolumeClaim into yaml.
 func (v *VolumeClaim) Yaml() ([]byte, error) {
+	var out []byte
+	var err error
+	if out, err = ToK8SYaml(v); err != nil {
+		return nil, err
+	}
+
 	serviceName := v.service.Name
 	if v.nameOverride != "" {
 		serviceName = v.nameOverride
 	}
 	volumeName := v.volumeName
-	out, err := yaml.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-
-	out = UnWrapTPL(out)
 
 	// replace 1Gi to {{ .Values.serviceName.volume.size }}
 	out = []byte(

@@ -15,7 +15,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var _ Yaml = (*Deployment)(nil)
@@ -365,12 +364,13 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 
 // Yaml returns the yaml representation of the deployment.
 func (d *Deployment) Yaml() ([]byte, error) {
+	var y []byte
+	var err error
 	serviceName := d.service.Name
-	y, err := yaml.Marshal(d)
-	if err != nil {
+
+	if y, err = ToK8SYaml(d); err != nil {
 		return nil, err
 	}
-	y = UnWrapTPL(y)
 
 	// for each volume mount, add a condition "if values has persistence"
 	changing := false

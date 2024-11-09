@@ -139,5 +139,5 @@ func (r *ServiceAccount) Filename() string {
 }
 
 func (r *ServiceAccount) Yaml() ([]byte, error) {
-	return yaml.Marshal(r)
+	return ToK8SYaml(r)
 }

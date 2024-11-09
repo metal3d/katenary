@@ -12,7 +12,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 // FileMapUsage is the usage of the filemap.
@@ -232,9 +231,5 @@ func (c *ConfigMap) SetData(data map[string]string) {
 
 // Yaml returns the yaml representation of the configmap
 func (c *ConfigMap) Yaml() ([]byte, error) {
-	if o, err := yaml.Marshal(c); err != nil {
-		return nil, err
-	} else {
-		return UnWrapTPL(o), nil
-	}
+	return ToK8SYaml(c)
 }

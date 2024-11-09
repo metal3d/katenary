@@ -9,7 +9,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -97,11 +96,11 @@ func (s *Secret) SetData(data map[string]string) {
 
 // Yaml returns the yaml representation of the secret.
 func (s *Secret) Yaml() ([]byte, error) {
-	y, err := yaml.Marshal(s)
-	if err != nil {
+	var y []byte
+	var err error
+	if y, err = ToK8SYaml(s); err != nil {
 		return nil, err
 	}
-	y = UnWrapTPL(y)
 
 	// replace the b64 value by the real value
 	for _, value := range s.Data {

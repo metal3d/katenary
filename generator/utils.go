@@ -9,6 +9,7 @@ import (
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var regexpLineWrap = regexp.MustCompile(`\n\s+}}`)
@@ -83,4 +84,12 @@ func isIgnored(service types.ServiceConfig) bool {
 // UnWrapTPL removes the line wrapping from a template.
 func UnWrapTPL(in []byte) []byte {
 	return regexpLineWrap.ReplaceAll(in, []byte(" }}"))
+}
+
+func ToK8SYaml(obj interface{}) ([]byte, error) {
+	if o, err := yaml.Marshal(obj); err != nil {
+		return nil, nil
+	} else {
+		return UnWrapTPL(o), nil
+	}
 }
