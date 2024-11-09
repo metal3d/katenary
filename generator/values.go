@@ -20,6 +20,10 @@ type PersistenceValue struct {
 	Enabled      bool     `yaml:"enabled"`
 }
 
+type TLS struct {
+	Enabled bool `yaml:"enabled"`
+}
+
 // IngressValue is a ingress configuration that will be saved in values.yaml.
 type IngressValue struct {
 	Annotations map[string]string `yaml:"annotations"`
@@ -27,6 +31,7 @@ type IngressValue struct {
 	Path        string            `yaml:"path"`
 	Class       string            `yaml:"class"`
 	Enabled     bool              `yaml:"enabled"`
+	TLS         TLS               `yaml:"tls"`
 }
 
 // Value will be saved in values.yaml. It contains configuraiton for all deployment and services.

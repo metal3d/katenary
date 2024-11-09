@@ -55,6 +55,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		Host:        mapping.Hostname,
 		Class:       mapping.Class,
 		Annotations: mapping.Annotations,
+		TLS:         TLS{Enabled: mapping.TLS.Enabled},
 	}
 
 	// ingressClassName := `{{ .Values.` + service.Name + `.ingress.class }}`
@@ -131,6 +132,34 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	ret = UnWrapTPL(ret)
 
 	lines := strings.Split(string(ret), "\n")
+
+	// first pass, wrap the tls part with `{{- if .Values.serviceName.ingress.tlsEnabled -}}`
+	// and `{{- end -}}`
+
+	from := -1
+	to := -1
+	spaces := -1
+	for i, line := range lines {
+		if strings.Contains(line, "tls:") {
+			from = i
+			spaces = utils.CountStartingSpaces(line)
+			continue
+		}
+		if from > -1 {
+			if utils.CountStartingSpaces(line) >= spaces {
+				to = i
+				continue
+			}
+		}
+	}
+	if from > -1 && to > -1 {
+		lines[from] = strings.Repeat(" ", spaces) +
+			`{{- if .Values.` + serviceName + `.ingress.tls.enabled }}` +
+			"\n" +
+			lines[from]
+		lines[to] = strings.Repeat(" ", spaces) + `{{ end -}}`
+	}
+
 	out := []string{
 		`{{- if .Values.` + serviceName + `.ingress.enabled -}}`,
 	}
