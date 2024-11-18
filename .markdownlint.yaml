@@ -2,7 +2,7 @@
 default: true
 
 MD013: # Line length
-  line_length: 240
+  line_length: 120
 
 MD010: # Hard tabs
   code_blocks: false
@@ -16,3 +16,6 @@ MD041: false
 # list indentation
 MD007:
   indent: 4
+
+# no problem using several code blocks styles
+MD046: false

@@ -7,6 +7,8 @@ package main
 import (
 	"fmt"
 	"katenary/generator"
+	"katenary/generator/katenaryfile"
+	"katenary/generator/labels"
 	"katenary/utils"
 	"os"
 	"strings"
@@ -43,6 +45,7 @@ func buildRootCmd() *cobra.Command {
 		generateConvertCommand(),
 		generateHashComposefilesCommand(),
 		generateLabelHelpCommand(),
+		generateSchemaCommand(),
 	)
 
 	return rootCmd
@@ -245,31 +248,31 @@ func generateLabelHelpCommand() *cobra.Command {
 If no label is specified, the help for all labels is printed.
 If a label is specified, the help for this label is printed.
 
-The name of the label must be specified without the prefix ` + generator.Prefix() + `.
+The name of the label must be specified without the prefix ` + labels.Prefix() + `.
 
 e.g. 
   kanetary help-labels
   katenary help-labels ingress
   katenary help-labels map-env
 `,
-		ValidArgs: generator.GetLabelNames(),
+		ValidArgs: labels.GetLabelNames(),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) > 0 {
-				fmt.Println(generator.GetLabelHelpFor(args[0], markdown))
+				fmt.Println(labels.GetLabelHelpFor(args[0], markdown))
 				return
 			}
 			if all {
 				// show the help for all labels
-				l := len(generator.GetLabelNames())
-				for i, label := range generator.GetLabelNames() {
-					fmt.Println(generator.GetLabelHelpFor(label, markdown))
+				l := len(labels.GetLabelNames())
+				for i, label := range labels.GetLabelNames() {
+					fmt.Println(labels.GetLabelHelpFor(label, markdown))
 					if !markdown && i < l-1 {
 						fmt.Println(strings.Repeat("-", 80))
 					}
 				}
 				return
 			}
-			fmt.Println(generator.GetLabelHelp(markdown))
+			fmt.Println(labels.GetLabelHelp(markdown))
 		},
 	}
 
@@ -294,6 +297,18 @@ If no composefile is specified, the hash of all composefiles is printed.`,
 				}
 				return
 			}
+		},
+	}
+	return cmd
+}
+
+func generateSchemaCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "schema",
+		Short: "Print the schema of the katenary file",
+		Long:  "Generate a schama for katenary.yaml file that can be used to validate the file or to use with yaml LSP to complete and check your configuration.",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(katenaryfile.GenerateSchema())
 		},
 	}
 	return cmd

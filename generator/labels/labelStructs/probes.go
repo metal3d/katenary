@@ -8,13 +8,13 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-type Probe struct {
-	LivenessProbe  *corev1.Probe `yaml:"livenessProbe,omitempty"`
-	ReadinessProbe *corev1.Probe `yaml:"readinessProbe,omitempty"`
+type HealthCheck struct {
+	LivenessProbe  *corev1.Probe `yaml:"livenessProbe,omitempty" json:"livenessProbe,omitempty"`
+	ReadinessProbe *corev1.Probe `yaml:"readinessProbe,omitempty" json:"readinessProbe,omitempty"`
 }
 
-func ProbeFrom(data string) (*Probe, error) {
-	mapping := Probe{}
+func ProbeFrom(data string) (*HealthCheck, error) {
+	mapping := HealthCheck{}
 	tmp := map[string]any{}
 	err := yaml.Unmarshal([]byte(data), &tmp)
 	if err != nil {

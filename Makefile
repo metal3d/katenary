@@ -169,6 +169,9 @@ tests: test
 test:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
 	go test -coverprofile=cover.out ./...
+	$(MAKE) cover
+
+cover:
 	go tool cover -func=cover.out | grep "total:"
 	go tool cover -html=cover.out -o cover.html
 	if [ "$(BROWSER)" = "xdg-open" ]; then

@@ -3,6 +3,7 @@ package generator
 import (
 	"encoding/base64"
 	"fmt"
+	"katenary/generator/labels"
 	"katenary/utils"
 	"strings"
 
@@ -44,7 +45,7 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 
 	// check if the value should be in values.yaml
 	valueList := []string{}
-	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
+	varDescriptons := utils.GetValuesFromLabel(service, labels.LabelValues)
 	for value := range varDescriptons {
 		valueList = append(valueList, value)
 	}
@@ -79,7 +80,15 @@ func (s *Secret) AddData(key, value string) {
 	if value == "" {
 		return
 	}
-	s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
+	valuesLabels := utils.GetValuesFromLabel(s.service, labels.LabelValues)
+	if _, ok := valuesLabels[key]; ok {
+		// the value should be in values.yaml
+		s.Data[key] = []byte(`{{ tpl .Values.` + s.service.Name + `.environment.` + key + ` $ | b64enc }}`)
+	} else {
+		encoded := base64.StdEncoding.EncodeToString([]byte(value))
+		s.Data[key] = []byte(encoded)
+	}
+	// s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
 }
 
 // Filename returns the filename of the secret.

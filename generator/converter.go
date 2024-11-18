@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"katenary/generator/extrafiles"
-	"katenary/generator/labelStructs"
+	"katenary/generator/katenaryfile"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/parser"
 	"katenary/utils"
 	"log"
@@ -124,6 +126,9 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 		fmt.Println(utils.IconFailure, err)
 		os.Exit(1)
 	}
+
+	// TODO: use katenary.yaml file here to set the labels
+	katenaryfile.OverrideWithConfig(project)
 
 	if !config.Force {
 		// check if the chart directory exists
@@ -264,7 +269,7 @@ func addDependencyDescription(values []byte, dependencies []labelStructs.Depende
 // of the service definition.
 func addDescriptions(values []byte, project types.Project) []byte {
 	for _, service := range project.Services {
-		if description, ok := service.Labels[LabelDescription]; ok {
+		if description, ok := service.Labels[labels.LabelDescription]; ok {
 			// set it as comment
 			description = "\n# " + strings.ReplaceAll(description, "\n", "\n# ")
 
@@ -288,7 +293,7 @@ func addDescriptions(values []byte, project types.Project) []byte {
 
 func addDocToVariable(service types.ServiceConfig, lines []string) []string {
 	currentService := ""
-	variables := utils.GetValuesFromLabel(service, LabelValues)
+	variables := utils.GetValuesFromLabel(service, labels.LabelValues)
 	for i, line := range lines {
 		// if the line is a service, it is a name followed by a colon
 		if regexp.MustCompile(`(?m)^` + service.Name + `:`).MatchString(line) {
@@ -378,7 +383,7 @@ func addMainTagAppDoc(values []byte, project *types.Project) []byte {
 
 	for _, service := range project.Services {
 		// read the label LabelMainApp
-		if v, ok := service.Labels[LabelMainApp]; !ok {
+		if v, ok := service.Labels[labels.LabelMainApp]; !ok {
 			continue
 		} else if v == "false" || v == "no" || v == "0" {
 			continue
@@ -651,7 +656,7 @@ func checkOldLabels(project *types.Project) error {
 	badServices := make([]string, 0)
 	for _, service := range project.Services {
 		for label := range service.Labels {
-			if strings.Contains(label, "katenary.") && !strings.Contains(label, katenaryLabelPrefix) {
+			if strings.Contains(label, "katenary.") && !strings.Contains(label, labels.KatenaryLabelPrefix) {
 				badServices = append(badServices, fmt.Sprintf("- %s: %s", service.Name, label))
 			}
 		}
@@ -667,7 +672,7 @@ func checkOldLabels(project *types.Project) error {
   Services to upgrade:
 %s`,
 			project.Name,
-			katenaryLabelPrefix[0:len(katenaryLabelPrefix)-1],
+			labels.KatenaryLabelPrefix[0:len(labels.KatenaryLabelPrefix)-1],
 			strings.Join(badServices, "\n"),
 		)
 

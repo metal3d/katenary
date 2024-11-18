@@ -1,4 +1,4 @@
-package generator
+package labels
 
 import (
 	_ "embed"
@@ -48,7 +48,7 @@ func TestLabelName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := labelName(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+			if got := LabelName(tt.args.name); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("labelName() = %v, want %v", got, tt.want)
 			}
 		})

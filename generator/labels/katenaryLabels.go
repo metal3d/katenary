@@ -1,4 +1,4 @@
-package generator
+package labels
 
 import (
 	"bytes"
@@ -14,24 +14,24 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const katenaryLabelPrefix = "katenary.v3"
+const KatenaryLabelPrefix = "katenary.v3"
 
 // Known labels.
 const (
-	LabelMainApp        Label = katenaryLabelPrefix + "/main-app"
-	LabelValues         Label = katenaryLabelPrefix + "/values"
-	LabelSecrets        Label = katenaryLabelPrefix + "/secrets"
-	LabelPorts          Label = katenaryLabelPrefix + "/ports"
-	LabelIngress        Label = katenaryLabelPrefix + "/ingress"
-	LabelMapEnv         Label = katenaryLabelPrefix + "/map-env"
-	LabelHealthCheck    Label = katenaryLabelPrefix + "/health-check"
-	LabelSamePod        Label = katenaryLabelPrefix + "/same-pod"
-	LabelDescription    Label = katenaryLabelPrefix + "/description"
-	LabelIgnore         Label = katenaryLabelPrefix + "/ignore"
-	LabelDependencies   Label = katenaryLabelPrefix + "/dependencies"
-	LabelConfigMapFiles Label = katenaryLabelPrefix + "/configmap-files"
-	LabelCronJob        Label = katenaryLabelPrefix + "/cronjob"
-	LabelEnvFrom        Label = katenaryLabelPrefix + "/env-from"
+	LabelMainApp        Label = KatenaryLabelPrefix + "/main-app"
+	LabelValues         Label = KatenaryLabelPrefix + "/values"
+	LabelSecrets        Label = KatenaryLabelPrefix + "/secrets"
+	LabelPorts          Label = KatenaryLabelPrefix + "/ports"
+	LabelIngress        Label = KatenaryLabelPrefix + "/ingress"
+	LabelMapEnv         Label = KatenaryLabelPrefix + "/map-env"
+	LabelHealthCheck    Label = KatenaryLabelPrefix + "/health-check"
+	LabelSamePod        Label = KatenaryLabelPrefix + "/same-pod"
+	LabelDescription    Label = KatenaryLabelPrefix + "/description"
+	LabelIgnore         Label = KatenaryLabelPrefix + "/ignore"
+	LabelDependencies   Label = KatenaryLabelPrefix + "/dependencies"
+	LabelConfigMapFiles Label = KatenaryLabelPrefix + "/configmap-files"
+	LabelCronJob        Label = KatenaryLabelPrefix + "/cronjob"
+	LabelEnvFrom        Label = KatenaryLabelPrefix + "/env-from"
 )
 
 var (
@@ -47,8 +47,8 @@ var (
 // Label is a katenary label to find in compose files.
 type Label = string
 
-func labelName(name string) Label {
-	return Label(katenaryLabelPrefix + "/" + name)
+func LabelName(name string) Label {
+	return Label(KatenaryLabelPrefix + "/" + name)
 }
 
 // Help is the documentation of a label.
@@ -114,7 +114,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	template.Must(template.New("shorthelp").Parse(help.Long)).Execute(&buf, struct {
 		KatenaryPrefix string
 	}{
-		KatenaryPrefix: katenaryLabelPrefix,
+		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 	help.Long = buf.String()
 	buf.Reset()
@@ -122,7 +122,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	template.Must(template.New("example").Parse(help.Example)).Execute(&buf, struct {
 		KatenaryPrefix string
 	}{
-		KatenaryPrefix: katenaryLabelPrefix,
+		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 	help.Example = buf.String()
 	buf.Reset()
@@ -134,7 +134,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	}{
 		Name:           labelname,
 		Help:           help,
-		KatenaryPrefix: katenaryLabelPrefix,
+		KatenaryPrefix: KatenaryLabelPrefix,
 	})
 
 	return buf.String()
@@ -152,7 +152,7 @@ func generateMarkdownHelp(names []string) string {
 	}
 	for _, name := range names {
 		help := labelFullHelp[name]
-		maxNameLength = max(maxNameLength, len(name)+2+len(katenaryLabelPrefix))
+		maxNameLength = max(maxNameLength, len(name)+2+len(KatenaryLabelPrefix))
 		maxDescriptionLength = max(maxDescriptionLength, len(help.Short))
 		maxTypeLength = max(maxTypeLength, len(help.Type))
 	}
@@ -163,7 +163,7 @@ func generateMarkdownHelp(names []string) string {
 	for _, name := range names {
 		help := labelFullHelp[name]
 		fmt.Fprintf(&builder, "| %-*s | %-*s | %-*s |\n",
-			maxNameLength, "`"+labelName(name)+"`", // enclose in backticks
+			maxNameLength, "`"+LabelName(name)+"`", // enclose in backticks
 			maxDescriptionLength, help.Short,
 			maxTypeLength, help.Type,
 		)
@@ -176,7 +176,7 @@ func generatePlainHelp(names []string) string {
 	var builder strings.Builder
 	for _, name := range names {
 		help := labelFullHelp[name]
-		fmt.Fprintf(&builder, "%s:\t%s\t%s\n", labelName(name), help.Type, help.Short)
+		fmt.Fprintf(&builder, "%s:\t%s\t%s\n", LabelName(name), help.Type, help.Short)
 	}
 
 	// use tabwriter to align the help text
@@ -231,5 +231,5 @@ Example:
 }
 
 func Prefix() string {
-	return katenaryLabelPrefix
+	return KatenaryLabelPrefix
 }

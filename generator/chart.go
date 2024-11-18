@@ -2,7 +2,8 @@ package generator
 
 import (
 	"fmt"
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"os"
@@ -136,7 +137,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 			originalEnv[k] = v
 		}
 
-		if v, ok := s.Labels[LabelSecrets]; ok {
+		if v, ok := s.Labels[labels.LabelSecrets]; ok {
 			list, err := labelStructs.SecretsFrom(v)
 			if err != nil {
 				log.Fatal("error unmarshaling secrets label:", err)
@@ -210,7 +211,8 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 
 	// get the same-pod label if exists, add it to the list.
 	// We later will copy some parts to the target deployment and remove this one.
-	if samePod, ok := service.Labels[LabelSamePod]; ok && samePod != "" {
+	if samePod, ok := service.Labels[labels.LabelSamePod]; ok && samePod != "" {
+		log.Printf("Found same-pod label for %s", service.Name)
 		podToMerge[samePod] = &service
 	}
 
@@ -247,7 +249,7 @@ func (chart *HelmChart) setChartVersion(service types.ServiceConfig) {
 
 // setCronJob creates a cronjob from the service labels.
 func (chart *HelmChart) setCronJob(service types.ServiceConfig, appName string) *CronJob {
-	if _, ok := service.Labels[LabelCronJob]; !ok {
+	if _, ok := service.Labels[labels.LabelCronJob]; !ok {
 		return nil
 	}
 	cronjob, rbac := NewCronJob(service, chart, appName)
@@ -281,7 +283,7 @@ func (chart *HelmChart) setCronJob(service types.ServiceConfig, appName string) 
 // setDependencies sets the dependencies from the service labels.
 func (chart *HelmChart) setDependencies(service types.ServiceConfig) (bool, error) {
 	// helm dependency
-	if v, ok := service.Labels[LabelDependencies]; ok {
+	if v, ok := service.Labels[labels.LabelDependencies]; ok {
 		d, err := labelStructs.DependenciesFrom(v)
 		if err != nil {
 			return false, err
@@ -307,10 +309,10 @@ func (chart *HelmChart) setDependencies(service types.ServiceConfig) (bool, erro
 func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments map[string]*Deployment) {
 	// if the service has the "shared-conf" label, we need to add the configmap
 	// to the chart and add the env vars to the service
-	if _, ok := service.Labels[LabelEnvFrom]; !ok {
+	if _, ok := service.Labels[labels.LabelEnvFrom]; !ok {
 		return
 	}
-	fromservices, err := labelStructs.EnvFromFrom(service.Labels[LabelEnvFrom])
+	fromservices, err := labelStructs.EnvFromFrom(service.Labels[labels.LabelEnvFrom])
 	if err != nil {
 		log.Fatal("error unmarshaling env-from label:", err)
 	}

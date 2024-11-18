@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labels"
 	"os"
 	"testing"
 
@@ -22,7 +23,7 @@ services:
                 hostname: my.test.tld
                 port: 80
 `
-	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 

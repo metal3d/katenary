@@ -1,7 +1,8 @@
 package generator
 
 import (
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"strings"
@@ -25,7 +26,7 @@ type CronJob struct {
 
 // NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
 func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (*CronJob, *RBAC) {
-	labels, ok := service.Labels[LabelCronJob]
+	labels, ok := service.Labels[labels.LabelCronJob]
 	if !ok {
 		return nil, nil
 	}

@@ -1,7 +1,8 @@
 package generator
 
 import (
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"strings"
@@ -27,7 +28,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 	}
 	var label string
 	var ok bool
-	if label, ok = service.Labels[LabelIngress]; !ok {
+	if label, ok = service.Labels[labels.LabelIngress]; !ok {
 		return nil
 	}
 

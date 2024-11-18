@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labels"
 	"os"
 	"testing"
 
@@ -21,7 +22,7 @@ services:
             %s/secrets: |-
                 - BAR
 `
-	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 

@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labels"
 	"os"
 	"testing"
 
@@ -159,7 +160,7 @@ services:
                   version: 18.x.X
 
     `
-	composeFile = fmt.Sprintf(composeFile, Prefix())
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
@@ -249,7 +250,7 @@ services:
                         path: /ready
                         port: 80
     `
-	composeFile = fmt.Sprintf(composeFile, Prefix())
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
@@ -295,7 +296,7 @@ services:
                 - FOO
 `
 
-	composeFile = fmt.Sprintf(composeFile, Prefix())
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
