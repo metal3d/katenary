@@ -2,7 +2,6 @@ package generator
 
 import (
 	"encoding/base64"
-	"fmt"
 	"katenary/generator/labels"
 	"katenary/utils"
 	"strings"
@@ -48,14 +47,6 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 	varDescriptons := utils.GetValuesFromLabel(service, labels.LabelValues)
 	for value := range varDescriptons {
 		valueList = append(valueList, value)
-	}
-
-	// wrap values with quotes
-	for _, value := range service.Environment {
-		if value == nil {
-			continue
-		}
-		*value = fmt.Sprintf(`"%s"`, *value)
 	}
 
 	for _, value := range valueList {
