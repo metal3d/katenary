@@ -1,7 +1,8 @@
 package generator
 
 import (
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 // only used to check interface implementation
@@ -26,7 +26,7 @@ type CronJob struct {
 
 // NewCronJob creates a new CronJob from a compose service. The appName is the name of the application taken from the project name.
 func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (*CronJob, *RBAC) {
-	labels, ok := service.Labels[LabelCronJob]
+	labels, ok := service.Labels[labels.LabelCronJob]
 	if !ok {
 		return nil, nil
 	}
@@ -119,9 +119,5 @@ func (c *CronJob) Filename() string {
 //
 // Implements the Yaml interface.
 func (c *CronJob) Yaml() ([]byte, error) {
-	if o, err := yaml.Marshal(c); err != nil {
-		return nil, err
-	} else {
-		return UnWrapTPL(o), nil
-	}
+	return ToK8SYaml(c)
 }

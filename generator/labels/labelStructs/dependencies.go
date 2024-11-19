@@ -4,11 +4,11 @@ import "gopkg.in/yaml.v3"
 
 // Dependency is a dependency of a chart to other charts.
 type Dependency struct {
-	Values     map[string]any `yaml:"-"`
-	Name       string         `yaml:"name"`
-	Version    string         `yaml:"version"`
-	Repository string         `yaml:"repository"`
-	Alias      string         `yaml:"alias,omitempty"`
+	Values     map[string]any `yaml:"-" json:"values,omitempty"`
+	Name       string         `yaml:"name" json:"name"`
+	Version    string         `yaml:"version" json:"version"`
+	Repository string         `yaml:"repository" json:"repository"`
+	Alias      string         `yaml:"alias,omitempty" json:"alias,omitempty"`
 }
 
 // DependenciesFrom returns a slice of dependencies from the given string.

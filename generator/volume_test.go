@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labels"
 	"os"
 	"testing"
 
@@ -52,7 +53,7 @@ services:
             %s/configmap-files: |-
                 - ./static
 `
-	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
@@ -112,7 +113,7 @@ services:
             %s/configmap-files: |-
                 - ./static/index.html
 `
-	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 
@@ -169,7 +170,7 @@ volumes:
     data:
 `
 
-	composeFile = fmt.Sprintf(composeFile, katenaryLabelPrefix)
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
 	tmpDir := setup(composeFile)
 	defer teardown(tmpDir)
 

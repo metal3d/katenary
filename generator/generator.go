@@ -3,6 +3,7 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"katenary/generator/labels"
 	"katenary/utils"
 	"log"
 	"regexp"
@@ -39,7 +40,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	if err != nil {
 		return nil, err
 	}
-	Annotations[labelName("compose-hash")] = hash
+	Annotations[labels.LabelName("compose-hash")] = hash
 	chart.composeHash = &hash
 
 	// find the "main-app" label, and set chart.AppVersion to the tag if exists
@@ -81,14 +82,14 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
 	for _, service := range podToMerge {
-		if samepod, ok := service.Labels[LabelSamePod]; ok && samepod != "" {
+		if samepod, ok := service.Labels[labels.LabelSamePod]; ok && samepod != "" {
 			// move this deployment volumes to the target deployment
 			if target, ok := deployments[samepod]; ok {
 				target.AddContainer(*service)
 				target.BindFrom(*service, deployments[service.Name])
 				delete(deployments, service.Name)
 			} else {
-				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, LabelSamePod)
+				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, labels.LabelSamePod)
 			}
 		}
 	}
@@ -163,7 +164,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 
 // serviceIsMain returns true if the service is the main app.
 func serviceIsMain(service types.ServiceConfig) bool {
-	if main, ok := service.Labels[LabelMainApp]; ok {
+	if main, ok := service.Labels[labels.LabelMainApp]; ok {
 		return main == "true" || main == "yes" || main == "1"
 	}
 	return false
@@ -276,7 +277,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 
 			// if the service is integrated in another deployment, we need to add the volume
 			// to the target deployment
-			if override, ok := service.Labels[LabelSamePod]; ok {
+			if override, ok := service.Labels[labels.LabelSamePod]; ok {
 				pvc.nameOverride = override
 				pvc.Spec.StorageClassName = utils.StrPtr(`{{ .Values.` + override + `.persistence.` + v.Source + `.storageClass }}`)
 				chart.Values[override].(*Value).AddPersistence(v.Source)
@@ -308,7 +309,7 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 	}
 
 	targetDeployment := ""
-	if targetName, ok := service.Labels[LabelSamePod]; !ok {
+	if targetName, ok := service.Labels[labels.LabelSamePod]; !ok {
 		return false
 	} else {
 		targetDeployment = targetName

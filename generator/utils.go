@@ -1,7 +1,8 @@
 package generator
 
 import (
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"regexp"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 var regexpLineWrap = regexp.MustCompile(`\n\s+}}`)
@@ -45,7 +47,7 @@ func fixPorts(service *types.ServiceConfig) error {
 	// check the "ports" label from container and add it to the service
 	portsLabel := ""
 	ok := false
-	if portsLabel, ok = service.Labels[LabelPorts]; !ok {
+	if portsLabel, ok = service.Labels[labels.LabelPorts]; !ok {
 		return nil
 	}
 	ports, err := labelStructs.PortsFrom(portsLabel)
@@ -74,7 +76,7 @@ func fixPorts(service *types.ServiceConfig) error {
 
 // isIgnored returns true if the service is ignored.
 func isIgnored(service types.ServiceConfig) bool {
-	if v, ok := service.Labels[LabelIgnore]; ok {
+	if v, ok := service.Labels[labels.LabelIgnore]; ok {
 		return v == "true" || v == "yes" || v == "1"
 	}
 	return false
@@ -83,4 +85,12 @@ func isIgnored(service types.ServiceConfig) bool {
 // UnWrapTPL removes the line wrapping from a template.
 func UnWrapTPL(in []byte) []byte {
 	return regexpLineWrap.ReplaceAll(in, []byte(" }}"))
+}
+
+func ToK8SYaml(obj interface{}) ([]byte, error) {
+	if o, err := yaml.Marshal(obj); err != nil {
+		return nil, nil
+	} else {
+		return UnWrapTPL(o), nil
+	}
 }

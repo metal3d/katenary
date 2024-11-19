@@ -1,6 +1,9 @@
 package generator
 
-import "regexp"
+import (
+	"katenary/generator/labels"
+	"regexp"
+)
 
 var (
 	// find all labels starting by __replace_ and ending with ":"
@@ -11,6 +14,6 @@ var (
 
 	// Standard annotationss
 	Annotations = map[string]string{
-		labelName("version"): Version,
+		labels.LabelName("version"): Version,
 	}
 )

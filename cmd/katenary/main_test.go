@@ -10,7 +10,7 @@ func TestBuildCommand(t *testing.T) {
 	if rootCmd.Use != "katenary" {
 		t.Errorf("Expected rootCmd.Use to be katenary, got %s", rootCmd.Use)
 	}
-	numCommands := 5
+	numCommands := 6
 	if len(rootCmd.Commands()) != numCommands {
 		t.Errorf("Expected %d command, got %d", numCommands, len(rootCmd.Commands()))
 	}

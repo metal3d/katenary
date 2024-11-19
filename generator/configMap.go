@@ -1,7 +1,8 @@
 package generator
 
 import (
-	"katenary/generator/labelStructs"
+	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 // FileMapUsage is the usage of the filemap.
@@ -74,7 +74,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 	}
 
 	// get the secrets from the labels
-	secrets, err := labelStructs.SecretsFrom(service.Labels[LabelSecrets])
+	secrets, err := labelStructs.SecretsFrom(service.Labels[labels.LabelSecrets])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 		drop[secret] = true
 	}
 	// get the label values from the labels
-	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
+	varDescriptons := utils.GetValuesFromLabel(service, labels.LabelValues)
 	for value := range varDescriptons {
 		labelValues = append(labelValues, value)
 	}
@@ -99,7 +99,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 	if !forFile {
 		// do not bind env variables to the configmap
 		// remove the variables that are already defined in the environment
-		if l, ok := service.Labels[LabelMapEnv]; ok {
+		if l, ok := service.Labels[labels.LabelMapEnv]; ok {
 			envmap, err := labelStructs.MapEnvFrom(l)
 			if err != nil {
 				log.Fatal("Error parsing map-env", err)
@@ -232,9 +232,5 @@ func (c *ConfigMap) SetData(data map[string]string) {
 
 // Yaml returns the yaml representation of the configmap
 func (c *ConfigMap) Yaml() ([]byte, error) {
-	if o, err := yaml.Marshal(c); err != nil {
-		return nil, err
-	} else {
-		return UnWrapTPL(o), nil
-	}
+	return ToK8SYaml(c)
 }

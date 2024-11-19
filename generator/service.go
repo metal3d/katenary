@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/yaml"
 )
 
 var _ Yaml = (*Service)(nil)
@@ -80,11 +79,11 @@ func (s *Service) Filename() string {
 
 // Yaml returns the yaml representation of the service.
 func (s *Service) Yaml() ([]byte, error) {
-	y, err := yaml.Marshal(s)
-	if err != nil {
+	var y []byte
+	var err error
+	if y, err = ToK8SYaml(s); err != nil {
 		return nil, err
 	}
-	y = UnWrapTPL(y)
 
 	lines := []string{}
 	for _, line := range strings.Split(string(y), "\n") {

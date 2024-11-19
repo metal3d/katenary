@@ -2,9 +2,10 @@ package generator
 
 import (
 	"fmt"
+	"katenary/generator/labels"
 )
 
-var componentLabel = labelName("component")
+var componentLabel = labels.LabelName("component")
 
 // GetLabels returns the labels for a service. It uses the appName to replace the __replace__ in the labels.
 // This is used to generate the labels in the templates.

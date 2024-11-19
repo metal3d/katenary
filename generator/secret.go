@@ -2,14 +2,13 @@ package generator
 
 import (
 	"encoding/base64"
-	"fmt"
+	"katenary/generator/labels"
 	"katenary/utils"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 var (
@@ -45,17 +44,9 @@ func NewSecret(service types.ServiceConfig, appName string) *Secret {
 
 	// check if the value should be in values.yaml
 	valueList := []string{}
-	varDescriptons := utils.GetValuesFromLabel(service, LabelValues)
+	varDescriptons := utils.GetValuesFromLabel(service, labels.LabelValues)
 	for value := range varDescriptons {
 		valueList = append(valueList, value)
-	}
-
-	// wrap values with quotes
-	for _, value := range service.Environment {
-		if value == nil {
-			continue
-		}
-		*value = fmt.Sprintf(`"%s"`, *value)
 	}
 
 	for _, value := range valueList {
@@ -80,7 +71,15 @@ func (s *Secret) AddData(key, value string) {
 	if value == "" {
 		return
 	}
-	s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
+	valuesLabels := utils.GetValuesFromLabel(s.service, labels.LabelValues)
+	if _, ok := valuesLabels[key]; ok {
+		// the value should be in values.yaml
+		s.Data[key] = []byte(`{{ tpl .Values.` + s.service.Name + `.environment.` + key + ` $ | b64enc }}`)
+	} else {
+		encoded := base64.StdEncoding.EncodeToString([]byte(value))
+		s.Data[key] = []byte(encoded)
+	}
+	// s.Data[key] = []byte(`{{ tpl ` + value + ` $ | b64enc }}`)
 }
 
 // Filename returns the filename of the secret.
@@ -97,11 +96,11 @@ func (s *Secret) SetData(data map[string]string) {
 
 // Yaml returns the yaml representation of the secret.
 func (s *Secret) Yaml() ([]byte, error) {
-	y, err := yaml.Marshal(s)
-	if err != nil {
+	var y []byte
+	var err error
+	if y, err = ToK8SYaml(s); err != nil {
 		return nil, err
 	}
-	y = UnWrapTPL(y)
 
 	// replace the b64 value by the real value
 	for _, value := range s.Data {
