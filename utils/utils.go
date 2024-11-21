@@ -198,3 +198,9 @@ func EncodeBasicYaml(data any) ([]byte, error) {
 func FixedResourceName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
 }
+
+// AsResourceName returns a resource name with underscores to respect the kubernetes naming convention.
+// It's the opposite of FixedResourceName.
+func AsResourceName(name string) string {
+	return strings.ReplaceAll(name, "-", "_")
+}

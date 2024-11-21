@@ -273,7 +273,7 @@ func buildVolumes(service types.ServiceConfig, chart *HelmChart, deployments map
 		}
 		switch v.Type {
 		case "volume":
-			v.Source = strings.ReplaceAll(v.Source, "-", "_")
+			v.Source = utils.AsResourceName(v.Source)
 			pvc := NewVolumeClaim(service, v.Source, appName)
 
 			// if the service is integrated in another deployment, we need to add the volume
