@@ -87,6 +87,7 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			if target, ok := deployments[samepod]; ok {
 				target.AddContainer(*service)
 				target.BindFrom(*service, deployments[service.Name])
+				target.SetEnvFrom(*service, appName)
 				delete(deployments, service.Name)
 			} else {
 				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, labels.LabelSamePod)

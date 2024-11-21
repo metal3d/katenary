@@ -405,7 +405,11 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 		if strings.Contains(volume, "mountPath: ") {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(volume))
-			varName := d.volumeMap[volumeName]
+			varName, ok := d.volumeMap[volumeName]
+			if !ok {
+				// this case happens when the volume is a "bind" volume comming from a "same-pod" service.
+				continue
+			}
 			varName = strings.ReplaceAll(varName, "-", "_")
 			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + volume
 			changing = true
