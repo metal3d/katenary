@@ -42,6 +42,12 @@ var (
 
 	// parsed yaml
 	labelFullHelp map[string]Help
+
+	//go:embed help-template.tpl
+	helpTemplatePlain string
+
+	//go:embed help-template.md.tpl
+	helpTemplateMarkdown string
 )
 
 // Label is a katenary label to find in compose files.
@@ -95,9 +101,6 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	help.Example = strings.TrimPrefix(help.Example, "\n")
 	help.Short = strings.TrimPrefix(help.Short, "\n")
 
-	// get help template
-	helpTemplate := getHelpTemplate(asMarkdown)
-
 	if asMarkdown {
 		// enclose templates in backticks
 		help.Long = regexp.MustCompile(`\{\{(.*?)\}\}`).ReplaceAllString(help.Long, "`{{$1}}`")
@@ -108,6 +111,15 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 		help.Long = strings.ReplaceAll(help.Long, "<code>", "")
 		help.Long = strings.ReplaceAll(help.Long, "</code>", "")
 		help.Long = utils.WordWrap(help.Long, 80)
+	}
+
+	// get help template
+	var helpTemplate string
+	switch asMarkdown {
+	case true:
+		helpTemplate = helpTemplateMarkdown
+	case false:
+		helpTemplate = helpTemplatePlain
 	}
 
 	var buf bytes.Buffer
@@ -205,29 +217,6 @@ func generateTableHeaderSeparator(maxNameLength, maxDescriptionLength, maxTypeLe
 		strings.Repeat("-", maxDescriptionLength),
 		strings.Repeat("-", maxTypeLength),
 	)
-}
-
-func getHelpTemplate(asMarkdown bool) string {
-	if asMarkdown {
-		return `## {{ .KatenaryPrefix }}/{{ .Name }}
-
-{{ .Help.Short }}
-
-**Type**: ` + "`" + `{{ .Help.Type }}` + "`" + `
-
-{{ .Help.Long }}
-
-**Example:**` + "\n\n```yaml\n" + `{{ .Help.Example }}` + "\n```\n"
-	}
-
-	return `{{ .KatenaryPrefix }}/{{ .Name }}: {{ .Help.Short }}
-Type: {{ .Help.Type }}
-
-{{ .Help.Long }}
-
-Example:
-{{ .Help.Example }}
-`
 }
 
 func Prefix() string {
