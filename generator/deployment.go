@@ -585,10 +585,12 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 
 func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container
 	}(d, container, index)
-	if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
+
+	if _, found := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !found {
 		utils.Warn(
 			"Bind volumes are not supported yet, " +
 				"excepting for those declared as " +
