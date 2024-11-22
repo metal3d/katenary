@@ -107,6 +107,19 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 		return err
 	}
 	val := strings.TrimSpace(string(c))
+	if labelName == labels.LabelIngress {
+		// special case, values must be set from some defaults
+		ing, err := labelStructs.IngressFrom(val)
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
+		c, err := yaml.Marshal(ing)
+		if err != nil {
+			return err
+		}
+		val = strings.TrimSpace(string(c))
+	}
 
 	service.Labels[labelName] = val
 	return nil
