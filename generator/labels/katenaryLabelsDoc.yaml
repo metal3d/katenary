@@ -293,6 +293,7 @@
     in a "same pod" logic. For example to let PHP-FPM and Nginx share the same direcotory.
 
     This will create:
+
     - an `emptyDir` volume in the deployment
     - a `voumeMount` in the pod for **each container**
     - a `initContainer` for each definition
