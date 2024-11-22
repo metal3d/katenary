@@ -9,7 +9,7 @@
 Tired of manual conversions? Katenary harnesses the labels from your "compose" file to craft complete Helm Charts
 effortlessly, saving you time and energy.
 
-🛠️ Simple autmated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding
+🛠️ Simple automated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding
 and Helm Chart creation.
 
 💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call `katenary convert`
@@ -21,18 +21,18 @@ and let the magic happen.
 
 # What is it?
 
-Katenary is a tool made to help you to transform "compose" files (`compose.yaml`, `docker-compose.yml`, `podman-compose.yml`...) to
-complete and production ready [Helm Chart](https://helm.sh).
+Katenary is a tool made to help you to transform "compose" files (`compose.yaml`, `docker-compose.yml`,
+`podman-compose.yml`...) to complete and production ready [Helm Chart](https://helm.sh).
 
 You'll be able to deploy your project in [:material-kubernetes: Kubernetes](https://kubernetes.io) in a few seconds
 (of course, more if you need to tweak with labels).
 
-It uses your current file and optionnaly labels to configure the result.
+It uses your current file and optionally labels to configure the result.
 
-It's an opensource project, under MIT licence, originally partially developped at [Smile](https://www.smile.eu).  
+It's an open source project, under MIT license, originally partially developed at [Smile](https://www.smile.eu).
 
-Today, it's partially developped in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
-and **will stay an opensource and free (as freedom) project**. We are convinced that the best way to make it better is to
+Today, it's partially developed in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
+and **will stay an open source and free (as freedom) project**. We are convinced that the best way to make it better is to
 share it with the community.
 
 <div id="klee">
@@ -46,9 +46,9 @@ code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](h
 
 ## Install Katenary
 
-Katenary is developped using the :fontawesome-brands-golang:{ .gopher } [Go](https://go.dev) language.
+Katenary is developed using the :fontawesome-brands-golang:{ .gopher } [Go](https://go.dev) language.
 The binary is statically linked, so you can simply download it from the [release
-page](https://github.com/metal3d/katenary/releases) of the project in GutHub.
+page](https://github.com/metal3d/katenary/releases) of the project in GitHub.
 
 You need to select the right binary for your operating system and architecture, and copy the binary in a directory
 that is in your `PATH`.
@@ -61,7 +61,7 @@ sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install
 ```
 
 !!! Info "Upgrading is integrated to the `katenary` command"
-    Katenary propose a `upgrade` subcommand to update the current binary to the latest stable release.
+    Katenary propose a `upgrade` sub-command to update the current binary to the latest stable release.
 
     Of course, you need to install Katenary once :smile:
 
@@ -122,18 +122,18 @@ Anyway, it's too late to change the name now :smile:
 ## Special thanks to
 
 I really want to thank all the contributors, testers, and of course, the authors of the packages and tools that are used
-in this project. There is too many to list here. Katenary can works because of all these people. Open source is a great
+in this project. There is too many to list here. Katenary can work because of all these people. Open source is a great
 thing! :heart:
 
 !!! Edit "Special thanks"
 
     **Katenary is built with:** <br /> 
 
-    <a href="https://go.dev" target="_blank">:fontawesome-brands-golang:{ .go-logo }</a> 
+    <a href="https://go.dev" target="_blank">:fontawesome-brands-golang:{ .go-logo }</a>
 
-    Go is an open source programming language that makes it easy to build simple, reliable, and efficient software. Because Docker, Podman,
-    Kubernetes, and Helm are written in Go, Katenary is also written in Go and borrows packages from these projects to
-    make it as efficient as possible.
+    Go is an open source programming language that makes it easy to build simple, reliable, and efficient software.
+    Because Docker, Podman, Kubernetes, and Helm are written in Go, Katenary is also written in Go and borrows packages
+    from these projects to make it as efficient as possible.
 
     Thanks to Kubernetes to provide [Kind](https://kind.sigs.k8s.io) that is used to test Katenary locally.
 
@@ -142,17 +142,17 @@ thing! :heart:
     Katenary can progress because of all these people. All contributions, as comments, issues, pull requests and
     feedbacks are welcome.
 
-    **Everything was also possible because of:** <br /> 
+    **Everything was also possible because of:** <br />
 
     <ul>
       <li><a href="https://helm.sh" target="_blank"><img src="https://helm.sh/img/helm.svg" style="height: 1rem"/>
-      Helm</a> that is the main toppic of Katenary, Kubernetes is easier to use with it.</li> 
+      Helm</a> that is the main toppic of Katenary, Kubernetes is easier to use with it.</li>
       <li><a href="https://cobra.dev/"><img src="https://cobra.dev/home/logo.png" style="height: 1rem"/> Cobra</a> that
       makes command, subcommand and completion possible for Katenary with ease.</li>
       <li>Podman, Docker, Kubernetes that are the main tools that Katenary is made for.</li>
     </ul>
 
-    **Documentation is built with:** <br /> 
+    **Documentation is built with:** <br />
 
     <a href="https://www.mkdocs.org/" target="_blank">MkDocs</a> using <a
     href="https://squidfunk.github.io/mkdocs-material/" target="_blank">Material for MkDocs</a> theme template.

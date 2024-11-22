@@ -59,4 +59,8 @@ nav:
     - Generator: 
       - Index: packages/generator.md
       - ExtraFiles: packages/generator/extrafiles.md
-      - LabelStructs: packages/generator/labelStructs.md
+      - labels:
+        - packages/generator/labels.md
+        - LabelStructs: packages/generator/labels/labelStructs.md
+      - KatenaryFile: packages/generator/katenaryfile.md
+

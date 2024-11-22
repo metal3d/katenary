@@ -23,7 +23,7 @@ Kompose is able to generate Helm charts, but [it could be not the case in future
 task, and we can confirm. Katenary takes a lot of time to be developed and maintained. This issue mentions Katenary as
 an alternative to Helm chart generation :smile:
 
-The project is focused on Kubernetes manifests and proposes to use "kusomize" to adapt the manifests. Helm seems to be
+The project is focused on Kubernetes manifests and proposes to use "Kustomize" to adapt the manifests. Helm seems to be
 not the priority.
 
 Anyway, before this decision, the Helm chart generation was not what we expected. We wanted to have a more complete
@@ -41,7 +41,7 @@ your `docker-compose` files to Kubernetes manifests, but if you want to use Helm
 
 ## Why not using "one label" for all the configuration?
 
-That was a dicsussion I had with my colleagues. The idea was to use a single label to store all the configuration.
+That was a discussion I had with my colleagues. The idea was to use a single label to store all the configuration.
 But, it's not a good idea.
 
 Sometimes, you will have a long list of things to configure, like ports, ingress, dependencies, etc. It's better to have
@@ -78,7 +78,8 @@ There is no reason to use Rust for this project.
 Yes, it's a possibility. But, it's not a priority. We have a lot of things to do before. We need to stabilize the
 project, to have a good documentation, to have a good test coverage, and to have a good community.
 
-But, in a not so far future, we could have a GUI. The choice of [Fyne.io](https://fyne.io) is already made and we tested some concepts.
+But, in a not so far future, we could have a GUI. The choice of [Fyne.io](https://fyne.io) is already made, and we
+tested some concepts.
 
 ## I'm rich (or not), I want to help you. How can I do?
 
@@ -86,13 +87,13 @@ You can help us in many ways.
 
 - The first things we really need, more than money, more than anything else, is to have feedback. If you use Katenary,
 if you have some issues, if you have some ideas, please open an issue on the [GitHub repository](https://github.com/metal3d/katenary).
-- The second things is to help us to fix issues. If you're a Go developper, or if you want to fix the documentation,
+- The second thing is to help us to fix issues. If you're a Go developer, or if you want to fix the documentation,
 your help is greatly appreciated.
 - And then, of course, we need money, or sponsors.
 
 ### If you're a company
 
-We will be happy to communicate your help by putting your logo on the website and in the documentaiton. You can sponsor
+We will be happy to communicate your help by putting your logo on the website and in the documentation. You can sponsor
 us by giving us some money, or by giving us some time of your developers, or leaving us some time to work on the project.
 
 ### If you're an individual

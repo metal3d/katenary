@@ -1,11 +1,11 @@
 # Why those dependencies?
 
-Katenary uses `compose-go` and several kubernetes official packages.
+Katenary uses `compose-go` and several Kubernetes official packages.
 
 - `github.com/compose-spec/compose-go`: to parse compose files. It ensures :
     - that the project respects the "compose" specification
-    - that Katenary uses the "compose" struct exactly the same way  `podman compose` or `docker copose` does
-- `github.com/spf13/cobra`: to parse command line arguments, subcommands and flags. It also generates completion for
+    - that Katenary uses the "compose" struct exactly the same way `podman compose` or `docker copose` does
+- `github.com/spf13/cobra`: to parse command line arguments, sub-commands and flags. It also generates completion for
   bash, zsh, fish and PowerShell.
 - `github.com/thediveo/netdb`: to get the standard names of a service from its port number
 - `gopkg.in/yaml.v3`:

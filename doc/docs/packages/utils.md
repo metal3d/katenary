@@ -8,6 +8,15 @@ import "katenary/utils"
 
 Utils package provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
 
+## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L204>)
+
+```go
+func AsResourceName(name string) string
+```
+
+AsResourceName returns a resource name with underscores to respect the kubernetes naming convention. It's the opposite of FixedResourceName.
+
+<a name="Confirm"></a>
 ## func [Confirm](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L174>)
 
 ```go
