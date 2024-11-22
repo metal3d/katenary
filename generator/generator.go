@@ -155,7 +155,9 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	for _, s := range podToMerge {
 		// get the target service
 		target := services[s.Name]
-		delete(chart.Templates, target.Filename())
+		if target != nil {
+			delete(chart.Templates, target.Filename())
+		}
 	}
 
 	// compute all needed resplacements in YAML templates
