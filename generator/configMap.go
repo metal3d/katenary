@@ -109,14 +109,14 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 				done[key] = true
 			}
 		}
-	}
-	for key, env := range service.Environment {
-		_, isDropped := drop[key]
-		_, isDone := done[key]
-		if isDropped || isDone {
-			continue
+		for key, env := range service.Environment {
+			_, isDropped := drop[key]
+			_, isDone := done[key]
+			if isDropped || isDone {
+				continue
+			}
+			cm.AddData(key, *env)
 		}
-		cm.AddData(key, *env)
 	}
 
 	return cm
@@ -168,7 +168,6 @@ func (c *ConfigMap) AppendDir(path string) {
 	if err != nil {
 		log.Fatalf("Path %s does not exist\n", path)
 	}
-	log.Printf("Appending files from %s to configmap\n", path)
 	// recursively read all files in the path and add them to the configmap
 	if stat.IsDir() {
 		files, err := os.ReadDir(path)
