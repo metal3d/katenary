@@ -32,6 +32,7 @@ const (
 	LabelConfigMapFiles Label = KatenaryLabelPrefix + "/configmap-files"
 	LabelCronJob        Label = KatenaryLabelPrefix + "/cronjob"
 	LabelEnvFrom        Label = KatenaryLabelPrefix + "/env-from"
+	LabelExchangeVolume Label = KatenaryLabelPrefix + "/exchange-volumes"
 )
 
 var (

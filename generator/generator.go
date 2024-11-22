@@ -79,6 +79,11 @@ func Generate(project *types.Project) (*HelmChart, error) {
 		}
 	}
 
+	// if we have built exchange volumes, we need to moint them in each deployment
+	for _, d := range deployments {
+		d.MountExchangeVolumes()
+	}
+
 	// drop all "same-pod" deployments because the containers and volumes are already
 	// in the target deployment
 	for _, service := range podToMerge {
@@ -87,7 +92,10 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			if target, ok := deployments[samepod]; ok {
 				target.AddContainer(*service)
 				target.BindFrom(*service, deployments[service.Name])
-				target.SetEnvFrom(*service, appName)
+				target.SetEnvFrom(*service, appName, true)
+				// copy all init containers
+				initContainers := deployments[service.Name].Spec.Template.Spec.InitContainers
+				target.Spec.Template.Spec.InitContainers = append(target.Spec.Template.Spec.InitContainers, initContainers...)
 				delete(deployments, service.Name)
 			} else {
 				log.Printf("service %[1]s is declared as %[2]s, but %[2]s is not defined", service.Name, labels.LabelSamePod)

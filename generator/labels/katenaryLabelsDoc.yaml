@@ -284,4 +284,40 @@
         {{ .KatenaryPrefix }}/env-from: |-
             - myservice1
 
+"exchange-volumes":
+  short: Add exchange volumes (empty directory on the node) to share data
+  type: "list of objects"
+  long: |-
+    This label allows sharing data between containres. The volume is created in 
+    the node and mounted in the pod. It is useful to share data between containers
+    in a "same pod" logic. For example to let PHP-FPM and Nginx share the same direcotory.
+
+    This will create:
+    - an `emptyDir` volume in the deployment
+    - a `voumeMount` in the pod for **each container**
+    - a `initContainer` for each definition
+
+    Fields:
+      - name: the name of the volume (manadatory)
+      - mountPath: the path where the volume is mounted in the pod (optional, default is `/opt`)
+      - init: a command to run to initialize the volume with data (optional)
+
+    !!! Warning
+        This is highly experimental. This is mainly useful when using the "same-pod" label.
+
+  example: |-
+    nginx:
+      # ...
+      labels;
+        {{ .KatenaryPrefix }}/exchange-volumes: |-
+          - name: php-fpm
+            mountPath: /var/www/html
+    php:
+      # ...
+      labels:
+        {{ .KatenaryPrefix }}/exchange-volumes: |-
+          - name: php-fpm
+            mountPath: /opt
+            init: cp -ra /var/www/html/* /opt
+
 # vim: ft=gotmpl.yaml
