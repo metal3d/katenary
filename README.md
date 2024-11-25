@@ -14,7 +14,8 @@ effortlessly, saving you time and energy.
 🛠️ Simple automated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding
 and Helm Chart creation.
 
-💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call `katenary convert` and let the magic happen.
+💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things.
+Then call `katenary convert` and let the magic happen.
 
 # What ?
 
@@ -158,7 +159,7 @@ services:
       katenary.v3/ingress: |-
         hostname: myapp.example.com
         port: 80
-      katenary.v3/mapenv: |-
+      katenary.v3/map-env: |-
         # make adaptations, DB_HOST environment is actually the service name
         DB_HOST: '{{ .Release.Name }}-database'
 
