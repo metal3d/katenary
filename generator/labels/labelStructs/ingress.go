@@ -2,6 +2,7 @@ package labelStructs
 
 import (
 	"fmt"
+	"katenary/utils"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,14 +23,11 @@ type Ingress struct {
 
 // IngressFrom creates a new Ingress from a compose service.
 func IngressFrom(data string) (*Ingress, error) {
-	strPtr := func(s string) *string {
-		return &s
-	}
 	mapping := Ingress{
 		Hostname: "",
-		Path:     strPtr("/"),
+		Path:     utils.StrPtr("/"),
 		Enabled:  false,
-		Class:    strPtr("-"),
+		Class:    utils.StrPtr("-"),
 		Port:     nil,
 		TLS:      &TLS{Enabled: true},
 	}
