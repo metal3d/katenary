@@ -33,7 +33,7 @@ type ConvertOptions struct {
 }
 
 // HelmChart is a Helm Chart representation. It contains all the
-// tempaltes, values, versions, helpers...
+// templates, values, versions, helpers...
 type HelmChart struct {
 	Templates    map[string]*ChartTemplate `yaml:"-"`
 	Values       map[string]any            `yaml:"-"`

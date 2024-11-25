@@ -34,7 +34,7 @@ type IngressValue struct {
 	TLS         TLS               `yaml:"tls"`
 }
 
-// Value will be saved in values.yaml. It contains configuraiton for all deployment and services.
+// Value will be saved in values.yaml. It contains configuration for all deployment and services.
 type Value struct {
 	Repository      *RepositoryValue             `yaml:"repository,omitempty"`
 	Persistence     map[string]*PersistenceValue `yaml:"persistence,omitempty"`

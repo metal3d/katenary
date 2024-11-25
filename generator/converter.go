@@ -53,7 +53,7 @@ const imagePullSecretHelp = `
 # e.g.
 # pullSecrets:
 # - name: regcred
-# You are, for now, repsonsible for creating the secret.
+# You are, for now, responsible for creating the secret.
 `
 
 const imagePullPolicyHelp = `# imagePullPolicy allows you to specify a policy to cache or always pull an image.
