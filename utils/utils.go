@@ -70,11 +70,6 @@ func Wrap(src, above, below string) string {
 	return spaces + above + "\n" + src + "\n" + spaces + below
 }
 
-// WrapBytes wraps a byte array with a byte array above and below. It will respect the indentation of the src string.
-func WrapBytes(src, above, below []byte) []byte {
-	return []byte(Wrap(string(src), string(above), string(below)))
-}
-
 // GetServiceNameByPort returns the service name for a port. It the service name is not found, it returns an empty string.
 func GetServiceNameByPort(port int) string {
 	name := ""
@@ -162,14 +157,6 @@ func WordWrap(text string, lineWidth int) string {
 	return wordwrap.WrapString(text, uint(lineWidth))
 }
 
-func MapKeys(m map[string]interface{}) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
 // Confirm asks a question and returns true if the answer is y.
 func Confirm(question string, icon ...Icon) bool {
 	if len(icon) > 0 {
@@ -197,4 +184,10 @@ func EncodeBasicYaml(data any) ([]byte, error) {
 // FixedResourceName returns a resource name without underscores to respect the kubernetes naming convention.
 func FixedResourceName(name string) string {
 	return strings.ReplaceAll(name, "_", "-")
+}
+
+// AsResourceName returns a resource name with underscores to respect the kubernetes naming convention.
+// It's the opposite of FixedResourceName.
+func AsResourceName(name string) string {
+	return strings.ReplaceAll(name, "-", "_")
 }

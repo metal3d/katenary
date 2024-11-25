@@ -4,10 +4,77 @@ Basically, you can use `katenary` to transpose a docker-compose file (or any com
 `podman-compose` and `docker-compose`) to a configurable Helm Chart. This resulting helm chart can be installed with
 `helm` command to your Kubernetes cluster.
 
+For very basic compose files, without any specific configuration, Katenary will create a working helm chart using the
+simple command line:
+
+```bash
+katenary convert
+```
+
+This will create a `chart` directory with the helm chart inside.
+
+But, in general, you will need to add a few configuration to help Katenary to transpose the compose file to a working
+helm chart.
+
+There are two ways to configure Katenary:
+
+- Using the compose files, adding labels to the services
+- Using a specific file named `katenary.yaml`
+
+The Katenary file `katenary.yaml` has benefits over the labels in the compose file:
+
+- you can validate the configuration with a schema, and use completion in your editor
+- you separate the configuration and leave the compose file "intact"
+- the syntax is a bit simpler, instead of using `katenary.v3/xxx: |-" you can use`xxx: ...`
+
+But: **this implies that you have to maintain two files if the compose file changes.**
+
+For example. With "labels", you should do:
+
+```yaml
+# in compose file
+services:
+  webapp:
+    image: php:7-apache
+    ports:
+    - 8080:80
+    environment:
+      DB_HOST: database
+    labels:
+    katenary.v3/ingress: |-
+        hostname: myapp.example.com
+        port: 8080
+    katenary.v3/map-env: |-
+        DB_HOST: "{{ .Release.Name }}-database"
+
+```
+
+Using a Katenary file, you can do:
+
+```yaml
+# in compose file, no need to add labels
+services:
+  webapp:
+    image: php:7-apache
+    ports:
+    - 8080:80
+    environment:
+      DB_HOST: database
+
+# in katenary.yaml
+webapp:
+  ingress:
+    hostname: myapp.example.com
+    port: 8080
+    
+  map-env:
+    DB_HOST: "{{ .Release.Name }}-database"
+```
+
 !!! Warning "YAML in multiline label"
 
-    Compose only accept text label. So, to put a complete YAML content in the target label, you need to use a pipe char (`|` or `|-`)
-    and to **indent** your content.
+    Compose only accept text label. So, to put a complete YAML content in the target label, 
+    you need to use a pipe char (`|` or `|-`) and to **indent** your content.
 
     For example :
 
@@ -26,14 +93,15 @@ Basically, you can use `katenary` to transpose a docker-compose file (or any com
 Katenary transforms compose services this way:
 
 - Takes the service and create a "Deployment" file
-- if a port is declared, Katenary creates a service (ClusterIP)
-- if a port is exposed, Katenary creates a service (NodePort)
-- environment variables will be stored inside a configMap
+- if a port is declared, Katenary creates a service (`ClusterIP`)
+- if a port is exposed, Katenary creates a service (`NodePort`)
+- environment variables will be stored inside a `ConfigMap`
 - image, tags, and ingresses configuration are also stored in `values.yaml` file
-- if named volumes are declared, Katenary create PersistentVolumeClaims - not enabled in values file
+- if named volumes are declared, Katenary create `PersistentVolumeClaims` - not enabled in values file
 - `depends_on` needs that the pointed service declared a port. If not, you can use labels to inform Katenary
 
-For any other specific configuration, like binding local files as configMap, bind variables, add values with documentation, etc. You'll need to use labels.
+For any other specific configuration, like binding local files as `ConfigMap`, bind variables, add values with
+documentation, etc. You'll need to use labels.
 
 Katenary can also configure containers grouping in pods, declare dependencies, ignore some services, force variables as
 secrets, mount files as `configMap`, and many others things. To adapt the helm chart generation, you will need to use
@@ -100,7 +168,7 @@ services:
 
 In this case, `webapp` needs to know the `database` port because the `depends_on` points on it and Kubernetes has not
 (yet) solution to check the database startup. Katenary wants to create a `initContainer` to hit on the related service.
-So, instead of exposing the port in the compose definition, let's declare this to katenary with labels:
+So, instead of exposing the port in the compose definition, let's declare this to Katenary with labels:
 
 ```yaml
 version: "3"

@@ -33,7 +33,7 @@ type ConvertOptions struct {
 }
 
 // HelmChart is a Helm Chart representation. It contains all the
-// tempaltes, values, versions, helpers...
+// templates, values, versions, helpers...
 type HelmChart struct {
 	Templates    map[string]*ChartTemplate `yaml:"-"`
 	Values       map[string]any            `yaml:"-"`
@@ -209,10 +209,21 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 	// generate the cronjob if needed
 	chart.setCronJob(service, appName)
 
+	if exchange, ok := service.Labels[labels.LabelExchangeVolume]; ok {
+		// we need to add a volume and a mount point
+		ex, err := labelStructs.NewExchangeVolumes(exchange)
+		if err != nil {
+			return err
+		}
+		for _, exchangeVolume := range ex {
+			d.AddLegacyVolume("exchange-"+exchangeVolume.Name, exchangeVolume.Type)
+			d.exchangesVolumes[service.Name] = exchangeVolume
+		}
+	}
+
 	// get the same-pod label if exists, add it to the list.
 	// We later will copy some parts to the target deployment and remove this one.
 	if samePod, ok := service.Labels[labels.LabelSamePod]; ok && samePod != "" {
-		log.Printf("Found same-pod label for %s", service.Name)
 		podToMerge[samePod] = &service
 	}
 

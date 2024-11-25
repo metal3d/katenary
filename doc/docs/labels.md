@@ -7,22 +7,23 @@ Katenary will try to Unmarshal these labels.
 ## Label list and types
 
 <!-- START_LABEL_DOC : do not remove this tag !-->
-| Label name                   | Description                                            | Type                  |
-| ---------------------------- | ------------------------------------------------------ | --------------------- |
-| `katenary.v3/configmap-files` | Add files to the configmap.                            | list of strings       |
-| `katenary.v3/cronjob`        | Create a cronjob from the service.                     | object                |
-| `katenary.v3/dependencies`   | Add Helm dependencies to the service.                  | list of objects       |
-| `katenary.v3/description`    | Description of the service                             | string                |
-| `katenary.v3/env-from`       | Add environment variables from antoher service.        | list of strings       |
-| `katenary.v3/health-check`   | Health check to be added to the deployment.            | object                |
-| `katenary.v3/ignore`         | Ignore the service                                     | bool                  |
-| `katenary.v3/ingress`        | Ingress rules to be added to the service.              | object                |
-| `katenary.v3/main-app`       | Mark the service as the main app.                      | bool                  |
-| `katenary.v3/map-env`        | Map env vars from the service to the deployment.       | object                |
-| `katenary.v3/ports`          | Ports to be added to the service.                      | list of uint32        |
-| `katenary.v3/same-pod`       | Move the same-pod deployment to the target deployment. | string                |
-| `katenary.v3/secrets`        | Env vars to be set as secrets.                         | list of string        |
-| `katenary.v3/values`         | Environment variables to be added to the values.yaml   | list of string or map |
+| Label name                    | Description                                                      | Type                  |
+| ----------------------------- | ---------------------------------------------------------------- | --------------------- |
+| `katenary.v3/configmap-files` | Add files to the configmap.                                      | list of strings       |
+| `katenary.v3/cronjob`         | Create a cronjob from the service.                               | object                |
+| `katenary.v3/dependencies`    | Add Helm dependencies to the service.                            | list of objects       |
+| `katenary.v3/description`     | Description of the service                                       | string                |
+| `katenary.v3/env-from`        | Add environment variables from antoher service.                  | list of strings       |
+| `katenary.v3/exchange-volumes` | Add exchange volumes (empty directory on the node) to share data | list of objects       |
+| `katenary.v3/health-check`    | Health check to be added to the deployment.                      | object                |
+| `katenary.v3/ignore`          | Ignore the service                                               | bool                  |
+| `katenary.v3/ingress`         | Ingress rules to be added to the service.                        | object                |
+| `katenary.v3/main-app`        | Mark the service as the main app.                                | bool                  |
+| `katenary.v3/map-env`         | Map env vars from the service to the deployment.                 | object                |
+| `katenary.v3/ports`           | Ports to be added to the service.                                | list of uint32        |
+| `katenary.v3/same-pod`        | Move the same-pod deployment to the target deployment.           | string                |
+| `katenary.v3/secrets`         | Env vars to be set as secrets.                                   | list of string        |
+| `katenary.v3/values`          | Environment variables to be added to the values.yaml             | list of string or map |
 
 <!-- STOP_LABEL_DOC : do not remove this tag !-->
 
@@ -33,7 +34,7 @@ Katenary will try to Unmarshal these labels.
 
 Add files to the configmap.
 
-**Type**: `list of strings`
+**Type**:  `list of strings`
 
 It makes a file or directory to be converted to one or more ConfigMaps 
 and mounted in the pod. The file or directory is relative to the 
@@ -59,11 +60,12 @@ labels:
     - ./conf.d
 ```
 
+
 ### katenary.v3/cronjob
 
 Create a cronjob from the service.
 
-**Type**: `object`
+**Type**:  `object`
 
 This adds a cronjob to the chart.
 
@@ -83,11 +85,12 @@ labels:
         schedule: "* */1 * * *" # or @hourly for example
 ```
 
+
 ### katenary.v3/dependencies
 
 Add Helm dependencies to the service.
 
-**Type**: `list of objects`
+**Type**:  `list of objects`
 
 Set the service to be, actually, a Helm dependency. This means that the 
 service will not be exported as template. The dependencies are added to 
@@ -129,11 +132,12 @@ labels:
           password: the secret password
 ```
 
+
 ### katenary.v3/description
 
 Description of the service
 
-**Type**: `string`
+**Type**:  `string`
 
 This replaces the default comment in values.yaml file to the given description. 
 It is useful to document the service and configuration.
@@ -149,11 +153,12 @@ labels:
     It can be multiline.
 ```
 
+
 ### katenary.v3/env-from
 
 Add environment variables from antoher service.
 
-**Type**: `list of strings`
+**Type**:  `list of strings`
 
 It adds environment variables from another service to the current service.
 
@@ -174,11 +179,55 @@ service2:
         - myservice1
 ```
 
+
+### katenary.v3/exchange-volumes
+
+Add exchange volumes (empty directory on the node) to share data
+
+**Type**:  `list of objects`
+
+This label allows sharing data between containres. The volume is created in 
+the node and mounted in the pod. It is useful to share data between containers
+in a "same pod" logic. For example to let PHP-FPM and Nginx share the same direcotory.
+
+This will create:
+
+- an `emptyDir` volume in the deployment
+- a `voumeMount` in the pod for **each container**
+- a `initContainer` for each definition
+
+Fields:
+  - name: the name of the volume (manadatory)
+  - mountPath: the path where the volume is mounted in the pod (optional, default is `/opt`)
+  - init: a command to run to initialize the volume with data (optional)
+
+!!! Warning
+    This is highly experimental. This is mainly useful when using the "same-pod" label.
+
+**Example:**
+
+```yaml
+nginx:
+  # ...
+  labels;
+    katenary.v3/exchange-volumes: |-
+      - name: php-fpm
+        mountPath: /var/www/html
+php:
+  # ...
+  labels:
+    katenary.v3/exchange-volumes: |-
+      - name: php-fpm
+        mountPath: /opt
+        init: cp -ra /var/www/html/* /opt
+```
+
+
 ### katenary.v3/health-check
 
 Health check to be added to the deployment.
 
-**Type**: `object`
+**Type**:  `object`
 
 Health check to be added to the deployment.
 
@@ -193,11 +242,12 @@ labels:
         port: 8080
 ```
 
+
 ### katenary.v3/ignore
 
 Ignore the service
 
-**Type**: `bool`
+**Type**:  `bool`
 
 Ingoring a service to not be exported in helm chart.
 
@@ -208,11 +258,12 @@ labels:
   katenary.v3/ignore: "true"
 ```
 
+
 ### katenary.v3/ingress
 
 Ingress rules to be added to the service.
 
-**Type**: `object`
+**Type**:  `object`
 
 Declare an ingress rule for the service. The port should be exposed or 
 declared with `katenary.v3/ports`.
@@ -226,17 +277,16 @@ labels:
     hostname: mywebsite.com (optional)
 ```
 
+
 ### katenary.v3/main-app
 
 Mark the service as the main app.
 
-**Type**: `bool`
+**Type**:  `bool`
 
 This makes the service to be the main application. Its image tag is 
-considered to be the 
-
-Chart appVersion and to be the defaultvalue in Pod container 
-image attribute.
+considered to be the Chart appVersion and to be the defaultvalue in Pod
+container image attribute.
 
 !!! Warning
     This label cannot be repeated in others services. If this label is
@@ -254,11 +304,12 @@ ghost:
     katenary.v3/main-app: true
 ```
 
+
 ### katenary.v3/map-env
 
 Map env vars from the service to the deployment.
 
-**Type**: `object`
+**Type**:  `object`
 
 Because you may need to change the variable for Kubernetes, this label
 forces the value to another. It is also particullary helpful to use a template 
@@ -281,11 +332,12 @@ labels:
     DB_HOST: '{{ include "__APP__.fullname" . }}-database'
 ```
 
+
 ### katenary.v3/ports
 
 Ports to be added to the service.
 
-**Type**: `list of uint32`
+**Type**:  `list of uint32`
 
 Only useful for services without exposed port. It is mandatory if the 
 service is a dependency of another service.
@@ -299,11 +351,12 @@ labels:
     - 8081
 ```
 
+
 ### katenary.v3/same-pod
 
 Move the same-pod deployment to the target deployment.
 
-**Type**: `string`
+**Type**:  `string`
 
 This will make the service to be included in another service pod. Some services 
 must work together in the same pod, like a sidecar or a proxy or nginx + php-fpm.
@@ -323,11 +376,12 @@ php:
     katenary.v3/same-pod: web
 ```
 
+
 ### katenary.v3/secrets
 
 Env vars to be set as secrets.
 
-**Type**: `list of string`
+**Type**:  `list of string`
 
 This label allows setting the environment variables as secrets. The variable 
 is removed from the environment and added to a secret object.
@@ -346,11 +400,12 @@ labels:
     - PASSWORD
 ```
 
+
 ### katenary.v3/values
 
 Environment variables to be added to the values.yaml
 
-**Type**: `list of string or map`
+**Type**:  `list of string or map`
 
 By default, all environment variables in the "env" and environment
 files are added to configmaps with the static values set. This label
@@ -381,5 +436,6 @@ labels:
         configure in values.yaml.
         It can be, of course,  a multiline text.
 ```
+
 
 <!-- STOP_DETAILED_DOC : do not remove this tag !-->

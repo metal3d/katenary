@@ -53,7 +53,7 @@ const imagePullSecretHelp = `
 # e.g.
 # pullSecrets:
 # - name: regcred
-# You are, for now, repsonsible for creating the secret.
+# You are, for now, responsible for creating the secret.
 `
 
 const imagePullPolicyHelp = `# imagePullPolicy allows you to specify a policy to cache or always pull an image.
@@ -395,23 +395,6 @@ func addMainTagAppDoc(values []byte, project *types.Project) []byte {
 	}
 
 	return []byte(strings.Join(lines, "\n"))
-}
-
-// addModeline adds a modeline to the values.yaml file to make sure that vim
-// will use the correct syntax highlighting.
-func addModeline(values []byte) []byte {
-	modeline := "# vi" + "m: ft=helm.gotmpl.yaml"
-
-	// if the values ends by `{{- end }}` we need to add the modeline before
-	lines := strings.Split(string(values), "\n")
-
-	if lines[len(lines)-1] == "{{- end }}" || lines[len(lines)-1] == "{{- end -}}" {
-		lines = lines[:len(lines)-1]
-		lines = append(lines, modeline, "{{- end }}")
-		return []byte(strings.Join(lines, "\n"))
-	}
-
-	return append(values, []byte(modeline)...)
 }
 
 func addResourceHelp(values []byte) []byte {

@@ -12,7 +12,7 @@ Since version v3, Katenary uses, in addition to `go-compose`, the `k8s` library 
 to work before transformation. Katenary adds Helm syntax entries to add loops, transformations, and conditions.
 
 We really try to follow best practices and code principles. But, Katenary needs a lot of workarounds and string
-manipulation during the process. There are, also, some drawbacks using standard k8s packages that makes a lot of type
+manipulation during the process. There are, also, some drawbacks using standard k8s packages that make a lot of type
 checks when generating the objects. We need to finalize the values after object generation.
 
 **This makes the coding a bit harder than simply converting from YAML to YAML.**
@@ -59,9 +59,9 @@ its associated service are still created. They are deleted last, once the merge 
 
 ## Conversion in "`generator`" package
 
-The `generator` package is where object struct are defined, and where the `Generate()` function is written.
+The `generator` package is where object struct are defined, and where you can find the `Generate()` function.
 
-The generation is made by using a `HelmChart` object:
+The generation fills `HelmChart` object using a loop:
 
 ```golang
 for _, service := range project.Services {
@@ -75,7 +75,7 @@ for _, service := range project.Services {
 ```
 
 **A lot** of string manipulations are made by each `Yaml()` methods. This is where you find the complex and impacting
-operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart Yaml content with template
+operations. The `Yaml` methods **don't return a valid YAML content**. This is a Helm Chart YAML content with template
 conditions, values and calls to helper templates.
 
 > The `Yaml()` methods, in each object, need contribution, help, fixes, enhancements... They work, but there is a lot of
@@ -92,11 +92,11 @@ For each source container linked to the destination:
 - we then copy the service port to the destination service
 - we finally remove the source service and deployment
 
-> The configmap, secrets, variables... are kept.
+> The `Configmap`, secrets, variables... are kept.
 
-It finaly computes the `helper` file.
+It finally computes the `helper` file.
 
-## Convertion command
+## Conversion command
 
 The `generator` works the same as described above. But the "convert" command makes some final steps:
 

@@ -191,3 +191,60 @@ volumes:
 		t.Errorf("Expected volume name to be data: %v", dt)
 	}
 }
+
+func TestExchangeVolume(t *testing.T) {
+	composeFile := `
+services:
+  app1:
+    image: nginx:1.29
+    labels:
+      %[1]s/exchange-volumes: |-
+        - name: data
+          mountPath: /var/www
+  app2:
+    image: foo:bar
+    labels:
+      %[1]s/same-pod: app1
+      %[1]s/exchange-volumes: |-
+        - name: data
+          mountPath: /opt
+          init: cp -r /var/www /opt
+`
+	composeFile = fmt.Sprintf(composeFile, labels.KatenaryLabelPrefix)
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+	output := internalCompileTest(t, "-s", "templates/app1/deployment.yaml")
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+	// the deployment should have a volume named "data"
+	volumes := dt.Spec.Template.Spec.Volumes
+	found := false
+	for v := range volumes {
+		if volumes[v].Name == "exchange-data" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Expected volume name to be data: %v", volumes)
+	}
+	mounted := 0
+	// we should have a volume mount for both containers
+	containers := dt.Spec.Template.Spec.Containers
+	for c := range containers {
+		for _, vm := range containers[c].VolumeMounts {
+			if vm.Name == "exchange-data" {
+				mounted++
+			}
+		}
+	}
+	if mounted != 2 {
+		t.Errorf("Expected 2 mounted volumes, got %d", mounted)
+	}
+}

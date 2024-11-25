@@ -106,3 +106,12 @@ h3[id*="katenaryio"] {
     z-index: 1;
   }
 }
+
+#klee {
+  filter: drop-shadow(0 0 16px var(--md-default-fg-color));
+  text-align: center;
+  padding: 1rem;
+}
+#klee svg {
+  zoom: 2;
+}

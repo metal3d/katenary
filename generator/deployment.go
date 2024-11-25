@@ -33,12 +33,13 @@ type ConfigMapMount struct {
 // Deployment is a kubernetes Deployment.
 type Deployment struct {
 	*appsv1.Deployment `yaml:",inline"`
-	chart              *HelmChart                 `yaml:"-"`
-	configMaps         map[string]*ConfigMapMount `yaml:"-"`
-	volumeMap          map[string]string          `yaml:"-"` // keep map of fixed named to original volume name
-	service            *types.ServiceConfig       `yaml:"-"`
-	defaultTag         string                     `yaml:"-"`
-	isMainApp          bool                       `yaml:"-"`
+	chart              *HelmChart                              `yaml:"-"`
+	configMaps         map[string]*ConfigMapMount              `yaml:"-"`
+	volumeMap          map[string]string                       `yaml:"-"` // keep map of fixed named to original volume name
+	service            *types.ServiceConfig                    `yaml:"-"`
+	defaultTag         string                                  `yaml:"-"`
+	isMainApp          bool                                    `yaml:"-"`
+	exchangesVolumes   map[string]*labelStructs.ExchangeVolume `yaml:"-"`
 }
 
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
@@ -90,8 +91,9 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 				},
 			},
 		},
-		configMaps: make(map[string]*ConfigMapMount),
-		volumeMap:  make(map[string]string),
+		configMaps:       make(map[string]*ConfigMapMount),
+		volumeMap:        make(map[string]string),
+		exchangesVolumes: map[string]*labelStructs.ExchangeVolume{},
 	}
 
 	// add containers
@@ -212,6 +214,27 @@ func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	}
 }
 
+func (d *Deployment) AddLegacyVolume(name, kind string) {
+	// ensure the volume is not present
+	for _, v := range d.Spec.Template.Spec.Volumes {
+		if v.Name == name {
+			return
+		}
+	}
+
+	// init
+	if d.Spec.Template.Spec.Volumes == nil {
+		d.Spec.Template.Spec.Volumes = []corev1.Volume{}
+	}
+
+	d.Spec.Template.Spec.Volumes = append(d.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	})
+}
+
 func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 	// find the volume in the binded deployment
 	for _, bindedVolume := range binded.Spec.Template.Spec.Volumes {
@@ -276,13 +299,26 @@ func (d *Deployment) Filename() string {
 }
 
 // SetEnvFrom sets the environment variables to a configmap. The configmap is created.
-func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
+func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, samePod ...bool) {
 	if len(service.Environment) == 0 {
 		return
+	}
+	inSamePod := false
+	if len(samePod) > 0 && samePod[0] {
+		inSamePod = true
 	}
 
 	drop := []string{}
 	secrets := []string{}
+
+	defer func() {
+		c, index := d.BindMapFilesToContainer(service, secrets, appName)
+		if c == nil || index == -1 {
+			log.Println("Container not found for service ", service.Name)
+			return
+		}
+		d.Spec.Template.Spec.Containers[index] = *c
+	}()
 
 	// secrets from label
 	labelSecrets, err := labelStructs.SecretsFrom(service.Labels[labels.LabelSecrets])
@@ -308,6 +344,10 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 		secrets = append(secrets, secret)
 	}
 
+	if inSamePod {
+		return
+	}
+
 	// for each values from label "values", add it to Values map and change the envFrom
 	// value to {{ .Values.<service>.<value> }}
 	for _, value := range labelValues {
@@ -330,10 +370,26 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	for _, value := range drop {
 		delete(service.Environment, value)
 	}
+}
 
+func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secrets []string, appName string) (*corev1.Container, int) {
 	fromSources := []corev1.EnvFromSource{}
 
-	if len(service.Environment) > 0 {
+	envSize := len(service.Environment)
+
+	for _, secret := range secrets {
+		for k := range service.Environment {
+			if k == secret {
+				envSize--
+			}
+		}
+	}
+
+	if envSize > 0 {
+		if service.Name == "db" {
+			log.Println("Service ", service.Name, " has environment variables")
+			log.Println(service.Environment)
+		}
 		fromSources = append(fromSources, corev1.EnvFromSource{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
@@ -356,7 +412,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
 	if container == nil {
 		utils.Warn("Container not found for service " + service.Name)
-		return
+		return nil, -1
 	}
 
 	container.EnvFrom = append(container.EnvFrom, fromSources...)
@@ -364,8 +420,30 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string) {
 	if container.Env == nil {
 		container.Env = []corev1.EnvVar{}
 	}
+	return container, index
+}
 
-	d.Spec.Template.Spec.Containers[index] = *container
+func (d *Deployment) MountExchangeVolumes() {
+	for name, ex := range d.exchangesVolumes {
+		for i, c := range d.Spec.Template.Spec.Containers {
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      "exchange-" + ex.Name,
+				MountPath: ex.MountPath,
+			})
+			if len(ex.Init) > 0 && name == c.Name {
+				d.Spec.Template.Spec.InitContainers = append(d.Spec.Template.Spec.InitContainers, corev1.Container{
+					Command: []string{"/bin/sh", "-c", ex.Init},
+					Image:   c.Image,
+					Name:    "exhange-init-" + name,
+					VolumeMounts: []corev1.VolumeMount{{
+						Name:      "exchange-" + ex.Name,
+						MountPath: ex.MountPath,
+					}},
+				})
+			}
+			d.Spec.Template.Spec.Containers[i] = c
+		}
+	}
 }
 
 // Yaml returns the yaml representation of the deployment.
@@ -405,7 +483,11 @@ func (d *Deployment) Yaml() ([]byte, error) {
 
 		if strings.Contains(volume, "mountPath: ") {
 			spaces = strings.Repeat(" ", utils.CountStartingSpaces(volume))
-			varName := d.volumeMap[volumeName]
+			varName, ok := d.volumeMap[volumeName]
+			if !ok {
+				// this case happens when the volume is a "bind" volume comming from a "same-pod" service.
+				continue
+			}
 			varName = strings.ReplaceAll(varName, "-", "_")
 			content[line] = spaces + `{{- if .Values.` + serviceName + `.persistence.` + varName + `.enabled }}` + "\n" + volume
 			changing = true
@@ -581,10 +663,12 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 
 func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
 	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container
 	}(d, container, index)
-	if _, ok := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !ok {
+
+	if _, found := tobind[volume.Source]; !isSamePod && volume.Type == "bind" && !found {
 		utils.Warn(
 			"Bind volumes are not supported yet, " +
 				"excepting for those declared as " +
