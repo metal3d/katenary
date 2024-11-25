@@ -24,17 +24,6 @@ const (
 	FileMapUsageFiles                         // files in a configmap.
 )
 
-// NewFileMap creates a new DataMap from a compose service. The appName is the name of the application taken from the project name.
-func NewFileMap(service types.ServiceConfig, appName, kind string) DataMap {
-	switch kind {
-	case "configmap":
-		return NewConfigMap(service, appName, true)
-	default:
-		log.Fatalf("Unknown filemap kind: %s", kind)
-	}
-	return nil
-}
-
 // only used to check interface implementation
 var (
 	_ DataMap = (*ConfigMap)(nil)
