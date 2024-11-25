@@ -70,11 +70,6 @@ func Wrap(src, above, below string) string {
 	return spaces + above + "\n" + src + "\n" + spaces + below
 }
 
-// WrapBytes wraps a byte array with a byte array above and below. It will respect the indentation of the src string.
-func WrapBytes(src, above, below []byte) []byte {
-	return []byte(Wrap(string(src), string(above), string(below)))
-}
-
 // GetServiceNameByPort returns the service name for a port. It the service name is not found, it returns an empty string.
 func GetServiceNameByPort(port int) string {
 	name := ""
@@ -160,14 +155,6 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 // WordWrap wraps a string to a given line width. Warning: it may break the string. You need to check the result.
 func WordWrap(text string, lineWidth int) string {
 	return wordwrap.WrapString(text, uint(lineWidth))
-}
-
-func MapKeys(m map[string]interface{}) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
 }
 
 // Confirm asks a question and returns true if the answer is y.
