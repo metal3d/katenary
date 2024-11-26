@@ -61,6 +61,15 @@ func GetMatchLabels(serviceName, appName string) map[string]string
 
 GetMatchLabels returns the matchLabels for a service. It uses the appName to replace the \_\_replace\_\_ in the labels. This is used to generate the matchLabels in the templates.
 
+<a name="GetVersion"></a>
+## func [GetVersion](<https://github.com/metal3d/katenary/blob/develop/generator/version.go#L14>)
+
+```go
+func GetVersion() string
+```
+
+GetVersion return the version of katneary. It's important to understand that the version is set at compile time for the github release. But, it the user get katneary using \`go install\`, the version should be different.
+
 <a name="Helper"></a>
 ## func [Helper](<https://github.com/metal3d/katenary/blob/develop/generator/helper.go#L15>)
 

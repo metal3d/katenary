@@ -21,11 +21,8 @@ Then call `katenary convert` and let the magic happen.
 
 ## What ?
 
-Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
-
-> **Important Note:** Katenary is a tool to help to build Helm Chart from a docker-compose file, but docker-compose
-> doesn't propose as many features as what can do Kubernetes. So, we strongly recommend to use Katenary as a "bootstrap"
-> tool and then to manually enhance the generated helm chart.
+Katenary is a tool to help to transform `compose` (`docker compose`, `podman compose`, `nerdctl compose`, ...) files
+to a working Helm Chart for Kubernetes.
 
 Today, it's partially developed in collaboration with [Klee Group](https://www.kleegroup.com). Note that Katenary is
 and **will stay an open source and free (as freedom) project**. We are convinced that the best way to make it better is to
@@ -151,6 +148,10 @@ services:
       # note that "database" is a "compose" service name
       # so we need to adapt it with the map-env label
       DB_HOST: database
+      # a pitty to repeat this values, isn't it?
+      # so, let's change them with "values-from" label
+      DB_USER: foo
+      DB_PASSWORD: bar
     expose:
       - 80
     depends_on:
@@ -165,11 +166,16 @@ services:
       katenary.v3/map-env: |-
         # make adaptations, DB_HOST environment is actually the service name
         DB_HOST: '{{ .Release.Name }}-database'
+      katenary.v3/values-from: |-
+        # get the values from the "database" service
+        # this will use the databas secret, see below
+        DB_USER: databse.MARIADB_USER
+        DB_PASSWORD: database.MARIADB_PASSWORD
 
     database:
       image: mariadb:10
       env_file:
-        # this will create a configMap
+        # this valuse will be added in a configMap
         - my_env.env
       environment:
         MARIADB_USER: foo
@@ -241,7 +247,8 @@ To validate the `katenary.yaml` file, you can use the JSON schema using the "mas
 
 `https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json`
 
-It's easy to configure in LazyVim, create a Lua file in your plugins directory:
+It's easy to configure in [LazyVim](https://www.lazyvim.org/), using `nvim-lspconfig`,
+create a Lua file in your `plugins` directory, or apply the settings as the example below:
 
 ```lua
 -- yaml.lua
@@ -276,7 +283,7 @@ Use this address to validate the `katenary.yaml` file in VSCode:
 }
 ```
 
-You can, of course, replace the `refs/heads/master` with a specific tag or branch.
+> You can, of course, replace the `refs/heads/master` with a specific tag or branch.
 
 ## What a name…
 
