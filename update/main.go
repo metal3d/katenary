@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"golang.org/x/mod/semver"
@@ -57,7 +58,7 @@ func CheckLatestVersion() (string, []Asset, error) {
 	}
 
 	// if it's a prerelease, don't update
-	if release.PreRelease {
+	if release.PreRelease || strings.Contains(release.TagName, "rc") {
 		return "", nil, errors.New("prerelease detected, not updating")
 	}
 
@@ -67,9 +68,8 @@ func CheckLatestVersion() (string, []Asset, error) {
 	}
 
 	// compare the current version, if the current version is the same or lower than the latest version, don't update
-	versions := []string{Version, release.TagName}
-	semver.Sort(versions)
-	if versions[1] == Version {
+	c := semver.Compare(Version, release.TagName)
+	if c >= 0 {
 		return "", nil, errors.New("current version is the latest version")
 	}
 
