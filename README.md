@@ -17,7 +17,7 @@ and Helm Chart creation.
 💡 Effortless Efficiency: You only need to add labels when it's necessary to precise things.
 Then call `katenary convert` and let the magic happen.
 
-# What ?
+## What ?
 
 Katenary is a tool to help to transform `docker-compose` files to a working Helm Chart for Kubernetes.
 
@@ -31,7 +31,7 @@ share it with the community.
 
 The main developer is [Patrice FERLET](https://github.com/metal3d).
 
-# Install
+## Install
 
 You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary
 and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
@@ -45,7 +45,7 @@ You can use this commands on Linux:
 sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
 ```
 
-# Or, build yourself
+## Or, build yourself
 
 If you've got `podman` or `docker`, you can build `katenary` by using:
 
@@ -77,7 +77,7 @@ make build GO=local GOOS=linux GOARCH=arm64
 
 Then place the `katenary` binary file inside your PATH.
 
-# Tips
+## Tips
 
 We strongly recommend adding the completion call to you SHELL using the common `bashrc`, or whatever the profile file
 you use.
@@ -100,7 +100,7 @@ katenary completion fish | source
 # powershell (as we don't provide any support on Windows yet, please avoid this...)
 ```
 
-# Usage
+## Usage
 
 ```text
 Katenary is a tool to convert compose files to Helm Charts.
@@ -184,7 +184,7 @@ services:
           - MARIADB_PASSWORD
 ```
 
-# Labels
+## Labels
 
 These labels could be found by `katenary help-labels`, and can be placed as labels inside your docker-compose file:
 
@@ -197,6 +197,7 @@ katenary.v3/cronjob:		object			Create a cronjob from the service.
 katenary.v3/dependencies:	list of objects		Add Helm dependencies to the service.
 katenary.v3/description:	string			Description of the service
 katenary.v3/env-from:		list of strings		Add environment variables from antoher service.
+katenary.v3/exchange-volumes:	list of objects		Add exchange volumes (empty directory on the node) to share data
 katenary.v3/health-check:	object			Health check to be added to the deployment.
 katenary.v3/ignore:		bool			Ignore the service
 katenary.v3/ingress:		object			Ingress rules to be added to the service.
@@ -206,9 +207,76 @@ katenary.v3/ports:		list of uint32		Ports to be added to the service.
 katenary.v3/same-pod:		string			Move the same-pod deployment to the target deployment.
 katenary.v3/secrets:		list of string		Env vars to be set as secrets.
 katenary.v3/values:		list of string or map	Environment variables to be added to the values.yaml
+katenary.v3/values-from:	map[string]string	Add values from another service.
 ```
 
-# What a name…
+## Katenary.yaml file and schema validation
+
+Instead of using labels inside the docker-compose file, you can use a `katenary.yaml` file to define the labels. This
+file is simpler to read and maintain, but you need to keep it up-to-date with the docker-compose file.
+
+For example, instead of using this:
+
+```yaml
+services:
+  web:
+    image: nginx:latest
+    katenary.v3/ingress: |-
+      hostname: myapp.example.com
+      port: 80
+```
+
+You can remove the labels, and use a kanetary.yaml file:
+
+```yaml
+web:
+  ingress:
+    hostname: myapp.example.com
+    port: 80
+```
+
+To validate the `katenary.yaml` file, you can use the JSON schema using the "master" raw content:
+
+`https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json`
+
+It's easy to configure in LazyVim, create a Lua file in your plugins directory:
+
+```lua
+-- yaml.lua
+
+return {
+  {
+    "neovim/nvim-lspconfig",
+    opts = {
+      servers = {
+        yamlls = {
+          settings = {
+            yaml = {
+              schemas = {
+                ["https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json"] = "katenary.yaml",
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+Use this address to validate the `katenary.yaml` file in VSCode:
+
+```json
+{
+  "yaml.schemas": {
+    "https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json": "katenary.yaml"
+  }
+}
+```
+
+You can, of course, replace the `refs/heads/master` with a specific tag or branch.
+
+## What a name…
 
 Katenary is the stylized name of the project that comes from the "catenary" word.
 
