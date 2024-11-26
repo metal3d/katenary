@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ChartTemplate is a template of a chart. It contains the content of the template and the name of the service.
@@ -340,5 +341,87 @@ func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments m
 		}
 		// add the configmap to the service
 		addConfigMapToService(service.Name, fromservice, chart.Name, target)
+	}
+}
+
+// setEnvironmentValuesFrom sets the environment values from another service.
+func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, deployments map[string]*Deployment) {
+	if _, ok := service.Labels[labels.LabelValueFrom]; !ok {
+		return
+	}
+	mapping, err := labelStructs.GetValueFrom(service.Labels[labels.LabelValueFrom])
+	if err != nil {
+		log.Fatal("error unmarshaling values-from label:", err)
+	}
+
+	findDeployment := func(name string) *Deployment {
+		for _, dep := range deployments {
+			if dep.service.Name == name {
+				return dep
+			}
+		}
+		return nil
+	}
+
+	// each mapping key is the environment, and the value is serivename.variable name
+	for env, from := range *mapping {
+		// find the deployment that has the variable
+		depName := strings.Split(from, ".")
+		dep := findDeployment(depName[0])
+		target := findDeployment(service.Name)
+		if dep == nil || target == nil {
+			log.Fatalf("deployment %s or %s not found", depName[0], service.Name)
+		}
+		container, index := utils.GetContainerByName(target.service.Name, target.Spec.Template.Spec.Containers)
+		if container == nil {
+			log.Fatalf("Container %s not found", target.GetName())
+		}
+		reourceName := fmt.Sprintf(`{{ include "%s.fullname" . }}-%s`, chart.Name, depName[0])
+		// add environment with from
+
+		// is it a secret?
+		isSecret := false
+		secrets, err := labelStructs.SecretsFrom(dep.service.Labels[labels.LabelSecrets])
+		if err == nil {
+			for _, secret := range secrets {
+				if secret == depName[1] {
+					isSecret = true
+					break
+				}
+			}
+		}
+
+		if !isSecret {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name: env,
+				ValueFrom: &corev1.EnvVarSource{
+					ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: reourceName,
+						},
+						Key: depName[1],
+					},
+				},
+			})
+		} else {
+			container.Env = append(container.Env, corev1.EnvVar{
+				Name: env,
+				ValueFrom: &corev1.EnvVarSource{
+					SecretKeyRef: &corev1.SecretKeySelector{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: reourceName,
+						},
+						Key: depName[1],
+					},
+				},
+			})
+		}
+		// the environment is bound, so we shouldn't add it to the values.yaml or in any other place
+		delete(service.Environment, env)
+		// also, remove the values
+		target.boundEnvVar = append(target.boundEnvVar, env)
+		// and save the container
+		target.Spec.Template.Spec.Containers[index] = *container
+
 	}
 }

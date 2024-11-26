@@ -40,6 +40,7 @@ type Service struct {
 	CronJob         *labelStructs.CronJob          `json:"cron-job,omitempty" jsonschema:"title=Cron Job,description=Cron Job configuration"`
 	EnvFrom         *labelStructs.EnvFrom          `json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
 	ExchangeVolumes []*labelStructs.ExchangeVolume `json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
+	ValuesFrom      *labelStructs.ValueFrom        `json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
 }
 
 // OverrideWithConfig overrides the project with the katenary.yaml file. It
@@ -91,6 +92,7 @@ func OverrideWithConfig(project *types.Project) {
 			getLabelContent(s.CronJob, &project.Services[i], labels.LabelCronJob)
 			getLabelContent(s.EnvFrom, &project.Services[i], labels.LabelEnvFrom)
 			getLabelContent(s.ExchangeVolumes, &project.Services[i], labels.LabelExchangeVolume)
+			getLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValueFrom)
 		}
 	}
 	fmt.Println(utils.IconInfo, "Katenary file loaded successfully, the services are now configured.")

@@ -113,6 +113,10 @@ func Generate(project *types.Project) (*HelmChart, error) {
 			}
 		}
 	}
+	// it's now time to get "value-from", before makeing the secrets and configmaps!
+	for _, s := range project.Services {
+		chart.setEnvironmentValuesFrom(s, deployments)
+	}
 
 	// generate configmaps with environment variables
 	chart.generateConfigMapsAndSecrets(project)
@@ -121,6 +125,16 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	// to the environment of the service
 	for _, s := range project.Services {
 		chart.setSharedConf(s, deployments)
+	}
+
+	// remove all "boundEnv" from the values
+	for _, d := range deployments {
+		if len(d.boundEnvVar) == 0 {
+			continue
+		}
+		for _, e := range d.boundEnvVar {
+			delete(chart.Values[d.service.Name].(*Value).Environment, e)
+		}
 	}
 
 	// generate yaml files
