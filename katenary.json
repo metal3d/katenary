@@ -1,0 +1,405 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ConfigMapFile": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "CronJob": {
+      "properties": {
+        "image": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "schedule": {
+          "type": "string"
+        },
+        "rbac": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Dependency": {
+      "properties": {
+        "values": {
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "alias": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "repository"
+      ]
+    },
+    "EnvFrom": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "ExchangeVolume": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "mountPath": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "init": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "mountPath"
+      ]
+    },
+    "ExecAction": {
+      "properties": {
+        "command": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "GRPCAction": {
+      "properties": {
+        "port": {
+          "type": "integer"
+        },
+        "service": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "port",
+        "service"
+      ]
+    },
+    "HTTPGetAction": {
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "$ref": "#/$defs/IntOrString"
+        },
+        "host": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "httpHeaders": {
+          "items": {
+            "$ref": "#/$defs/HTTPHeader"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "port"
+      ]
+    },
+    "HTTPHeader": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "HealthCheck": {
+      "properties": {
+        "livenessProbe": {
+          "$ref": "#/$defs/Probe"
+        },
+        "readinessProbe": {
+          "$ref": "#/$defs/Probe"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Ingress": {
+      "properties": {
+        "port": {
+          "type": "integer"
+        },
+        "annotations": {
+          "oneOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "hostname": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "class": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "tls": {
+          "$ref": "#/$defs/TLS"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "IntOrString": {
+      "oneOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "MapEnv": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "Ports": {
+      "items": {
+        "type": "integer"
+      },
+      "type": "array"
+    },
+    "Probe": {
+      "properties": {
+        "exec": {
+          "$ref": "#/$defs/ExecAction"
+        },
+        "httpGet": {
+          "$ref": "#/$defs/HTTPGetAction"
+        },
+        "tcpSocket": {
+          "$ref": "#/$defs/TCPSocketAction"
+        },
+        "grpc": {
+          "$ref": "#/$defs/GRPCAction"
+        },
+        "initialDelaySeconds": {
+          "type": "integer"
+        },
+        "timeoutSeconds": {
+          "type": "integer"
+        },
+        "periodSeconds": {
+          "type": "integer"
+        },
+        "successThreshold": {
+          "type": "integer"
+        },
+        "failureThreshold": {
+          "type": "integer"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Secrets": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "Service": {
+      "properties": {
+        "main-app": {
+          "type": "boolean",
+          "title": "Is this service the main application"
+        },
+        "values": {
+          "items": true,
+          "type": "array",
+          "description": "Environment variables to be set in values.yaml with or without a description"
+        },
+        "secrets": {
+          "$ref": "#/$defs/Secrets",
+          "title": "Secrets",
+          "description": "Environment variables to be set as secrets"
+        },
+        "ports": {
+          "$ref": "#/$defs/Ports",
+          "title": "Ports",
+          "description": "Ports to be exposed in services"
+        },
+        "ingress": {
+          "$ref": "#/$defs/Ingress",
+          "title": "Ingress",
+          "description": "Ingress configuration"
+        },
+        "health-check": {
+          "$ref": "#/$defs/HealthCheck",
+          "title": "Health Check",
+          "description": "Health check configuration that respects the kubernetes api"
+        },
+        "same-pod": {
+          "type": "string",
+          "title": "Same Pod",
+          "description": "Service that should be in the same pod"
+        },
+        "description": {
+          "type": "string",
+          "title": "Description",
+          "description": "Description of the service that will be injected in the values.yaml file"
+        },
+        "ignore": {
+          "type": "boolean",
+          "title": "Ignore",
+          "description": "Ignore the service in the conversion"
+        },
+        "dependencies": {
+          "items": {
+            "$ref": "#/$defs/Dependency"
+          },
+          "type": "array",
+          "title": "Dependencies",
+          "description": "Services that should be injected in the Chart.yaml file"
+        },
+        "configmap-files": {
+          "$ref": "#/$defs/ConfigMapFile",
+          "title": "ConfigMap Files",
+          "description": "Files that should be injected as ConfigMap"
+        },
+        "map-env": {
+          "$ref": "#/$defs/MapEnv",
+          "title": "Map Env",
+          "description": "Map environment variables to another value"
+        },
+        "cron-job": {
+          "$ref": "#/$defs/CronJob",
+          "title": "Cron Job",
+          "description": "Cron Job configuration"
+        },
+        "env-from": {
+          "$ref": "#/$defs/EnvFrom",
+          "title": "Env From",
+          "description": "Inject environment variables from another service"
+        },
+        "exchange-volumes": {
+          "items": {
+            "$ref": "#/$defs/ExchangeVolume"
+          },
+          "type": "array",
+          "title": "Exchange Volumes",
+          "description": "Exchange volumes between services"
+        },
+        "values-from": {
+          "$ref": "#/$defs/ValueFrom",
+          "title": "Values From",
+          "description": "Inject values from another service (secret or configmap environment variables)"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "StringOrMap": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      ]
+    },
+    "TCPSocketAction": {
+      "properties": {
+        "port": {
+          "$ref": "#/$defs/IntOrString"
+        },
+        "host": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "port"
+      ]
+    },
+    "TLS": {
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "ValueFrom": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    }
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/Service"
+  },
+  "type": "object"
+}
