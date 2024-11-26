@@ -233,7 +233,7 @@ func generateVersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: "Print the version number of Katenary",
 		Run: func(cmd *cobra.Command, args []string) {
-			println(generator.GetVersion())
+			fmt.Println(generator.GetVersion())
 		},
 	}
 }
