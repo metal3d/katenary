@@ -108,22 +108,23 @@ Katenary is a tool to convert compose files to Helm Charts.
 Each [command] and subcommand has got an "help" and "--help" flag to show more information.
 
 Usage:
-katenary [command]
+  katenary [command]
 
 Examples:
-katenary convert -c docker-compose.yml -o ./charts
+  katenary convert -c docker-compose.yml -o ./charts
 
 Available Commands:
-completion        Generates completion scripts
-convert           Converts a docker-compose file to a Helm Chart
-hash-composefiles Print the hash of the composefiles
-help              Help about any command
-help-labels       Print the labels help for all or a specific label
-version           Print the version number of Katenary
+  completion        Generates completion scripts
+  convert           Converts a docker-compose file to a Helm Chart
+  hash-composefiles Print the hash of the composefiles
+  help              Help about any command
+  help-labels       Print the labels help for all or a specific label
+  schema            Print the schema of the katenary file
+  version           Print the version number of Katenary
 
 Flags:
--h, --help      help for katenary
--v, --version   version for katenary
+  -h, --help      help for katenary
+  -v, --version   version for katenary
 
 Use "katenary [command] --help" for more information about a command.
 ```
