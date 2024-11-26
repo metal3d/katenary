@@ -30,10 +30,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v4.0.1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          slug: metal3d/katenary
-          file: ./coverprofile.out
-          fail_ci_if_error: true
