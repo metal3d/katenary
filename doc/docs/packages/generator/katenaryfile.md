@@ -12,7 +12,7 @@ A katenary file, named "katenary.yml" or "katenary.yaml", is a file where you ca
 
 Formely, the file describe the same structure as in labels, and so that can be validated and completed by LSP. It also ease the use of katenary.
 
-## func [GenerateSchema](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L116>)
+## func [GenerateSchema](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L131>)
 
 ```go
 func GenerateSchema() string
@@ -21,7 +21,7 @@ func GenerateSchema() string
 GenerateSchema generates the schema for the katenary.yaml file.
 
 <a name="OverrideWithConfig"></a>
-## func [OverrideWithConfig](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L48>)
+## func [OverrideWithConfig](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L49>)
 
 ```go
 func OverrideWithConfig(project *types.Project)
@@ -30,7 +30,7 @@ func OverrideWithConfig(project *types.Project)
 OverrideWithConfig overrides the project with the katenary.yaml file. It will set the labels of the services with the values from the katenary.yaml file. It work in memory, so it will not modify the original project.
 
 <a name="Service"></a>
-## type [Service](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L27-L43>)
+## type [Service](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L27-L44>)
 
 Service is a struct that contains the service configuration for katenary
 
@@ -51,6 +51,7 @@ type Service struct {
     CronJob         *labelStructs.CronJob          `json:"cron-job,omitempty" jsonschema:"title=Cron Job,description=Cron Job configuration"`
     EnvFrom         *labelStructs.EnvFrom          `json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
     ExchangeVolumes []*labelStructs.ExchangeVolume `json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
+    ValuesFrom      *labelStructs.ValueFrom        `json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
 }
 ```
 
