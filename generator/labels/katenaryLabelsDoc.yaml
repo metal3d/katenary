@@ -69,7 +69,7 @@
             This is the documentation for the variable to 
             configure in values.yaml.
             It can be, of course,  a multiline text.
-  type: "list of string or map"
+  type: "[]string or map[string]string"
 
 "secrets":
   short: "Env vars to be set as secrets."
@@ -86,7 +86,7 @@
     labels:
       {{ .KatenaryPrefix }}/secrets: |-
         - PASSWORD
-  type: "list of string"
+  type: "[]string"
 
 "ports":
   short: "Ports to be added to the service."
@@ -98,7 +98,7 @@
       {{ .KatenaryPrefix }}/ports: |-
         - 8080
         - 8081
-  type: "list of uint32"
+  type: "[]uint32"
 
 "ingress":
   short: "Ingress rules to be added to the service."
@@ -131,7 +131,7 @@
       {{ .KatenaryPrefix }}/map-env: |-
         RUNNING: kubernetes
         DB_HOST: '{{ "{{ include \"__APP__.fullname\" . }}" }}-database'
-  type: "object"
+  type: "map[string]string"
 
 "health-check":
   short: "Health check to be added to the deployment."
@@ -221,7 +221,7 @@
               database: mydatabasename
               username: myuser
               password: the secret password
-  type: "list of objects"
+  type: "[]object"
 
 "configmap-files":
   short: "Add files to the configmap."
@@ -245,7 +245,7 @@
     labels:
       {{ .KatenaryPrefix }}/configmap-files: |-
         - ./conf.d
-  type: "list of strings"
+  type: "[]string"
 
 "cronjob":
   short: "Create a cronjob from the service."
@@ -267,7 +267,7 @@
 
 "env-from":
   short: "Add environment variables from antoher service."
-  type: "list of strings"
+  type: "[]string"
   long: |-
     It adds environment variables from another service to the current service.
   example: |-
@@ -286,7 +286,7 @@
 
 "exchange-volumes":
   short: Add exchange volumes (empty directory on the node) to share data
-  type: "list of objects"
+  type: "[]object"
   long: |-
     This label allows sharing data between containres. The volume is created in 
     the node and mounted in the pod. It is useful to share data between containers

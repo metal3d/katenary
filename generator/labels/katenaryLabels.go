@@ -166,9 +166,9 @@ func generateMarkdownHelp(names []string) string {
 	}
 	for _, name := range names {
 		help := labelFullHelp[name]
-		maxNameLength = max(maxNameLength, len(name)+2+len(KatenaryLabelPrefix))
+		maxNameLength = max(maxNameLength, len(name)+3+len(KatenaryLabelPrefix))
 		maxDescriptionLength = max(maxDescriptionLength, len(help.Short))
-		maxTypeLength = max(maxTypeLength, len(help.Type))
+		maxTypeLength = max(maxTypeLength, len(help.Type)+3)
 	}
 
 	fmt.Fprintf(&builder, "%s\n", generateTableHeader(maxNameLength, maxDescriptionLength, maxTypeLength))
@@ -179,7 +179,7 @@ func generateMarkdownHelp(names []string) string {
 		fmt.Fprintf(&builder, "| %-*s | %-*s | %-*s |\n",
 			maxNameLength, "`"+LabelName(name)+"`", // enclose in backticks
 			maxDescriptionLength, help.Short,
-			maxTypeLength, help.Type,
+			maxTypeLength, "`"+help.Type+"`",
 		)
 	}
 
