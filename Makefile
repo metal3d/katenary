@@ -7,7 +7,8 @@ PREFIX=~/.local
 GOVERSION=1.23
 GO=container
 OUT=katenary
-BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary
+RELEASE=""
+BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(RELEASE)$(VERSION)'" -o $(OUT)  ./cmd/katenary
 GOOS=linux
 GOARCH=amd64
 SIGNER=metal3d@gmail.com

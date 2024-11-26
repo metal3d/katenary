@@ -35,7 +35,7 @@ func buildRootCmd() *cobra.Command {
 	}
 	rootCmd.Example = `  katenary convert -c docker-compose.yml -o ./charts`
 
-	rootCmd.Version = generator.Version
+	rootCmd.Version = generator.GetVersion()
 	rootCmd.CompletionOptions.DisableDescriptions = false
 	rootCmd.CompletionOptions.DisableNoDescFlag = false
 
@@ -233,7 +233,7 @@ func generateVersionCommand() *cobra.Command {
 		Use:   "version",
 		Short: "Print the version number of Katenary",
 		Run: func(cmd *cobra.Command, args []string) {
-			println(generator.Version)
+			println(generator.GetVersion())
 		},
 	}
 }
