@@ -321,4 +321,36 @@
             mountPath: /opt
             init: cp -ra /var/www/html/* /opt
 
+"values-from":
+  short: "Add values from another service."
+  long: |-
+    This label allows adding values from another service to the current service.
+    It avoid duplicating values, environment or secrets that should be the same.
+
+    The key is the value to be added, and the value is the "key" to fetch in the
+    form `service_name.environment_name`.
+
+  type: "map[string]string"
+  example: |-
+    database:
+      image: mariadb:10.5
+      environment:
+        MARIADB_USER: myuser
+        MARIADB_PASSWORD: mypassword
+      labels:
+        # it can be a secret
+        {{ .KatenaryPrefix }}/secrets: |-
+          - DB_PASSWORD
+    php:
+      image: php:7.4-fpm
+      environment:
+        # it's duplicated in docker / podman
+        DB_USER: myuser
+        DB_PASSWORD: mypassword
+      labels:
+        # removes the duplicated, use the configMap and secrets from "database"
+        {{ .KatenaryPrefix }}/values-from: |-
+          DB_USER: database.MARIADB_USER
+          DB_PASSWORD: database.MARIADB_PASSWORD
+
 # vim: ft=gotmpl.yaml

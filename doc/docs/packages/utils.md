@@ -8,7 +8,7 @@ import "katenary/utils"
 
 Utils package provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
 
-## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L204>)
+## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L191>)
 
 ```go
 func AsResourceName(name string) string
@@ -17,7 +17,7 @@ func AsResourceName(name string) string
 AsResourceName returns a resource name with underscores to respect the kubernetes naming convention. It's the opposite of FixedResourceName.
 
 <a name="Confirm"></a>
-## func [Confirm](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L174>)
+## func [Confirm](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L161>)
 
 ```go
 func Confirm(question string, icon ...Icon) bool
@@ -35,7 +35,7 @@ func CountStartingSpaces(line string) int
 CountStartingSpaces counts the number of spaces at the beginning of a string.
 
 <a name="EncodeBasicYaml"></a>
-## func [EncodeBasicYaml](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L186>)
+## func [EncodeBasicYaml](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L173>)
 
 ```go
 func EncodeBasicYaml(data any) ([]byte, error)
@@ -44,7 +44,7 @@ func EncodeBasicYaml(data any) ([]byte, error)
 EncodeBasicYaml encodes a basic yaml from an interface.
 
 <a name="FixedResourceName"></a>
-## func [FixedResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L198>)
+## func [FixedResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L185>)
 
 ```go
 func FixedResourceName(name string) string
@@ -53,7 +53,7 @@ func FixedResourceName(name string) string
 FixedResourceName returns a resource name without underscores to respect the kubernetes naming convention.
 
 <a name="GetContainerByName"></a>
-## func [GetContainerByName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L89>)
+## func [GetContainerByName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L84>)
 
 ```go
 func GetContainerByName(name string, containers []corev1.Container) (*corev1.Container, int)
@@ -71,7 +71,7 @@ func GetKind(path string) (kind string)
 GetKind returns the kind of the resource from the file path.
 
 <a name="GetServiceNameByPort"></a>
-## func [GetServiceNameByPort](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L79>)
+## func [GetServiceNameByPort](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L74>)
 
 ```go
 func GetServiceNameByPort(port int) string
@@ -80,7 +80,7 @@ func GetServiceNameByPort(port int) string
 GetServiceNameByPort returns the service name for a port. It the service name is not found, it returns an empty string.
 
 <a name="GetValuesFromLabel"></a>
-## func [GetValuesFromLabel](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L131>)
+## func [GetValuesFromLabel](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L126>)
 
 ```go
 func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[string]*EnvConfig
@@ -106,17 +106,8 @@ func Int32Ptr(i int32) *int32
 
 Int32Ptr returns a pointer to an int32.
 
-<a name="MapKeys"></a>
-## func [MapKeys](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L165>)
-
-```go
-func MapKeys(m map[string]interface{}) []string
-```
-
-
-
 <a name="PathToName"></a>
-## func [PathToName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L108>)
+## func [PathToName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L103>)
 
 ```go
 func PathToName(path string) string
@@ -143,7 +134,7 @@ func TplName(serviceName, appname string, suffix ...string) string
 TplName returns the name of the kubernetes resource as a template string. It is used in the templates and defined in \_helper.tpl file.
 
 <a name="TplValue"></a>
-## func [TplValue](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L99>)
+## func [TplValue](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L94>)
 
 ```go
 func TplValue(serviceName, variable string, pipes ...string) string
@@ -161,7 +152,7 @@ func Warn(msg ...interface{})
 Warn prints a warning message
 
 <a name="WordWrap"></a>
-## func [WordWrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L161>)
+## func [WordWrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L156>)
 
 ```go
 func WordWrap(text string, lineWidth int) string
@@ -178,17 +169,8 @@ func Wrap(src, above, below string) string
 
 Wrap wraps a string with a string above and below. It will respect the indentation of the src string.
 
-<a name="WrapBytes"></a>
-## func [WrapBytes](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L74>)
-
-```go
-func WrapBytes(src, above, below []byte) []byte
-```
-
-WrapBytes wraps a byte array with a byte array above and below. It will respect the indentation of the src string.
-
 <a name="EnvConfig"></a>
-## type [EnvConfig](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L125-L128>)
+## type [EnvConfig](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L120-L123>)
 
 EnvConfig is a struct to hold the description of an environment variable.
 

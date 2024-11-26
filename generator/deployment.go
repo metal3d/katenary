@@ -40,6 +40,7 @@ type Deployment struct {
 	defaultTag         string                                  `yaml:"-"`
 	isMainApp          bool                                    `yaml:"-"`
 	exchangesVolumes   map[string]*labelStructs.ExchangeVolume `yaml:"-"`
+	boundEnvVar        []string                                `yaml:"-"` // environement to remove
 }
 
 // NewDeployment creates a new Deployment from a compose service. The appName is the name of the application taken from the project name.
@@ -94,6 +95,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 		configMaps:       make(map[string]*ConfigMapMount),
 		volumeMap:        make(map[string]string),
 		exchangesVolumes: map[string]*labelStructs.ExchangeVolume{},
+		boundEnvVar:      []string{},
 	}
 
 	// add containers

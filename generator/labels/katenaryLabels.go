@@ -33,6 +33,7 @@ const (
 	LabelCronJob        Label = KatenaryLabelPrefix + "/cronjob"
 	LabelEnvFrom        Label = KatenaryLabelPrefix + "/env-from"
 	LabelExchangeVolume Label = KatenaryLabelPrefix + "/exchange-volumes"
+	LabelValueFrom      Label = KatenaryLabelPrefix + "/values-from"
 )
 
 var (

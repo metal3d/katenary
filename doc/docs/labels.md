@@ -24,6 +24,7 @@ Katenary will try to Unmarshal these labels.
 | `katenary.v3/same-pod`        | Move the same-pod deployment to the target deployment.           | string                |
 | `katenary.v3/secrets`         | Env vars to be set as secrets.                                   | list of string        |
 | `katenary.v3/values`          | Environment variables to be added to the values.yaml             | list of string or map |
+| `katenary.v3/values-from`     | Add values from another service.                                 | map[string]string     |
 
 <!-- STOP_LABEL_DOC : do not remove this tag !-->
 
@@ -435,6 +436,44 @@ labels:
         This is the documentation for the variable to 
         configure in values.yaml.
         It can be, of course,  a multiline text.
+```
+
+
+### katenary.v3/values-from
+
+Add values from another service.
+
+**Type**:  `map[string]string`
+
+This label allows adding values from another service to the current service.
+It avoid duplicating values, environment or secrets that should be the same.
+
+The key is the value to be added, and the value is the "key" to fetch in the
+form `service_name.environment_name`.
+
+**Example:**
+
+```yaml
+database:
+  image: mariadb:10.5
+  environment:
+    MARIADB_USER: myuser
+    MARIADB_PASSWORD: mypassword
+  labels:
+    # it can be a secret
+    katenary.v3/secrets: |-
+      - DB_PASSWORD
+php:
+  image: php:7.4-fpm
+  environment:
+    # it's duplicated in docker / podman
+    DB_USER: myuser
+    DB_PASSWORD: mypassword
+  labels:
+    # removes the duplicated, use the configMap and secrets from "database"
+    katenary.v3/values-from: |-
+      DB_USER: database.MARIADB_USER
+      DB_PASSWORD: database.MARIADB_PASSWORD
 ```
 
 
