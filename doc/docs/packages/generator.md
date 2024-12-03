@@ -119,7 +119,7 @@ type ChartTemplate struct {
 ```
 
 <a name="ConfigMap"></a>
-## type [ConfigMap](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L35-L40>)
+## type [ConfigMap](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L36-L41>)
 
 ConfigMap is a kubernetes ConfigMap. Implements the DataMap interface.
 
@@ -131,7 +131,7 @@ type ConfigMap struct {
 ```
 
 <a name="NewConfigMap"></a>
-### func [NewConfigMap](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L44>)
+### func [NewConfigMap](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L45>)
 
 ```go
 func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *ConfigMap
@@ -140,7 +140,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 NewConfigMap creates a new ConfigMap from a compose service. The appName is the name of the application taken from the project name. The ConfigMap is filled by environment variables and labels "map\-env".
 
 <a name="NewConfigMapFromDirectory"></a>
-### func [NewConfigMapFromDirectory](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L117>)
+### func [NewConfigMapFromDirectory](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L118>)
 
 ```go
 func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string) *ConfigMap
@@ -148,8 +148,17 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 
 NewConfigMapFromDirectory creates a new ConfigMap from a compose service. This path is the path to the file or directory. If the path is a directory, all files in the directory are added to the ConfigMap. Each subdirectory are ignored. Note that the Generate\(\) function will create the subdirectories ConfigMaps.
 
+<a name="ConfigMap.AddBinaryData"></a>
+### func \(\*ConfigMap\) [AddBinaryData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L154>)
+
+```go
+func (c *ConfigMap) AddBinaryData(key string, value []byte)
+```
+
+AddBinaryData adds binary data to the configmap. Append or overwrite the value if the key already exists.
+
 <a name="ConfigMap.AddData"></a>
-### func \(\*ConfigMap\) [AddData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L148>)
+### func \(\*ConfigMap\) [AddData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L149>)
 
 ```go
 func (c *ConfigMap) AddData(key, value string)
@@ -157,17 +166,8 @@ func (c *ConfigMap) AddData(key, value string)
 
 AddData adds a key value pair to the configmap. Append or overwrite the value if the key already exists.
 
-<a name="ConfigMap.AppendDir"></a>
-### func \(\*ConfigMap\) [AppendDir](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L154>)
-
-```go
-func (c *ConfigMap) AppendDir(path string)
-```
-
-AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
-
 <a name="ConfigMap.AppendFile"></a>
-### func \(\*ConfigMap\) [AppendFile](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L189>)
+### func \(\*ConfigMap\) [AppendFile](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L209>)
 
 ```go
 func (c *ConfigMap) AppendFile(path string)
@@ -175,8 +175,17 @@ func (c *ConfigMap) AppendFile(path string)
 
 
 
+<a name="ConfigMap.AppenddDir"></a>
+### func \(\*ConfigMap\) [AppenddDir](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L163>)
+
+```go
+func (c *ConfigMap) AppenddDir(path string)
+```
+
+AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
+
 <a name="ConfigMap.Filename"></a>
-### func \(\*ConfigMap\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L207>)
+### func \(\*ConfigMap\) [Filename](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L232>)
 
 ```go
 func (c *ConfigMap) Filename() string
@@ -185,7 +194,7 @@ func (c *ConfigMap) Filename() string
 Filename returns the filename of the configmap. If the configmap is used for files, the filename contains the path.
 
 <a name="ConfigMap.SetData"></a>
-### func \(\*ConfigMap\) [SetData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L217>)
+### func \(\*ConfigMap\) [SetData](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L242>)
 
 ```go
 func (c *ConfigMap) SetData(data map[string]string)
@@ -194,7 +203,7 @@ func (c *ConfigMap) SetData(data map[string]string)
 SetData sets the data of the configmap. It replaces the entire data.
 
 <a name="ConfigMap.Yaml"></a>
-### func \(\*ConfigMap\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L222>)
+### func \(\*ConfigMap\) [Yaml](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L247>)
 
 ```go
 func (c *ConfigMap) Yaml() ([]byte, error)
@@ -421,7 +430,7 @@ func (d *Deployment) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the deployment.
 
 <a name="FileMapUsage"></a>
-## type [FileMapUsage](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L19>)
+## type [FileMapUsage](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L20>)
 
 FileMapUsage is the usage of the filemap.
 

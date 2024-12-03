@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"katenary/generator/labels"
 	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
@@ -149,58 +151,84 @@ func (c *ConfigMap) AddData(key, value string) {
 	c.Data[key] = value
 }
 
+// AddBinaryData adds binary data to the configmap. Append or overwrite the value if the key already exists.
+func (c *ConfigMap) AddBinaryData(key string, value []byte) {
+	if c.BinaryData == nil {
+		c.BinaryData = make(map[string][]byte)
+	}
+	c.BinaryData[key] = value
+}
+
 // AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory,
 // you need to call this function for each subdirectory.
-func (c *ConfigMap) AppendDir(path string) {
+func (c *ConfigMap) AppendDir(path string) error {
 	// read all files in the path and add them to the configmap
 	stat, err := os.Stat(path)
 	if err != nil {
-		log.Fatalf("Path %s does not exist\n", path)
+		return fmt.Errorf("Path %s does not exist, %w\n", path, err)
 	}
 	// recursively read all files in the path and add them to the configmap
 	if stat.IsDir() {
 		files, err := os.ReadDir(path)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		for _, file := range files {
 			if file.IsDir() {
+				utils.Warn("Subdirectories are ignored for the moment, skipping", filepath.Join(path, file.Name()))
 				continue
 			}
 			path := filepath.Join(path, file.Name())
 			content, err := os.ReadFile(path)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 			// remove the path from the file
 			filename := filepath.Base(path)
-			c.AddData(filename, string(content))
+			if utf8.Valid(content) {
+				c.AddData(filename, string(content))
+			} else {
+				c.AddBinaryData(filename, content)
+			}
+
 		}
 	} else {
 		// add the file to the configmap
 		content, err := os.ReadFile(path)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		c.AddData(filepath.Base(path), string(content))
+		filename := filepath.Base(path)
+		if utf8.Valid(content) {
+			c.AddData(filename, string(content))
+		} else {
+			c.AddBinaryData(filename, content)
+		}
 	}
+	return nil
 }
 
-func (c *ConfigMap) AppendFile(path string) {
+func (c *ConfigMap) AppendFile(path string) error {
 	// read all files in the path and add them to the configmap
 	stat, err := os.Stat(path)
 	if err != nil {
-		log.Fatalf("Path %s does not exist\n", path)
+		return fmt.Errorf("Path %s doesn not exists, %w", path, err)
 	}
 	// recursively read all files in the path and add them to the configmap
 	if !stat.IsDir() {
 		// add the file to the configmap
 		content, err := os.ReadFile(path)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
-		c.AddData(filepath.Base(path), string(content))
+		if utf8.Valid(content) {
+			c.AddData(filepath.Base(path), string(content))
+		} else {
+			c.AddBinaryData(filepath.Base(path), content)
+		}
+
 	}
+	return nil
 }
 
 // Filename returns the filename of the configmap. If the configmap is used for files, the filename contains the path.

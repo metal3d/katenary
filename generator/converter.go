@@ -90,7 +90,7 @@ var keyRegExp = regexp.MustCompile(`^\s*[^#]+:.*`)
 
 // Convert a compose (docker, podman...) project to a helm chart.
 // It calls Generate() to generate the chart and then write it to the disk.
-func Convert(config ConvertOptions, dockerComposeFile ...string) {
+func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	var (
 		templateDir = filepath.Join(config.OutputDir, "templates")
 		helpersPath = filepath.Join(config.OutputDir, "templates", "_helpers.tpl")
@@ -105,7 +105,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	// go to the root of the project
 	if err := os.Chdir(filepath.Dir(dockerComposeFile[0])); err != nil {
 		fmt.Println(utils.IconFailure, err)
-		os.Exit(1)
+		return err
 	}
 	defer os.Chdir(currentDir) // after the generation, go back to the original directory
 
@@ -118,13 +118,13 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	project, err := parser.Parse(config.Profiles, config.EnvFiles, dockerComposeFile...)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	// check older version of labels
 	if err := checkOldLabels(project); err != nil {
 		fmt.Println(utils.IconFailure, err)
-		os.Exit(1)
+		return err
 	}
 
 	// TODO: use katenary.yaml file here to set the labels
@@ -140,7 +140,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 			)
 			if !overwrite {
 				fmt.Println("Aborting")
-				os.Exit(126) // 126 is the exit code for "Command invoked cannot execute"
+				return nil
 			}
 		}
 		fmt.Println() // clean line
@@ -150,7 +150,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 	chart, err := Generate(project)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	// if the app version is set from the command line, use it
@@ -194,6 +194,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) {
 
 	// call helm update if needed
 	callHelmUpdate(config)
+	return nil
 }
 
 func addChartDoc(values []byte, project *types.Project) []byte {

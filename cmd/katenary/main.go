@@ -141,11 +141,11 @@ func generateConvertCommand() *cobra.Command {
 	convertCmd := &cobra.Command{
 		Use:   "convert",
 		Short: "Converts a docker-compose file to a Helm Chart",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if givenAppVersion != "" {
 				appVersion = &givenAppVersion
 			}
-			generator.Convert(generator.ConvertOptions{
+			return generator.Convert(generator.ConvertOptions{
 				Force:        force,
 				OutputDir:    outputDir,
 				Profiles:     profiles,

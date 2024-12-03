@@ -1,7 +1,5 @@
-
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 <img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
-
 </div>
 
 [![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/en/latest/?badge=latest)
@@ -262,7 +260,7 @@ return {
           settings = {
             yaml = {
               schemas = {
-                ["https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json"] = "katenary.yaml",
+                ["https://raw.githubusercontent.com/metal3d/katenary/master/katenary.json"] = "katenary.yaml",
               },
             },
           },
@@ -278,12 +276,12 @@ Use this address to validate the `katenary.yaml` file in VSCode:
 ```json
 {
   "yaml.schemas": {
-    "https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json": "katenary.yaml"
+    "https://raw.githubusercontent.com/metal3d/katenary/master/katenary.json": "katenary.yaml"
   }
 }
 ```
 
-> You can, of course, replace the `refs/heads/master` with a specific tag or branch.
+> You can, of course, replace the `master` with a specific tag or branch.
 
 ## What a name…
 
