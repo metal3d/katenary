@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
@@ -140,7 +141,7 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 	// cumulate the path to the WorkingDir
 	path = filepath.Join(service.WorkingDir, path)
 	path = filepath.Clean(path)
-	cm.AppendDir(path)
+	cm.AppenddDir(path)
 	return cm
 }
 
@@ -149,9 +150,17 @@ func (c *ConfigMap) AddData(key, value string) {
 	c.Data[key] = value
 }
 
+// AddBinaryData adds binary data to the configmap. Append or overwrite the value if the key already exists.
+func (c *ConfigMap) AddBinaryData(key string, value []byte) {
+	if c.BinaryData == nil {
+		c.BinaryData = make(map[string][]byte)
+	}
+	c.BinaryData[key] = value
+}
+
 // AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory,
 // you need to call this function for each subdirectory.
-func (c *ConfigMap) AppendDir(path string) {
+func (c *ConfigMap) AppenddDir(path string) {
 	// read all files in the path and add them to the configmap
 	stat, err := os.Stat(path)
 	if err != nil {
@@ -165,6 +174,7 @@ func (c *ConfigMap) AppendDir(path string) {
 		}
 		for _, file := range files {
 			if file.IsDir() {
+				utils.Warn("Subdirectories are ignored for the moment, skipping", filepath.Join(path, file.Name()))
 				continue
 			}
 			path := filepath.Join(path, file.Name())
@@ -174,7 +184,12 @@ func (c *ConfigMap) AppendDir(path string) {
 			}
 			// remove the path from the file
 			filename := filepath.Base(path)
-			c.AddData(filename, string(content))
+			if utf8.Valid(content) {
+				c.AddData(filename, string(content))
+			} else {
+				c.AddBinaryData(filename, content)
+			}
+
 		}
 	} else {
 		// add the file to the configmap
@@ -182,7 +197,12 @@ func (c *ConfigMap) AppendDir(path string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.AddData(filepath.Base(path), string(content))
+		filename := filepath.Base(path)
+		if utf8.Valid(content) {
+			c.AddData(filename, string(content))
+		} else {
+			c.AddBinaryData(filename, content)
+		}
 	}
 }
 
@@ -199,7 +219,12 @@ func (c *ConfigMap) AppendFile(path string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		c.AddData(filepath.Base(path), string(content))
+		if utf8.Valid(content) {
+			c.AddData(filepath.Base(path), string(content))
+		} else {
+			c.AddBinaryData(filepath.Base(path), content)
+		}
+
 	}
 }
 
