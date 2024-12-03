@@ -2,11 +2,22 @@
 <img src="./doc/docs/statics/logo-vertical.svg" alt="Katenary Logo" style="max-width: 90%" align="center"/>
 </div>
 
+<div style="text-align:center; margin: auto 0 4em 0" align="center">
+
 [![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/en/latest/?badge=latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/metal3d/katenary)](https://goreportcard.com/report/github.com/metal3d/katenary)
 [![GitHub release](https://img.shields.io/github/v/release/metal3d/katenary)](https://github.com/metal3d/katenary/releases)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
 
-🚀 Unleash Productivity with Katenary! 🚀
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
+
+</div>
+
+<div style="text-align:center; margin: auto 0 4em 0" align="center">
+<h3>🚀 Unleash Productivity with Katenary! 🚀</h3>
+</div>
 
 Tired of manual conversions? Katenary harnesses the labels from your "`compose`" file to craft complete Helm Charts
 effortlessly, saving you time and energy.
