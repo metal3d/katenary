@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/compose-spec/compose-go/types"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -71,5 +72,21 @@ services:
 	data := configMap.Data
 	if v, ok := data["FOO"]; !ok || v != "baz" {
 		t.Errorf("Expected FOO to be baz, got %s", v)
+	}
+}
+
+func TestAppendBadFile(t *testing.T) {
+	cm := NewConfigMap(types.ServiceConfig{}, "app", true)
+	err := cm.AppendFile("foo")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
+	}
+}
+
+func TestAppendBadDir(t *testing.T) {
+	cm := NewConfigMap(types.ServiceConfig{}, "app", true)
+	err := cm.AppendDir("foo")
+	if err == nil {
+		t.Errorf("Expected error, got nil")
 	}
 }

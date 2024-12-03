@@ -48,7 +48,9 @@ func internalCompileTest(t *testing.T, options ...string) string {
 		AppVersion:   appVersion,
 		ChartVersion: chartVersion,
 	}
-	Convert(convertOptions, "compose.yml")
+	if err := Convert(convertOptions, "compose.yml"); err != nil {
+		return err.Error()
+	}
 
 	// launch helm lint to check the generated chart
 	if helmLint(convertOptions) != nil {
