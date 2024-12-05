@@ -21,7 +21,8 @@ type PersistenceValue struct {
 }
 
 type TLS struct {
-	Enabled bool `yaml:"enabled"`
+	Enabled    bool   `yaml:"enabled"`
+	SecretName string `yaml:"secretName"`
 }
 
 // IngressValue is a ingress configuration that will be saved in values.yaml.
@@ -92,6 +93,10 @@ func (v *Value) AddIngress(host, path string) {
 		Host:    host,
 		Path:    path,
 		Class:   "-",
+		TLS: TLS{
+			Enabled:    true,
+			SecretName: "",
+		},
 	}
 }
 

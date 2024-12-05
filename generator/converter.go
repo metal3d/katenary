@@ -85,6 +85,12 @@ var unwantedLines = []string{
 	"status:",
 }
 
+var ingressTLSHelp = `# Ingress TLS configuration
+# If enabled, a secret containing the certificate and the key should be
+# created by the ingress controller. If the name if emtpy, so the secret
+# name is generated. You can specify the secret name to use your own secret.
+`
+
 // keyRegExp checks if the line starts by a #
 var keyRegExp = regexp.MustCompile(`^\s*[^#]+:.*`)
 
@@ -486,6 +492,24 @@ func addYAMLSelectorPath(values []byte) []byte {
 	return []byte(strings.Join(toReturn, "\n"))
 }
 
+// addTLSHelp adds a comment to the values.yaml file to explain how to
+// use the tls option.
+func addTLSHelp(values []byte) []byte {
+	lines := strings.Split(string(values), "\n")
+	for i, line := range lines {
+		if strings.Contains(line, "tls:") {
+			spaces := utils.CountStartingSpaces(line)
+			spacesString := strings.Repeat(" ", spaces)
+			// indent ingressClassHelper comment
+			ingressTLSHelp := strings.ReplaceAll(ingressTLSHelp, "\n", "\n"+spacesString)
+			ingressTLSHelp = strings.TrimRight(ingressTLSHelp, " ")
+			ingressTLSHelp = spacesString + ingressTLSHelp
+			lines[i] = ingressTLSHelp + line
+		}
+	}
+	return []byte(strings.Join(lines, "\n"))
+}
+
 func buildCharYamlFile(chart *HelmChart, project *types.Project, chartPath string) {
 	// calculate the sha1 hash of the services
 	yamlChart, err := utils.EncodeBasicYaml(chart)
@@ -537,6 +561,7 @@ func buildValues(chart *HelmChart, project *types.Project, valuesPath string) {
 	values = addVariablesDoc(values, project)
 	values = addMainTagAppDoc(values, project)
 	values = addResourceHelp(values)
+	values = addTLSHelp(values)
 	values = addYAMLSelectorPath(values)
 	values = append([]byte(headerHelp), values...)
 
