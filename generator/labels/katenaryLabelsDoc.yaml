@@ -338,9 +338,9 @@
         MARIADB_USER: myuser
         MARIADB_PASSWORD: mypassword
       labels:
-        # it can be a secret
+        # we can declare secrets
         {{ .KatenaryPrefix }}/secrets: |-
-          - DB_PASSWORD
+          - MARIADB_PASSWORD
     php:
       image: php:7.4-fpm
       environment:
