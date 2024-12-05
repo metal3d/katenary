@@ -172,12 +172,13 @@ services:
       katenary.v3/ingress: |-
         hostname: myapp.example.com
         port: 80
+      # make adaptations, DB_HOST environment is actually the service name
       katenary.v3/map-env: |-
-        # make adaptations, DB_HOST environment is actually the service name
         DB_HOST: '{{ .Release.Name }}-database'
+      # get the values from the "database" service
+      # this will use the database secrets and environment,
+      # see the "database" service to see the values
       katenary.v3/values-from: |-
-        # get the values from the "database" service
-        # this will use the databas secret, see below
         DB_USER: databse.MARIADB_USER
         DB_PASSWORD: database.MARIADB_PASSWORD
 
