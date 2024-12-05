@@ -17,6 +17,7 @@ var _ Yaml = (*Ingress)(nil)
 type Ingress struct {
 	*networkv1.Ingress
 	service *types.ServiceConfig `yaml:"-"`
+	appName string               `yaml:"-"`
 }
 
 // NewIngress creates a new Ingress from a compose service.
@@ -42,7 +43,11 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 
 	// create the ingress
 	pathType := networkv1.PathTypeImplementationSpecific
-	serviceName := `{{ include "` + appName + `.fullname" . }}-` + service.Name
+
+	// fix the service name, and create the full name from variable name
+	// which is injected in the YAML() method
+	serviceName := strings.ReplaceAll(service.Name, "_", "-")
+	fullName := `{{ $fullname }}-` + serviceName
 
 	// Add the ingress host to the values.yaml
 	if Chart.Values[service.Name] == nil {
@@ -63,7 +68,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 
 	servicePortName := utils.GetServiceNameByPort(int(*mapping.Port))
 	ingressService := &networkv1.IngressServiceBackend{
-		Name: serviceName,
+		Name: fullName,
 		Port: networkv1.ServiceBackendPort{},
 	}
 	if servicePortName != "" {
@@ -74,26 +79,27 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 
 	ing := &Ingress{
 		service: &service,
+		appName: appName,
 		Ingress: &networkv1.Ingress{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Ingress",
 				APIVersion: "networking.k8s.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        utils.TplName(service.Name, appName),
-				Labels:      GetLabels(service.Name, appName),
+				Name:        fullName,
+				Labels:      GetLabels(serviceName, appName),
 				Annotations: Annotations,
 			},
 			Spec: networkv1.IngressSpec{
 				IngressClassName: &ingressClassName,
 				Rules: []networkv1.IngressRule{
 					{
-						Host: utils.TplValue(service.Name, "ingress.host"),
+						Host: utils.TplValue(serviceName, "ingress.host"),
 						IngressRuleValue: networkv1.IngressRuleValue{
 							HTTP: &networkv1.HTTPIngressRuleValue{
 								Paths: []networkv1.HTTPIngressPath{
 									{
-										Path:     utils.TplValue(service.Name, "ingress.path"),
+										Path:     utils.TplValue(serviceName, "ingress.path"),
 										PathType: &pathType,
 										Backend: networkv1.IngressBackend{
 											Service: ingressService,
@@ -107,9 +113,9 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 				TLS: []networkv1.IngressTLS{
 					{
 						Hosts: []string{
-							`{{ tpl .Values.` + service.Name + `.ingress.host . }}`,
+							`{{ tpl .Values.` + serviceName + `.ingress.host . }}`,
 						},
-						SecretName: `{{ include "` + appName + `.fullname" . }}-` + service.Name + `-tls`,
+						SecretName: `{{ .Values.` + serviceName + `.ingress.tls.secretName | default $tlsname }}`,
 					},
 				},
 			},
@@ -131,9 +137,7 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	}
 
 	serviceName := ingress.service.Name
-	if err != nil {
-		return nil, err
-	}
+
 	ret = UnWrapTPL(ret)
 
 	lines := strings.Split(string(ret), "\n")
@@ -141,9 +145,7 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 	// first pass, wrap the tls part with `{{- if .Values.serviceName.ingress.tlsEnabled -}}`
 	// and `{{- end -}}`
 
-	from := -1
-	to := -1
-	spaces := -1
+	from, to, spaces := -1, -1, -1
 	for i, line := range lines {
 		if strings.Contains(line, "tls:") {
 			from = i
@@ -167,6 +169,8 @@ func (ingress *Ingress) Yaml() ([]byte, error) {
 
 	out := []string{
 		`{{- if .Values.` + serviceName + `.ingress.enabled -}}`,
+		`{{- $fullname := include "` + ingress.appName + `.fullname" . -}}`,
+		`{{- $tlsname := printf "%s-%s-tls" $fullname "` + ingress.service.Name + `" -}}`,
 	}
 	for _, line := range lines {
 		if strings.Contains(line, "loadBalancer: ") {
