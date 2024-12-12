@@ -1,7 +1,6 @@
 module katenary // github.com/metal3d/katenary
 
 go 1.23
-
 toolchain go1.23.2
 
 require (
@@ -11,8 +10,8 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/thediveo/netdb v1.1.2
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.31.3
-	k8s.io/apimachinery v0.31.3
+	k8s.io/api v0.32.0
+	k8s.io/apimachinery v0.32.0
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -29,6 +28,7 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
