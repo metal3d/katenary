@@ -24,6 +24,7 @@ jobs:
           ./get_helm.sh
       - name: Launch Test
         run: |
+          go mod tidy
           go vet ./... && go test -coverprofile=coverprofile.out -json -v ./... > gotest.json
       - uses: actions/upload-artifact@v4
         with:
