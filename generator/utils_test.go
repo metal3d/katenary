@@ -21,7 +21,7 @@ services:
 	composeFileContent = fmt.Sprintf(composeFileContent, labels.KatenaryLabelPrefix)
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
@@ -38,6 +38,9 @@ services:
 		cli.WithDefaultConfigPath,
 	)
 	project, err := cli.ProjectFromOptions(options)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := fixPorts(&project.Services[0]); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
@@ -66,7 +69,7 @@ services:
 	composeFileContent = fmt.Sprintf(composeFileContent, labels.KatenaryLabelPrefix)
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err)
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
@@ -83,6 +86,9 @@ services:
 		cli.WithDefaultConfigPath,
 	)
 	project, err := cli.ProjectFromOptions(options)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := fixPorts(&project.Services[0]); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}

@@ -16,7 +16,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const htmlContent = "<html><body><h1>Hello, World!</h1></body></html>"
+const (
+	htmlContent      = "<html><body><h1>Hello, World!</h1></body></html>"
+	developementFile = "templates/web/deployment.yaml"
+	indexHtmlFile    = "index.html"
+)
 
 func TestGenerateWithBoundVolume(t *testing.T) {
 	composeFile := `
@@ -35,7 +39,7 @@ volumes:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
@@ -43,7 +47,7 @@ volumes:
 	}
 
 	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected volume name to be data: %v", dt)
+		t.Errorf("Expected container volume name to be data: %v", dt)
 	}
 }
 
@@ -76,7 +80,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -102,8 +106,8 @@ services:
 	if len(data) != 1 {
 		t.Errorf("Expected 1 data, got %d", len(data))
 	}
-	if data["index.html"] != htmlContent {
-		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data["index.html"])
+	if data[indexHtmlFile] != htmlContent {
+		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHtmlFile])
 	}
 }
 
@@ -136,7 +140,7 @@ services:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
@@ -149,7 +153,7 @@ services:
 	}
 	// but this time, we need a subpath
 	subPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath
-	if subPath != "index.html" {
+	if subPath != indexHtmlFile {
 		t.Errorf("Expected subpath to be index.html, got %s", subPath)
 	}
 }
@@ -199,7 +203,7 @@ services:
 	}
 	png.Encode(f, img)
 	f.Close()
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 	d := v1.Deployment{}
 	yaml.Unmarshal([]byte(output), &d)
 	volumes := d.Spec.Template.Spec.Volumes
@@ -211,6 +215,9 @@ services:
 	cmContent, err := helmTemplate(ConvertOptions{
 		OutputDir: "chart",
 	}, "-s", "templates/web/statics/images/configmap.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
 	yaml.Unmarshal([]byte(cmContent), &cm)
 	if im, ok := cm.BinaryData["foo.png"]; !ok {
 		t.Errorf("Expected foo.png to be in the configmap")
@@ -266,7 +273,7 @@ services:
 	}
 	png.Encode(f, img)
 	f.Close()
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 	d := v1.Deployment{}
 	yaml.Unmarshal([]byte(output), &d)
 	volumes := d.Spec.Template.Spec.Volumes
@@ -278,6 +285,9 @@ services:
 	cmContent, err := helmTemplate(ConvertOptions{
 		OutputDir: "chart",
 	}, "-s", "templates/web/statics/images/configmap.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
 	yaml.Unmarshal([]byte(cmContent), &cm)
 	if im, ok := cm.BinaryData["foo.png"]; !ok {
 		t.Errorf("Expected foo.png to be in the configmap")
@@ -317,17 +327,17 @@ volumes:
 	os.Chdir(tmpDir)
 	defer os.Chdir(currentDir)
 
-	output := internalCompileTest(t, "-s", "templates/web/deployment.yaml")
+	output := internalCompileTest(t, "-s", developementFile)
 	dt := v1.Deployment{}
 	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
 		t.Errorf(unmarshalError, err)
 	}
 	// both containers should have the same volume mount
 	if dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected volume name to be data: %v", dt)
+		t.Errorf("Expected container 0 volume name to be data: %v", dt)
 	}
 	if dt.Spec.Template.Spec.Containers[1].VolumeMounts[0].Name != "data" {
-		t.Errorf("Expected volume name to be data: %v", dt)
+		t.Errorf("Expected container 1 volume name to be data: %v", dt)
 	}
 }
 
