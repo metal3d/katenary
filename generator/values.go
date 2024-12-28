@@ -3,7 +3,7 @@ package generator
 import (
 	"strings"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
 // RepositoryValue is a docker repository image and tag that will be saved in values.yaml.

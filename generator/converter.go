@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
 const ingressClassHelp = `# Default value for ingress.class annotation

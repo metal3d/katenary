@@ -2,11 +2,12 @@
 package parser
 
 import (
+	"context"
 	"log"
 	"path/filepath"
 
-	"github.com/compose-spec/compose-go/cli"
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/cli"
+	"github.com/compose-spec/compose-go/v2/types"
 )
 
 func init() {
@@ -53,5 +54,5 @@ func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*
 	if err != nil {
 		return nil, err
 	}
-	return cli.ProjectFromOptions(options)
+	return cli.ProjectFromOptions(context.TODO(), options)
 }

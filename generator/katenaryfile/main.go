@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/invopop/jsonschema"
 	"gopkg.in/yaml.v3"
 )
@@ -72,27 +72,29 @@ func OverrideWithConfig(project *types.Project) {
 	}
 	for i, p := range project.Services {
 		name := p.Name
-		if project.Services[i].Labels == nil {
-			project.Services[i].Labels = make(map[string]string)
+		if p.Labels == nil {
+			p.Labels = make(map[string]string)
+			project.Services[i] = p
 		}
 
 		if s, ok := services[name]; ok {
-			getLabelContent(s.MainApp, &project.Services[i], labels.LabelMainApp)
-			getLabelContent(s.Values, &project.Services[i], labels.LabelValues)
-			getLabelContent(s.Secrets, &project.Services[i], labels.LabelSecrets)
-			getLabelContent(s.Ports, &project.Services[i], labels.LabelPorts)
-			getLabelContent(s.Ingress, &project.Services[i], labels.LabelIngress)
-			getLabelContent(s.HealthCheck, &project.Services[i], labels.LabelHealthCheck)
-			getLabelContent(s.SamePod, &project.Services[i], labels.LabelSamePod)
-			getLabelContent(s.Description, &project.Services[i], labels.LabelDescription)
-			getLabelContent(s.Ignore, &project.Services[i], labels.LabelIgnore)
-			getLabelContent(s.Dependencies, &project.Services[i], labels.LabelDependencies)
-			getLabelContent(s.ConfigMapFile, &project.Services[i], labels.LabelConfigMapFiles)
-			getLabelContent(s.MapEnv, &project.Services[i], labels.LabelMapEnv)
-			getLabelContent(s.CronJob, &project.Services[i], labels.LabelCronJob)
-			getLabelContent(s.EnvFrom, &project.Services[i], labels.LabelEnvFrom)
-			getLabelContent(s.ExchangeVolumes, &project.Services[i], labels.LabelExchangeVolume)
-			getLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValueFrom)
+			service := project.Services[i]
+			getLabelContent(s.MainApp, &service, labels.LabelMainApp)
+			getLabelContent(s.Values, &service, labels.LabelValues)
+			getLabelContent(s.Secrets, &service, labels.LabelSecrets)
+			getLabelContent(s.Ports, &service, labels.LabelPorts)
+			getLabelContent(s.Ingress, &service, labels.LabelIngress)
+			getLabelContent(s.HealthCheck, &service, labels.LabelHealthCheck)
+			getLabelContent(s.SamePod, &service, labels.LabelSamePod)
+			getLabelContent(s.Description, &service, labels.LabelDescription)
+			getLabelContent(s.Ignore, &service, labels.LabelIgnore)
+			getLabelContent(s.Dependencies, &service, labels.LabelDependencies)
+			getLabelContent(s.ConfigMapFile, &service, labels.LabelConfigMapFiles)
+			getLabelContent(s.MapEnv, &service, labels.LabelMapEnv)
+			getLabelContent(s.CronJob, &service, labels.LabelCronJob)
+			getLabelContent(s.EnvFrom, &service, labels.LabelEnvFrom)
+			getLabelContent(s.ExchangeVolumes, &service, labels.LabelExchangeVolume)
+			getLabelContent(s.ValuesFrom, &service, labels.LabelValueFrom)
 		}
 	}
 	fmt.Println(utils.IconInfo, "Katenary file loaded successfully, the services are now configured.")
@@ -123,6 +125,9 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 		val = strings.TrimSpace(string(c))
 	}
 
+	if service.Labels == nil {
+		service.Labels = make(map[string]string)
+	}
 	service.Labels[labelName] = val
 	return nil
 }

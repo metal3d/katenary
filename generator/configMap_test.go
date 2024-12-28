@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )

@@ -1,13 +1,14 @@
 package generator
 
 import (
+	"context"
 	"fmt"
 	"katenary/generator/labels"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 )
 
 func TestSplitPorts(t *testing.T) {
@@ -37,15 +38,18 @@ services:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fixPorts(&project.Services[0]); err != nil {
+	service := project.Services["foo"]
+	if err := fixPorts(&service); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
+	project.Services["foo"] = service
 	found := 0
-	for _, p := range project.Services[0].Ports {
+	t.Log(service.Ports, project.Services["foo"].Ports)
+	for _, p := range project.Services["foo"].Ports {
 		switch p.Target {
 		case 80, 443:
 			found++
@@ -85,15 +89,16 @@ services:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fixPorts(&project.Services[0]); err != nil {
+	service := project.Services["foo"]
+	if err := fixPorts(&service); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
 	found := 0
-	for _, p := range project.Services[0].Ports {
+	for _, p := range service.Ports {
 		switch p.Target {
 		case 80, 443, 8080:
 			found++

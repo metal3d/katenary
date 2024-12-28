@@ -1,13 +1,14 @@
 package katenaryfile
 
 import (
+	"context"
 	"katenary/generator/labels"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/v2/cli"
 )
 
 func TestBuildSchema(t *testing.T) {
@@ -33,7 +34,7 @@ webapp:
 	// create /tmp/katenary-test-override directory, save the compose.yaml file
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
@@ -56,10 +57,13 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
@@ -83,7 +87,7 @@ webapp:
 	// create /tmp/katenary-test-override directory, save the compose.yaml file
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
@@ -106,10 +110,14 @@ webapp:
 		cli.WithWorkingDirectory(tmpDir),
 		cli.WithDefaultConfigPath,
 	)
-	project, err := cli.ProjectFromOptions(options)
+	project, err := cli.ProjectFromOptions(context.TODO(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	OverrideWithConfig(project)
-	w := project.Services[0].Labels
+	log.Println(project.Services["webapp"].Labels)
+	w := project.Services["webapp"].Labels
 	if v, ok := w[labels.LabelPorts]; !ok {
 		t.Fatal("Expected ports to be defined", v)
 	}
