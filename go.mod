@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/thediveo/netdb v1.1.2
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.32.0
+	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
 	sigs.k8s.io/yaml v1.4.0
 )
