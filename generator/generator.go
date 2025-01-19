@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"katenary/generator/labels"
+	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
 	"regexp"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/compose-spec/compose-go/types"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // Generate a chart from a compose project.
@@ -42,6 +44,39 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	}
 	Annotations[labels.LabelName("compose-hash")] = hash
 	chart.composeHash = &hash
+
+	// rename all services name to remove dashes
+	for i, service := range project.Services {
+		if service.Name != utils.AsResourceName(service.Name) {
+			fixed := utils.AsResourceName(service.Name)
+			for j, s := range project.Services {
+				// for the same-pod services, we need to keep the original name
+				if samepod, ok := s.Labels[labels.LabelSamePod]; ok && samepod == service.Name {
+					s.Labels[labels.LabelSamePod] = fixed
+					project.Services[j] = s
+				}
+				// also, the value-from label should be updated
+				if valuefrom, ok := s.Labels[labels.LabelValueFrom]; ok {
+					vf, err := labelStructs.GetValueFrom(valuefrom)
+					if err != nil {
+						return nil, err
+					}
+					for varname, bind := range *vf {
+						log.Printf("service %s, varname %s, bind %s", service.Name, varname, bind)
+						bind := strings.ReplaceAll(bind, service.Name, fixed)
+						(*vf)[varname] = bind
+					}
+					output, err := yaml.Marshal(vf)
+					if err != nil {
+						return nil, err
+					}
+					s.Labels[labels.LabelValueFrom] = string(output)
+				}
+			}
+			service.Name = fixed
+			project.Services[i] = service
+		}
+	}
 
 	// find the "main-app" label, and set chart.AppVersion to the tag if exists
 	mainCount := 0
