@@ -179,27 +179,27 @@ services:
       # this will use the database secrets and environment,
       # see the "database" service to see the values
       katenary.v3/values-from: |-
-        DB_USER: databse.MARIADB_USER
+        DB_USER: database.MARIADB_USER
         DB_PASSWORD: database.MARIADB_PASSWORD
 
-    database:
-      image: mariadb:10
-      env_file:
-        # this valuse will be added in a configMap
-        - my_env.env
-      environment:
-        MARIADB_USER: foo
-        MARIADB_ROOT_PASSWORD: foobar
-        MARIADB_PASSWORD: bar
-      labels:
-        # no need to declare this port in docker-compose
-        # but katenary will need it
-        katenary.v3/ports: |-
-          - 3306
-        # these variables are secrets
-        katenary.v3/secrets: |-
-          - MARIADB_ROOT_PASSWORD
-          - MARIADB_PASSWORD
+  database:
+    image: mariadb:10
+    env_file:
+      # this valuse will be added in a configMap
+      - my_env.env
+    environment:
+      MARIADB_USER: foo
+      MARIADB_ROOT_PASSWORD: foobar
+      MARIADB_PASSWORD: bar
+    labels:
+      # no need to declare this port in docker-compose
+      # but katenary will need it
+      katenary.v3/ports: |-
+        - 3306
+      # these variables are secrets
+      katenary.v3/secrets: |-
+        - MARIADB_ROOT_PASSWORD
+        - MARIADB_PASSWORD
 ```
 
 ## Labels
