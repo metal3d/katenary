@@ -49,6 +49,7 @@ func internalCompileTest(t *testing.T, options ...string) string {
 		ChartVersion: chartVersion,
 	}
 	if err := Convert(convertOptions, "compose.yml"); err != nil {
+		log.Printf("Failed to convert: %s", err)
 		return err.Error()
 	}
 

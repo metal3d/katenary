@@ -4,6 +4,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"text/template"
@@ -20,7 +21,7 @@ type chart struct {
 	Values      []string
 }
 
-func parseValues(prefix string, values map[string]interface{}, result map[string]string) {
+func parseValues(prefix string, values map[string]any, result map[string]string) {
 	for key, value := range values {
 		path := key
 		if prefix != "" {
@@ -28,11 +29,11 @@ func parseValues(prefix string, values map[string]interface{}, result map[string
 		}
 
 		switch v := value.(type) {
-		case []interface{}:
+		case []any:
 			for i, u := range v {
-				parseValues(fmt.Sprintf("%s[%d]", path, i), map[string]interface{}{"value": u}, result)
+				parseValues(fmt.Sprintf("%s[%d]", path, i), map[string]any{"value": u}, result)
 			}
-		case map[string]interface{}:
+		case map[string]any:
 			parseValues(path, v, result)
 		default:
 			strValue := fmt.Sprintf("`%v`", value)
@@ -48,7 +49,9 @@ func ReadMeFile(charname, description string, values map[string]any) string {
 
 	vv := map[string]any{}
 	out, _ := yaml.Marshal(values)
-	yaml.Unmarshal(out, &vv)
+	if err := yaml.Unmarshal(out, &vv); err != nil {
+		log.Printf("Error parsing values: %s", err)
+	}
 
 	result := make(map[string]string)
 	parseValues("", vv, result)

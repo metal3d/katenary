@@ -12,7 +12,7 @@ A katenary file, named "katenary.yml" or "katenary.yaml", is a file where you ca
 
 Formely, the file describe the same structure as in labels, and so that can be validated and completed by LSP. It also ease the use of katenary.
 
-## func [GenerateSchema](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L131>)
+## func [GenerateSchema](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L137>)
 
 ```go
 func GenerateSchema() string

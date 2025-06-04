@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"katenary/utils"
+	"log"
 	"regexp"
 	"sort"
 	"strings"
@@ -125,23 +126,30 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 	}
 
 	var buf bytes.Buffer
-	template.Must(template.New("shorthelp").Parse(help.Long)).Execute(&buf, struct {
+	var err error
+	err = template.Must(template.New("shorthelp").Parse(help.Long)).Execute(&buf, struct {
 		KatenaryPrefix string
 	}{
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
+	if err != nil {
+		log.Fatalf("Error executing template: %v", err)
+	}
 	help.Long = buf.String()
 	buf.Reset()
 
-	template.Must(template.New("example").Parse(help.Example)).Execute(&buf, struct {
+	err = template.Must(template.New("example").Parse(help.Example)).Execute(&buf, struct {
 		KatenaryPrefix string
 	}{
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
+	if err != nil {
+		log.Fatalf("Error executing template: %v", err)
+	}
 	help.Example = buf.String()
 	buf.Reset()
 
-	template.Must(template.New("complete").Parse(helpTemplate)).Execute(&buf, struct {
+	err = template.Must(template.New("complete").Parse(helpTemplate)).Execute(&buf, struct {
 		Name           string
 		Help           Help
 		KatenaryPrefix string
@@ -150,6 +158,9 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string {
 		Help:           help,
 		KatenaryPrefix: KatenaryLabelPrefix,
 	})
+	if err != nil {
+		log.Fatalf("Error executing template: %v", err)
+	}
 
 	return buf.String()
 }

@@ -87,7 +87,7 @@ func UnWrapTPL(in []byte) []byte {
 	return regexpLineWrap.ReplaceAll(in, []byte(" }}"))
 }
 
-func ToK8SYaml(obj interface{}) ([]byte, error) {
+func ToK8SYaml(obj any) ([]byte, error) {
 	if o, err := yaml.Marshal(obj); err != nil {
 		return nil, nil
 	} else {

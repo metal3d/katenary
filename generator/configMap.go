@@ -142,7 +142,9 @@ func NewConfigMapFromDirectory(service types.ServiceConfig, appName, path string
 	// cumulate the path to the WorkingDir
 	path = filepath.Join(service.WorkingDir, path)
 	path = filepath.Clean(path)
-	cm.AppendDir(path)
+	if err := cm.AppendDir(path); err != nil {
+		log.Fatal("Error adding files to configmap:", err)
+	}
 	return cm
 }
 
@@ -165,7 +167,7 @@ func (c *ConfigMap) AppendDir(path string) error {
 	// read all files in the path and add them to the configmap
 	stat, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("Path %s does not exist, %w\n", path, err)
+		return fmt.Errorf("path %s does not exist, %w", path, err)
 	}
 	// recursively read all files in the path and add them to the configmap
 	if stat.IsDir() {
@@ -212,7 +214,7 @@ func (c *ConfigMap) AppendFile(path string) error {
 	// read all files in the path and add them to the configmap
 	stat, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("Path %s doesn not exists, %w", path, err)
+		return fmt.Errorf("path %s doesn not exists, %w", path, err)
 	}
 	// recursively read all files in the path and add them to the configmap
 	if !stat.IsDir() {

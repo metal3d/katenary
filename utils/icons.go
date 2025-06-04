@@ -22,7 +22,7 @@ const (
 )
 
 // Warn prints a warning message
-func Warn(msg ...interface{}) {
+func Warn(msg ...any) {
 	orange := "\033[38;5;214m"
 	reset := "\033[0m"
 	fmt.Print(IconWarning, orange, " ")

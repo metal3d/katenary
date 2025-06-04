@@ -305,10 +305,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 	if len(service.Environment) == 0 {
 		return
 	}
-	inSamePod := false
-	if len(samePod) > 0 && samePod[0] {
-		inSamePod = true
-	}
+	inSamePod := len(samePod) > 0 && samePod[0]
 
 	drop := []string{}
 	secrets := []string{}
@@ -660,7 +657,9 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 		d.configMaps[pathname].mountPath = mp
 
 	}
-	cm.AppendFile(volume.Source)
+	if err := cm.AppendFile(volume.Source); err != nil {
+		log.Fatal("Error adding file to configmap:", err)
+	}
 }
 
 func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {

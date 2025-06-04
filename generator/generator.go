@@ -117,7 +117,10 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	for _, s := range project.Services {
 		for _, d := range s.GetDependencies() {
 			if dep, ok := deployments[d]; ok {
-				deployments[s.Name].DependsOn(dep, d)
+				err := deployments[s.Name].DependsOn(dep, d)
+				if err != nil {
+					log.Printf("error creating init container for service %[1]s: %[2]s", s.Name, err)
+				}
 			} else {
 				log.Printf("service %[1]s depends on %[2]s, but %[2]s is not defined", s.Name, d)
 			}
@@ -129,7 +132,9 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	}
 
 	// generate configmaps with environment variables
-	chart.generateConfigMapsAndSecrets(project)
+	if err := chart.generateConfigMapsAndSecrets(project); err != nil {
+		log.Fatalf("error generating configmaps and secrets: %s", err)
+	}
 
 	// if the env-from label is set, we need to add the env vars from the configmap
 	// to the environment of the service
@@ -385,7 +390,7 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 		return false
 	}
 
-	if service.Volumes == nil || len(service.Volumes) == 0 {
+	if len(service.Volumes) == 0 {
 		return false
 	}
 

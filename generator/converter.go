@@ -113,7 +113,11 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 		fmt.Println(utils.IconFailure, err)
 		return err
 	}
-	defer os.Chdir(currentDir) // after the generation, go back to the original directory
+	defer func() {
+		if err := os.Chdir(currentDir); err != nil { // after the generation, go back to the original directory
+			log.Fatal(err)
+		}
+	}()
 
 	// repove the directory part of the docker-compose files
 	for i, f := range dockerComposeFile {
@@ -627,7 +631,11 @@ func writeContent(path string, content []byte) {
 		os.Exit(1)
 	}
 	defer f.Close()
-	f.Write(content)
+	defer func() {
+		if _, err := f.Write(content); err != nil {
+			log.Fatal(err)
+		}
+	}()
 }
 
 // helmLint runs "helm lint" on the output directory.

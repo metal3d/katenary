@@ -1,0 +1,26 @@
+version: "2"
+run:
+  issues-exit-code: 1
+linters:
+  enabled:
+  - unused
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - "(.+)_test.go"
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - "(.+)_test.go"
