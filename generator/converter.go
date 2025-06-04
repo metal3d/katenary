@@ -630,10 +630,8 @@ func writeContent(path string, content []byte) {
 		fmt.Println(utils.IconFailure, err)
 		os.Exit(1)
 	}
+	defer f.Close()
 	defer func() {
-		if err := f.Close(); err != nil {
-			log.Fatal(err)
-		}
 		if _, err := f.Write(content); err != nil {
 			log.Fatal(err)
 		}

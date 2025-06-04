@@ -116,14 +116,11 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 			fmt.Println(utils.IconFailure, err)
 			os.Exit(1)
 		}
-
+		defer f.Close()
 		if _, err := f.Write(t); err != nil {
 			log.Fatal("error writing template file:", err)
 		}
 
-		if err := f.Close(); err != nil {
-			log.Fatal("error closing template file:", err)
-		}
 	}
 }
 
