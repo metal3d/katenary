@@ -33,7 +33,7 @@ webapp:
 	// create /tmp/katenary-test-override directory, save the compose.yaml file
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatalf("Failed to create temp directory: %s", err.Error())
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")
@@ -83,7 +83,7 @@ webapp:
 	// create /tmp/katenary-test-override directory, save the compose.yaml file
 	tmpDir, err := os.MkdirTemp("", "katenary-test-override")
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatalf("Failed to create temp directory: %s", err.Error())
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 	katenaryFile := filepath.Join(tmpDir, "katenary.yaml")

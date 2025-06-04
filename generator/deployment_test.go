@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	yaml3 "gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -324,14 +325,140 @@ services:
 			Environment map[string]string `yaml:"environment"`
 		} `yaml:"web"`
 	}{}
-	if err := yaml.Unmarshal(valuesContent, &mapping); err != nil {
+	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
 		t.Errorf(unmarshalError, err)
 	}
 
-	if _, ok := mapping.Web.Environment["FOO"]; !ok {
+	if v, ok := mapping.Web.Environment["FOO"]; !ok {
 		t.Errorf("Expected FOO in web environment")
+		if v != "bar" {
+			t.Errorf("Expected FOO to be bar, got %s", v)
+		}
 	}
-	if _, ok := mapping.Web.Environment["BAZ"]; ok {
+	if v, ok := mapping.Web.Environment["BAZ"]; ok {
 		t.Errorf("Expected BAZ not in web environment")
+		if v != "qux" {
+			t.Errorf("Expected BAZ to be qux, got %s", v)
+		}
+	}
+}
+
+func TestWithDashes(t *testing.T) {
+	composeFile := `
+services:
+    web-app:
+        image: nginx:1.29
+        environment:
+            FOO: BAR
+        labels:
+            %s/values: |
+                - FOO
+`
+
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	valuesFile := "./chart/values.yaml"
+	if _, err := os.Stat(valuesFile); os.IsNotExist(err) {
+		t.Errorf("values.yaml does not exist")
+	}
+	valuesContent, err := os.ReadFile(valuesFile)
+	if err != nil {
+		t.Errorf("Error reading values.yaml: %s", err)
+	}
+	mapping := struct {
+		Web struct {
+			Environment map[string]string `yaml:"environment"`
+		} `yaml:"web_app"`
+	}{}
+	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	// we must have FOO in web_app environment (not web-app)
+	// this validates that the service name is converted to a valid k8s name
+	if v, ok := mapping.Web.Environment["FOO"]; !ok {
+		t.Errorf("Expected FOO in web_app environment")
+		if v != "BAR" {
+			t.Errorf("Expected FOO to be BAR, got %s", v)
+		}
+	}
+}
+
+func TestDashesWithValueFrom(t *testing.T) {
+	composeFile := `
+services:
+    web-app:
+        image: nginx:1.29
+        environment:
+            FOO: BAR
+        labels:
+            %[1]s/values: |
+                - FOO
+    web2:
+        image: nginx:1.29
+        labels:
+            %[1]s/values-from: |
+                BAR: web-app.FOO
+`
+
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web2/deployment.yaml")
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	valuesFile := "./chart/values.yaml"
+	if _, err := os.Stat(valuesFile); os.IsNotExist(err) {
+		t.Errorf("values.yaml does not exist")
+	}
+	valuesContent, err := os.ReadFile(valuesFile)
+	if err != nil {
+		t.Errorf("Error reading values.yaml: %s", err)
+	}
+	mapping := struct {
+		Web struct {
+			Environment map[string]string `yaml:"environment"`
+		} `yaml:"web_app"`
+	}{}
+	if err := yaml3.Unmarshal(valuesContent, &mapping); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+
+	// we must have FOO in web_app environment (not web-app)
+	// this validates that the service name is converted to a valid k8s name
+	if v, ok := mapping.Web.Environment["FOO"]; !ok {
+		t.Errorf("Expected FOO in web_app environment")
+		if v != "BAR" {
+			t.Errorf("Expected FOO to be BAR, got %s", v)
+		}
+	}
+
+	// ensure that the deployment has the value from the other service
+	barenv := dt.Spec.Template.Spec.Containers[0].Env[0]
+	if barenv.Value != "" {
+		t.Errorf("Expected value to be empty")
+	}
+	if barenv.ValueFrom == nil {
+		t.Errorf("Expected valueFrom to be set")
 	}
 }

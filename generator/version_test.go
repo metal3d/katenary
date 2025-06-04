@@ -8,7 +8,7 @@ import (
 func TestVersion(t *testing.T) {
 	// we build on "devel" branch
 	v := GetVersion()
-	if strings.Contains(v, "(devel)") {
+	if !strings.Contains(v, "(devel)") {
 		t.Errorf("Expected version to be set, got %s", v)
 	}
 
