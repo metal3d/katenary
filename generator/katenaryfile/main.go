@@ -75,24 +75,30 @@ func OverrideWithConfig(project *types.Project) {
 		if project.Services[i].Labels == nil {
 			project.Services[i].Labels = make(map[string]string)
 		}
+		mustGetLabelContent := func(o any, s *types.ServiceConfig, labelName string) {
+			err := getLabelContent(o, s, labelName)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 
 		if s, ok := services[name]; ok {
-			getLabelContent(s.MainApp, &project.Services[i], labels.LabelMainApp)
-			getLabelContent(s.Values, &project.Services[i], labels.LabelValues)
-			getLabelContent(s.Secrets, &project.Services[i], labels.LabelSecrets)
-			getLabelContent(s.Ports, &project.Services[i], labels.LabelPorts)
-			getLabelContent(s.Ingress, &project.Services[i], labels.LabelIngress)
-			getLabelContent(s.HealthCheck, &project.Services[i], labels.LabelHealthCheck)
-			getLabelContent(s.SamePod, &project.Services[i], labels.LabelSamePod)
-			getLabelContent(s.Description, &project.Services[i], labels.LabelDescription)
-			getLabelContent(s.Ignore, &project.Services[i], labels.LabelIgnore)
-			getLabelContent(s.Dependencies, &project.Services[i], labels.LabelDependencies)
-			getLabelContent(s.ConfigMapFile, &project.Services[i], labels.LabelConfigMapFiles)
-			getLabelContent(s.MapEnv, &project.Services[i], labels.LabelMapEnv)
-			getLabelContent(s.CronJob, &project.Services[i], labels.LabelCronJob)
-			getLabelContent(s.EnvFrom, &project.Services[i], labels.LabelEnvFrom)
-			getLabelContent(s.ExchangeVolumes, &project.Services[i], labels.LabelExchangeVolume)
-			getLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValueFrom)
+			mustGetLabelContent(s.MainApp, &project.Services[i], labels.LabelMainApp)
+			mustGetLabelContent(s.Values, &project.Services[i], labels.LabelValues)
+			mustGetLabelContent(s.Secrets, &project.Services[i], labels.LabelSecrets)
+			mustGetLabelContent(s.Ports, &project.Services[i], labels.LabelPorts)
+			mustGetLabelContent(s.Ingress, &project.Services[i], labels.LabelIngress)
+			mustGetLabelContent(s.HealthCheck, &project.Services[i], labels.LabelHealthCheck)
+			mustGetLabelContent(s.SamePod, &project.Services[i], labels.LabelSamePod)
+			mustGetLabelContent(s.Description, &project.Services[i], labels.LabelDescription)
+			mustGetLabelContent(s.Ignore, &project.Services[i], labels.LabelIgnore)
+			mustGetLabelContent(s.Dependencies, &project.Services[i], labels.LabelDependencies)
+			mustGetLabelContent(s.ConfigMapFile, &project.Services[i], labels.LabelConfigMapFiles)
+			mustGetLabelContent(s.MapEnv, &project.Services[i], labels.LabelMapEnv)
+			mustGetLabelContent(s.CronJob, &project.Services[i], labels.LabelCronJob)
+			mustGetLabelContent(s.EnvFrom, &project.Services[i], labels.LabelEnvFrom)
+			mustGetLabelContent(s.ExchangeVolumes, &project.Services[i], labels.LabelExchangeVolume)
+			mustGetLabelContent(s.ValuesFrom, &project.Services[i], labels.LabelValueFrom)
 		}
 	}
 	fmt.Println(utils.IconInfo, "Katenary file loaded successfully, the services are now configured.")
@@ -155,5 +161,5 @@ func GenerateSchema() string {
 		return err.Error()
 	}
 
-	return string(out.Bytes())
+	return out.String()
 }

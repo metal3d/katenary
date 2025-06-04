@@ -117,8 +117,13 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 			os.Exit(1)
 		}
 
-		f.Write(t)
-		f.Close()
+		if _, err := f.Write(t); err != nil {
+			log.Fatal("error writing template file:", err)
+		}
+
+		if err := f.Close(); err != nil {
+			log.Fatal("error closing template file:", err)
+		}
 	}
 }
 
@@ -126,7 +131,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) error {
 	appName := chart.Name
 	for _, s := range project.Services {
-		if s.Environment == nil || len(s.Environment) == 0 {
+		if len(s.Environment) == 0 {
 			continue
 		}
 

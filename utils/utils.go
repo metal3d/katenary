@@ -165,7 +165,9 @@ func Confirm(question string, icon ...Icon) bool {
 		fmt.Print(question + " [y/N] ")
 	}
 	var response string
-	fmt.Scanln(&response)
+	if _, err := fmt.Scanln(&response); err != nil {
+		log.Fatalf("Error parsing response: %s", err.Error())
+	}
 	return strings.ToLower(response) == "y"
 }
 

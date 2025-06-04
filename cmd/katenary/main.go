@@ -10,6 +10,7 @@ import (
 	"katenary/generator/katenaryfile"
 	"katenary/generator/labels"
 	"katenary/utils"
+	"log"
 	"os"
 	"strings"
 
@@ -24,7 +25,10 @@ Each [command] and subcommand has got an "help" and "--help" flag to show more i
 
 func main() {
 	rootCmd := buildRootCmd()
-	rootCmd.Execute()
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func buildRootCmd() *cobra.Command {
@@ -97,26 +101,26 @@ func generateCompletionCommand(name string) *cobra.Command {
 		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		Short:                 "Generates completion scripts",
 		Long:                  fmt.Sprintf(completionHelp, name),
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
-				cmd.Help()
-				return
+				return cmd.Help()
 			}
 			switch args[0] {
 			case "bash":
 				// get the bash version
 				if cmd.Flags().Changed("bash-v1") {
-					cmd.Root().GenBashCompletion(os.Stdout)
-					return
+					return cmd.Root().GenBashCompletion(os.Stdout)
 				}
-				cmd.Root().GenBashCompletionV2(os.Stdout, true)
+				return cmd.Root().GenBashCompletionV2(os.Stdout, true)
 			case "zsh":
-				cmd.Root().GenZshCompletion(os.Stdout)
+				return cmd.Root().GenZshCompletion(os.Stdout)
 			case "fish":
-				cmd.Root().GenFishCompletion(os.Stdout, true)
+				return cmd.Root().GenFishCompletion(os.Stdout, true)
 			case "powershell":
-				cmd.Root().GenPowerShellCompletion(os.Stdout)
+				return cmd.Root().GenPowerShellCompletion(os.Stdout)
 			}
+
+			return fmt.Errorf("unknown completion type: %s", args[0])
 		},
 	}
 
