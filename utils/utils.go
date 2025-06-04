@@ -136,12 +136,12 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 			switch val := value.(type) {
 			case string:
 				descriptions[val] = nil
-			case map[string]interface{}:
-				for k, v := range value.(map[string]interface{}) {
+			case map[string]any:
+				for k, v := range value.(map[string]any) {
 					descriptions[k] = &EnvConfig{Service: service, Description: v.(string)}
 				}
-			case map[interface{}]interface{}:
-				for k, v := range value.(map[interface{}]interface{}) {
+			case map[any]any:
+				for k, v := range value.(map[any]any) {
 					descriptions[k.(string)] = &EnvConfig{Service: service, Description: v.(string)}
 				}
 			default:
