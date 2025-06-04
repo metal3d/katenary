@@ -54,7 +54,6 @@ nav:
   - Go Packages:
     - packages/cmd/katenary.md
     - packages/parser.md
-    - packages/update.md
     - packages/utils.md
     - Generator: 
       - Index: packages/generator.md

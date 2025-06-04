@@ -8,7 +8,7 @@ import "katenary/utils"
 
 Utils package provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
 
-## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L191>)
+## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L193>)
 
 ```go
 func AsResourceName(name string) string
@@ -35,7 +35,7 @@ func CountStartingSpaces(line string) int
 CountStartingSpaces counts the number of spaces at the beginning of a string.
 
 <a name="EncodeBasicYaml"></a>
-## func [EncodeBasicYaml](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L173>)
+## func [EncodeBasicYaml](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L175>)
 
 ```go
 func EncodeBasicYaml(data any) ([]byte, error)
@@ -44,7 +44,7 @@ func EncodeBasicYaml(data any) ([]byte, error)
 EncodeBasicYaml encodes a basic yaml from an interface.
 
 <a name="FixedResourceName"></a>
-## func [FixedResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L185>)
+## func [FixedResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L187>)
 
 ```go
 func FixedResourceName(name string) string
@@ -146,7 +146,7 @@ GetContainerByName returns a container by name and its index in the array.
 ## func [Warn](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L25>)
 
 ```go
-func Warn(msg ...interface{})
+func Warn(msg ...any)
 ```
 
 Warn prints a warning message
