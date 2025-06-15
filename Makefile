@@ -12,6 +12,8 @@ BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(RELEASE)$(VERSION)'"
 GOOS=linux
 GOARCH=amd64
 SIGNER=metal3d@gmail.com
+UPX_OPTS = 
+UPX ?= upx $(UPX_OPTS)
 
 BUILD_IMAGE=docker.io/golang:$(GOVERSION)-alpine
 # SHELL=/bin/bash
@@ -95,17 +97,17 @@ ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
 	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it $(BUILD_IMAGE) $(BLD_CMD)
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id  $(BUILD_IMAGE) $(BLD_CMD)
 else
 	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it $(BUILD_IMAGE) $(BLD_CMD)
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp  $(BUILD_IMAGE) $(BLD_CMD)
 endif
 	echo "=> Stripping if possible"
 	strip $(OUT) 2>/dev/null || echo "=> No strip available"
 
 
 ## Release build
-dist: prepare $(BINARIES) $(ASC_BINARIES)
+dist: prepare $(BINARIES) upx $(ASC_BINARIES) 
 
 prepare: pull
 	mkdir -p dist
@@ -146,6 +148,13 @@ gpg-sign:
 
 dist/%.asc: dist/%
 	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
+
+
+upx:
+	$(UPX) dist/katenary-linux-amd64
+	$(UPX) dist/katenary-linux-arm64
+	$(UPX) dist/katenary.exe
+	$(UPX) dist/katenary-darwin-amd64 --force-macos
 
 install: build
 	install -Dm755 katenary $(PREFIX)/bin/katenary
