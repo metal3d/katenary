@@ -95,10 +95,10 @@ ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
 	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id -it $(BUILD_IMAGE) $(BLD_CMD)
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id  $(BUILD_IMAGE) $(BLD_CMD)
 else
 	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp -it $(BUILD_IMAGE) $(BLD_CMD)
+		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp  $(BUILD_IMAGE) $(BLD_CMD)
 endif
 	echo "=> Stripping if possible"
 	strip $(OUT) 2>/dev/null || echo "=> No strip available"
