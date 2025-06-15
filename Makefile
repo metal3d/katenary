@@ -4,7 +4,7 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
-GOVERSION=1.23
+GOVERSION=1.24
 GO=container
 OUT=katenary
 RELEASE=""
@@ -33,7 +33,7 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help clean build install tests test
+.PHONY: help clean build install tests test doc
 
 all: build
 
@@ -203,6 +203,11 @@ push-release: build-all
 	done
 	@rm -f release.id
 
+
+doc:
+	@echo "=> Generating documentation..."
+	# generate the labels doc and code doc
+	$(MAKE) __label_doc
 
 __label_doc:
 	@command -v gomarkdoc || (echo "==> We need to install gomarkdoc..." && \
