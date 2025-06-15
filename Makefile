@@ -12,6 +12,8 @@ BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(RELEASE)$(VERSION)'"
 GOOS=linux
 GOARCH=amd64
 SIGNER=metal3d@gmail.com
+UPX_OPTS = 
+UPX ?= upx $(UPX_OPTS)
 
 BUILD_IMAGE=docker.io/golang:$(GOVERSION)-alpine
 # SHELL=/bin/bash
@@ -105,7 +107,7 @@ endif
 
 
 ## Release build
-dist: prepare $(BINARIES) $(ASC_BINARIES)
+dist: prepare $(BINARIES) upx $(ASC_BINARIES) 
 
 prepare: pull
 	mkdir -p dist
@@ -146,6 +148,13 @@ gpg-sign:
 
 dist/%.asc: dist/%
 	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
+
+
+upx:
+	$(UPX) dist/katenary-linux-amd64
+	$(UPX) dist/katenary-linux-arm64
+	$(UPX) dist/katenary.exe
+	$(UPX) dist/katenary-darwin-amd64 --force-macos
 
 install: build
 	install -Dm755 katenary $(PREFIX)/bin/katenary
