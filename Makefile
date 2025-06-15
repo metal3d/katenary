@@ -33,7 +33,7 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help clean build install tests test
+.PHONY: help clean build install tests test doc
 
 all: build
 
@@ -203,6 +203,11 @@ push-release: build-all
 	done
 	@rm -f release.id
 
+
+doc:
+	@echo "=> Generating documentation..."
+	# generate the labels doc and code doc
+	$(MAKE) __label_doc
 
 __label_doc:
 	@command -v gomarkdoc || (echo "==> We need to install gomarkdoc..." && \
