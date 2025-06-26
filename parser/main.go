@@ -1,4 +1,4 @@
-// Parser package is a wrapper around compose-go to parse compose files.
+// Package parser is a wrapper around compose-go to parse compose files.
 package parser
 
 import (
