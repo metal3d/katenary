@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"katenary/generator/labels"
 	"os"
+	"strings"
 	"testing"
 
 	yaml3 "gopkg.in/yaml.v3"
@@ -340,6 +341,38 @@ services:
 		if v != "qux" {
 			t.Errorf("Expected BAZ to be qux, got %s", v)
 		}
+	}
+}
+
+func TestWithUnderscoreInContainerName(t *testing.T) {
+	composeFile := `
+services:
+    web-app:
+        image: nginx:1.29
+        container_name: web_app_container
+        environment:
+            FOO: BAR
+        labels:
+            %s/values: |
+                - FOO
+`
+	composeFile = fmt.Sprintf(composeFile, labels.Prefix())
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+	// find container.name
+	containerName := dt.Spec.Template.Spec.Containers[0].Name
+	if strings.Contains(containerName, "_") {
+		t.Errorf("Expected container name to not contain underscores, got %s", containerName)
 	}
 }
 

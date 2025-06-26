@@ -48,6 +48,8 @@ func Generate(project *types.Project) (*HelmChart, error) {
 	// drop all services with the "ignore" label
 	dropIngoredServices(project)
 
+	fixContainerNames(project)
+
 	// rename all services name to remove dashes
 	if err := fixResourceNames(project); err != nil {
 		return nil, err
@@ -265,7 +267,7 @@ func addStaticVolumes(deployments map[string]*Deployment, service types.ServiceC
 		return
 	}
 
-	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 	if container == nil { // may append for the same-pod services
 		return
 	}
@@ -415,4 +417,16 @@ func samePodVolume(service types.ServiceConfig, v types.ServiceVolumeConfig, dep
 		}
 	}
 	return false
+}
+
+func fixContainerNames(project *types.Project) {
+	// fix container names to be unique
+	for i, service := range project.Services {
+		if service.ContainerName == "" {
+			service.ContainerName = utils.FixedResourceName(service.Name)
+		} else {
+			service.ContainerName = utils.FixedResourceName(service.ContainerName)
+		}
+		project.Services[i] = service
+	}
 }

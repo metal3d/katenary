@@ -131,7 +131,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 		Image: utils.TplValue(service.Name, "repository.image") + ":" +
 			utils.TplValue(service.Name, "repository.tag", d.defaultTag),
 		Ports:           ports,
-		Name:            service.Name,
+		Name:            service.ContainerName,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{},
@@ -253,8 +253,8 @@ func (d *Deployment) BindFrom(service types.ServiceConfig, binded *Deployment) {
 			// get the container
 		}
 		// add volume mount to the container
-		targetContainer, ti := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
-		sourceContainer, _ := utils.GetContainerByName(service.Name, binded.Spec.Template.Spec.Containers)
+		targetContainer, ti := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
+		sourceContainer, _ := utils.GetContainerByName(service.ContainerName, binded.Spec.Template.Spec.Containers)
 		for _, bindedMount := range sourceContainer.VolumeMounts {
 			if bindedMount.Name == bindedVolume.Name {
 				targetContainer.VolumeMounts = append(targetContainer.VolumeMounts, bindedMount)
@@ -408,7 +408,7 @@ func (d *Deployment) BindMapFilesToContainer(service types.ServiceConfig, secret
 		})
 	}
 
-	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 	if container == nil {
 		utils.Warn("Container not found for service " + service.Name)
 		return nil, -1
@@ -663,7 +663,7 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 }
 
 func (d *Deployment) bindVolumes(volume types.ServiceVolumeConfig, isSamePod bool, tobind map[string]bool, service types.ServiceConfig, appName string) {
-	container, index := utils.GetContainerByName(service.Name, d.Spec.Template.Spec.Containers)
+	container, index := utils.GetContainerByName(service.ContainerName, d.Spec.Template.Spec.Containers)
 
 	defer func(d *Deployment, container *corev1.Container, index int) {
 		d.Spec.Template.Spec.Containers[index] = *container

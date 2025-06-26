@@ -374,7 +374,7 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 		if dep == nil || target == nil {
 			log.Fatalf("deployment %s or %s not found", depName[0], service.Name)
 		}
-		container, index := utils.GetContainerByName(target.service.Name, target.Spec.Template.Spec.Containers)
+		container, index := utils.GetContainerByName(target.service.ContainerName, target.Spec.Template.Spec.Containers)
 		if container == nil {
 			log.Fatalf("Container %s not found", target.GetName())
 		}
