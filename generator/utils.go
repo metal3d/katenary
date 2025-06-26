@@ -53,8 +53,8 @@ func fixPorts(service *types.ServiceConfig) error {
 	ports, err := labelStructs.PortsFrom(portsLabel)
 	if err != nil {
 		// maybe it's a string, comma separated
-		parts := strings.Split(portsLabel, ",")
-		for _, part := range parts {
+		parts := strings.SplitSeq(portsLabel, ",")
+		for part := range parts {
 			part = strings.TrimSpace(part)
 			if part == "" {
 				continue

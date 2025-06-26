@@ -90,7 +90,7 @@ func GetContainerByName(name string, containers []corev1.Container) (*corev1.Con
 	return nil, -1
 }
 
-// GetContainerByName returns a container by name and its index in the array.
+// TplValue returns a container by name and its index in the array.
 func TplValue(serviceName, variable string, pipes ...string) string {
 	if len(pipes) == 0 {
 		return `{{ tpl .Values.` + serviceName + `.` + variable + ` $ }}`

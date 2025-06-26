@@ -6,8 +6,10 @@ import (
 	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
@@ -42,7 +44,7 @@ type HelmChart struct {
 	composeHash  *string                   `yaml:"-"`
 	Name         string                    `yaml:"name"`
 	Icon         string                    `yaml:"icon,omitempty"`
-	ApiVersion   string                    `yaml:"apiVersion"`
+	APIVersion   string                    `yaml:"apiVersion"`
 	Version      string                    `yaml:"version"`
 	AppVersion   string                    `yaml:"appVersion"`
 	Description  string                    `yaml:"description"`
@@ -56,7 +58,7 @@ func NewChart(name string) *HelmChart {
 		Name:        name,
 		Templates:   make(map[string]*ChartTemplate, 0),
 		Description: "A Helm chart for " + name,
-		ApiVersion:  "v2",
+		APIVersion:  "v2",
 		Version:     "",
 		AppVersion:  "", // set to 0.1.0 by default if no "main-app" label is found
 		Values: map[string]any{
@@ -136,9 +138,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 		secretsVar := types.MappingWithEquals{}
 
 		// copy env to originalEnv
-		for k, v := range s.Environment {
-			originalEnv[k] = v
-		}
+		maps.Copy(originalEnv, s.Environment)
 
 		if v, ok := s.Labels[labels.LabelSecrets]; ok {
 			list, err := labelStructs.SecretsFrom(v)
@@ -374,7 +374,7 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 		if dep == nil || target == nil {
 			log.Fatalf("deployment %s or %s not found", depName[0], service.Name)
 		}
-		container, index := utils.GetContainerByName(target.service.Name, target.Spec.Template.Spec.Containers)
+		container, index := utils.GetContainerByName(target.service.ContainerName, target.Spec.Template.Spec.Containers)
 		if container == nil {
 			log.Fatalf("Container %s not found", target.GetName())
 		}
@@ -385,11 +385,8 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 		isSecret := false
 		secrets, err := labelStructs.SecretsFrom(dep.service.Labels[labels.LabelSecrets])
 		if err == nil {
-			for _, secret := range secrets {
-				if secret == depName[1] {
-					isSecret = true
-					break
-				}
+			if slices.Contains(secrets, depName[1]) {
+				isSecret = true
 			}
 		}
 
