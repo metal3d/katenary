@@ -161,7 +161,7 @@ func (c *ConfigMap) AddBinaryData(key string, value []byte) {
 	c.BinaryData[key] = value
 }
 
-// AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory,
+// AppendDir adds files from given path to the configmap. It is not recursive, to add all files in a directory,
 // you need to call this function for each subdirectory.
 func (c *ConfigMap) AppendDir(path string) error {
 	// read all files in the path and add them to the configmap
