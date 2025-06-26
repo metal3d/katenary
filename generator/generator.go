@@ -319,7 +319,7 @@ func computeNIndent(b []byte) []byte {
 			startSpaces = spaces[0]
 		}
 		line = []byte(startSpaces + strings.TrimLeft(string(line), " "))
-		line = bytes.ReplaceAll(line, []byte("__indent__"), []byte(fmt.Sprintf("%d", len(startSpaces))))
+		line = bytes.ReplaceAll(line, []byte("__indent__"), fmt.Appendf(nil, "%d", len(startSpaces)))
 		lines[i] = line
 	}
 	return bytes.Join(lines, []byte("\n"))

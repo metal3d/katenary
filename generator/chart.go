@@ -6,8 +6,10 @@ import (
 	"katenary/generator/labels/labelStructs"
 	"katenary/utils"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/compose-spec/compose-go/types"
@@ -136,9 +138,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 		secretsVar := types.MappingWithEquals{}
 
 		// copy env to originalEnv
-		for k, v := range s.Environment {
-			originalEnv[k] = v
-		}
+		maps.Copy(originalEnv, s.Environment)
 
 		if v, ok := s.Labels[labels.LabelSecrets]; ok {
 			list, err := labelStructs.SecretsFrom(v)
@@ -385,11 +385,8 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 		isSecret := false
 		secrets, err := labelStructs.SecretsFrom(dep.service.Labels[labels.LabelSecrets])
 		if err == nil {
-			for _, secret := range secrets {
-				if secret == depName[1] {
-					isSecret = true
-					break
-				}
+			if slices.Contains(secrets, depName[1]) {
+				isSecret = true
 			}
 		}
 
