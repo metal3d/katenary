@@ -42,7 +42,7 @@ type HelmChart struct {
 	composeHash  *string                   `yaml:"-"`
 	Name         string                    `yaml:"name"`
 	Icon         string                    `yaml:"icon,omitempty"`
-	ApiVersion   string                    `yaml:"apiVersion"`
+	APIVersion   string                    `yaml:"apiVersion"`
 	Version      string                    `yaml:"version"`
 	AppVersion   string                    `yaml:"appVersion"`
 	Description  string                    `yaml:"description"`
@@ -56,7 +56,7 @@ func NewChart(name string) *HelmChart {
 		Name:        name,
 		Templates:   make(map[string]*ChartTemplate, 0),
 		Description: "A Helm chart for " + name,
-		ApiVersion:  "v2",
+		APIVersion:  "v2",
 		Version:     "",
 		AppVersion:  "", // set to 0.1.0 by default if no "main-app" label is found
 		Values: map[string]any{
