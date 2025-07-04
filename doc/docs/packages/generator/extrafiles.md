@@ -6,7 +6,7 @@
 import "katenary/generator/extrafiles"
 ```
 
-extrafiles package provides function to generate the Chart files that are not objects. Like README.md and notes.txt...
+Package extrafiles provides function to generate the Chart files that are not objects. Like README.md and notes.txt...
 
 ## func [NotesFile](<https://github.com/metal3d/katenary/blob/develop/generator/extrafiles/notes.go#L13>)
 

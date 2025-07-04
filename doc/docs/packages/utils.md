@@ -6,7 +6,7 @@
 import "katenary/utils"
 ```
 
-Utils package provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
+Package utils provides some utility functions used in katenary. It defines some constants and functions used in the whole project.
 
 ## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L193>)
 
@@ -140,7 +140,7 @@ TplName returns the name of the kubernetes resource as a template string. It is 
 func TplValue(serviceName, variable string, pipes ...string) string
 ```
 
-GetContainerByName returns a container by name and its index in the array.
+TplValue returns a container by name and its index in the array.
 
 <a name="Warn"></a>
 ## func [Warn](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L25>)
