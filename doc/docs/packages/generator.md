@@ -6,7 +6,7 @@
 import "katenary/generator"
 ```
 
-The generator package generates kubernetes objects from a "compose" file and transforms them into a helm chart.
+Package generator generates kubernetes objects from a "compose" file and transforms them into a helm chart.
 
 The generator package is the core of katenary. It is responsible for generating kubernetes objects from a compose file and transforming them into a helm chart. Conversion manipulates Yaml representation of kubernetes object to add conditions, labels, annotations, etc. to the objects. It also create the values to be set to the values.yaml file.
 
@@ -107,7 +107,7 @@ func UnWrapTPL(in []byte) []byte
 UnWrapTPL removes the line wrapping from a template.
 
 <a name="ChartTemplate"></a>
-## type [ChartTemplate](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L19-L22>)
+## type [ChartTemplate](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L21-L24>)
 
 ChartTemplate is a template of a chart. It contains the content of the template and the name of the service. This is used internally to generate the templates.
 
@@ -173,7 +173,7 @@ AddData adds a key value pair to the configmap. Append or overwrite the value if
 func (c *ConfigMap) AppendDir(path string) error
 ```
 
-AddFile adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
+AppendDir adds files from given path to the configmap. It is not recursive, to add all files in a directory, you need to call this function for each subdirectory.
 
 <a name="ConfigMap.AppendFile"></a>
 ### func \(\*ConfigMap\) [AppendFile](<https://github.com/metal3d/katenary/blob/develop/generator/configMap.go#L213>)
@@ -223,7 +223,7 @@ type ConfigMapMount struct {
 ```
 
 <a name="ConvertOptions"></a>
-## type [ConvertOptions](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L25-L34>)
+## type [ConvertOptions](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L27-L36>)
 
 ConvertOptions are the options to convert a compose project to a helm chart.
 
@@ -448,7 +448,7 @@ const (
 ```
 
 <a name="HelmChart"></a>
-## type [HelmChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L38-L51>)
+## type [HelmChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L40-L53>)
 
 HelmChart is a Helm Chart representation. It contains all the templates, values, versions, helpers...
 
@@ -460,7 +460,7 @@ type HelmChart struct {
 
     Name         string                    `yaml:"name"`
     Icon         string                    `yaml:"icon,omitempty"`
-    ApiVersion   string                    `yaml:"apiVersion"`
+    APIVersion   string                    `yaml:"apiVersion"`
     Version      string                    `yaml:"version"`
     AppVersion   string                    `yaml:"appVersion"`
     Description  string                    `yaml:"description"`
@@ -491,7 +491,7 @@ The Generate function will create the HelmChart object this way:
 - Merge the same\-pod services.
 
 <a name="NewChart"></a>
-### func [NewChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L54>)
+### func [NewChart](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L56>)
 
 ```go
 func NewChart(name string) *HelmChart
@@ -500,7 +500,7 @@ func NewChart(name string) *HelmChart
 NewChart creates a new empty chart with the given name.
 
 <a name="HelmChart.SaveTemplates"></a>
-### func \(\*HelmChart\) [SaveTemplates](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L69>)
+### func \(\*HelmChart\) [SaveTemplates](<https://github.com/metal3d/katenary/blob/develop/generator/chart.go#L71>)
 
 ```go
 func (chart *HelmChart) SaveTemplates(templateDir string)
