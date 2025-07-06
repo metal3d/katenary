@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/png"
 	"katenary/generator/labels"
+	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -19,7 +20,7 @@ import (
 const (
 	htmlContent      = "<html><body><h1>Hello, World!</h1></body></html>"
 	developementFile = "templates/web/deployment.yaml"
-	indexHtmlFile    = "index.html"
+	indexHMLFile     = "index.html"
 )
 
 func TestGenerateWithBoundVolume(t *testing.T) {
@@ -68,7 +69,7 @@ services:
 
 	// create a static directory with an index.html file
 	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, 0o755)
+	os.Mkdir(staticDir, utils.DirectoryPermission)
 	indexFile, err := os.Create(staticDir + "/index.html")
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
@@ -106,8 +107,8 @@ services:
 	if len(data) != 1 {
 		t.Errorf("Expected 1 data, got %d", len(data))
 	}
-	if data[indexHtmlFile] != htmlContent {
-		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHtmlFile])
+	if data[indexHMLFile] != htmlContent {
+		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHMLFile])
 	}
 }
 
@@ -128,7 +129,7 @@ services:
 
 	// create a static directory with an index.html file
 	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, 0o755)
+	os.Mkdir(staticDir, utils.DirectoryPermission)
 	indexFile, err := os.Create(staticDir + "/index.html")
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
@@ -153,7 +154,7 @@ services:
 	}
 	// but this time, we need a subpath
 	subPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath
-	if subPath != indexHtmlFile {
+	if subPath != indexHMLFile {
 		t.Errorf("Expected subpath to be index.html, got %s", subPath)
 	}
 }
@@ -174,15 +175,15 @@ services:
 	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), 0o755)
+	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
 
 	// create a png image
 	pngFile := tmpDir + "/images/foo.png"
 	w, h := 100, 100
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	red := color.RGBA{255, 0, 0, 255}
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, red)
 		}
 	}
@@ -244,15 +245,15 @@ services:
 	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), 0o755)
+	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
 
 	// create a png image
 	pngFile := tmpDir + "/images/foo.png"
 	w, h := 100, 100
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	red := color.RGBA{255, 0, 0, 255}
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, red)
 		}
 	}

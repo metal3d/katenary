@@ -82,7 +82,9 @@ services:
 		AppVersion:   appVersion,
 		ChartVersion: chartVersion,
 	}
-	Convert(convertOptions, "compose.yml")
+	if err := Convert(convertOptions, "compose.yml"); err != nil {
+		t.Fatalf("Failed to convert compose file: %s", err)
+	}
 	c, err := os.ReadFile("chart/values.yaml")
 	if err != nil {
 		t.Fatal(err)

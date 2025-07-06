@@ -2,7 +2,7 @@ package generator
 
 import (
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"strings"
@@ -30,7 +30,7 @@ func NewCronJob(service types.ServiceConfig, chart *HelmChart, appName string) (
 	if !ok {
 		return nil, nil
 	}
-	mapping, err := labelStructs.CronJobFrom(labels)
+	mapping, err := labelstructs.CronJobFrom(labels)
 	if err != nil {
 		log.Fatalf("Error parsing cronjob labels: %s", err)
 		return nil, nil

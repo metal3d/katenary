@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"maps"
@@ -49,7 +49,7 @@ type HelmChart struct {
 	AppVersion   string                    `yaml:"appVersion"`
 	Description  string                    `yaml:"description"`
 	Helper       string                    `yaml:"-"`
-	Dependencies []labelStructs.Dependency `yaml:"dependencies,omitempty"`
+	Dependencies []labelstructs.Dependency `yaml:"dependencies,omitempty"`
 }
 
 // NewChart creates a new empty chart with the given name.
@@ -95,7 +95,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		}
 
 		servicename := template.Servicename
-		if err := os.MkdirAll(filepath.Join(templateDir, servicename), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Join(templateDir, servicename), utils.DirectoryPermission); err != nil {
 			fmt.Println(utils.IconFailure, err)
 			os.Exit(1)
 		}
@@ -103,7 +103,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		// if the name is a path, create the directory
 		if strings.Contains(name, string(filepath.Separator)) {
 			name = filepath.Join(templateDir, name)
-			err := os.MkdirAll(filepath.Dir(name), 0o755)
+			err := os.MkdirAll(filepath.Dir(name), utils.DirectoryPermission)
 			if err != nil {
 				fmt.Println(utils.IconFailure, err)
 				os.Exit(1)
@@ -141,7 +141,7 @@ func (chart *HelmChart) generateConfigMapsAndSecrets(project *types.Project) err
 		maps.Copy(originalEnv, s.Environment)
 
 		if v, ok := s.Labels[labels.LabelSecrets]; ok {
-			list, err := labelStructs.SecretsFrom(v)
+			list, err := labelstructs.SecretsFrom(v)
 			if err != nil {
 				log.Fatal("error unmarshaling secrets label:", err)
 			}
@@ -214,7 +214,7 @@ func (chart *HelmChart) generateDeployment(service types.ServiceConfig, deployme
 
 	if exchange, ok := service.Labels[labels.LabelExchangeVolume]; ok {
 		// we need to add a volume and a mount point
-		ex, err := labelStructs.NewExchangeVolumes(exchange)
+		ex, err := labelstructs.NewExchangeVolumes(exchange)
 		if err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func (chart *HelmChart) setCronJob(service types.ServiceConfig, appName string) 
 func (chart *HelmChart) setDependencies(service types.ServiceConfig) (bool, error) {
 	// helm dependency
 	if v, ok := service.Labels[labels.LabelDependencies]; ok {
-		d, err := labelStructs.DependenciesFrom(v)
+		d, err := labelstructs.DependenciesFrom(v)
 		if err != nil {
 			return false, err
 		}
@@ -326,7 +326,7 @@ func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments m
 	if _, ok := service.Labels[labels.LabelEnvFrom]; !ok {
 		return
 	}
-	fromservices, err := labelStructs.EnvFromFrom(service.Labels[labels.LabelEnvFrom])
+	fromservices, err := labelstructs.EnvFromFrom(service.Labels[labels.LabelEnvFrom])
 	if err != nil {
 		log.Fatal("error unmarshaling env-from label:", err)
 	}
@@ -351,7 +351,7 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 	if _, ok := service.Labels[labels.LabelValueFrom]; !ok {
 		return
 	}
-	mapping, err := labelStructs.GetValueFrom(service.Labels[labels.LabelValueFrom])
+	mapping, err := labelstructs.GetValueFrom(service.Labels[labels.LabelValueFrom])
 	if err != nil {
 		log.Fatal("error unmarshaling values-from label:", err)
 	}
@@ -383,7 +383,7 @@ func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, de
 
 		// is it a secret?
 		isSecret := false
-		secrets, err := labelStructs.SecretsFrom(dep.service.Labels[labels.LabelSecrets])
+		secrets, err := labelstructs.SecretsFrom(dep.service.Labels[labels.LabelSecrets])
 		if err == nil {
 			if slices.Contains(secrets, depName[1]) {
 				isSecret = true

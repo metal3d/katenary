@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"katenary/generator/labels"
+	"katenary/utils"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,7 +26,7 @@ services:
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
+	os.MkdirAll(tmpDir, utils.DirectoryPermission)
 	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0644); err != nil {
 		t.Log(err)
 	}
@@ -73,7 +74,7 @@ services:
 	}
 	composeFile := filepath.Join(tmpDir, "compose.yaml")
 
-	os.MkdirAll(tmpDir, 0755)
+	os.MkdirAll(tmpDir, utils.DirectoryPermission)
 	if err := os.WriteFile(composeFile, []byte(composeFileContent), 0644); err != nil {
 		t.Log(err)
 	}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"regexp"
@@ -227,7 +227,7 @@ func fixResourceNames(project *types.Project) error {
 				}
 				// also, the value-from label should be updated
 				if valuefrom, ok := s.Labels[labels.LabelValueFrom]; ok {
-					vf, err := labelStructs.GetValueFrom(valuefrom)
+					vf, err := labelstructs.GetValueFrom(valuefrom)
 					if err != nil {
 						return err
 					}

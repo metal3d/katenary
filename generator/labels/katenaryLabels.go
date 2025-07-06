@@ -84,7 +84,7 @@ func init() {
 	}
 }
 
-// Generate the help for the labels.
+// GetLabelHelp return the help for the labels.
 func GetLabelHelp(asMarkdown bool) string {
 	names := GetLabelNames() // sorted
 	if !asMarkdown {

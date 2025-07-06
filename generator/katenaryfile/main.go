@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"os"
@@ -27,20 +27,20 @@ type StringOrMap any
 type Service struct {
 	MainApp         *bool                          `json:"main-app,omitempty" jsonschema:"title=Is this service the main application"`
 	Values          []StringOrMap                  `json:"values,omitempty" jsonschema:"description=Environment variables to be set in values.yaml with or without a description"`
-	Secrets         *labelStructs.Secrets          `json:"secrets,omitempty" jsonschema:"title=Secrets,description=Environment variables to be set as secrets"`
-	Ports           *labelStructs.Ports            `json:"ports,omitempty" jsonschema:"title=Ports,description=Ports to be exposed in services"`
-	Ingress         *labelStructs.Ingress          `json:"ingress,omitempty" jsonschema:"title=Ingress,description=Ingress configuration"`
-	HealthCheck     *labelStructs.HealthCheck      `json:"health-check,omitempty" jsonschema:"title=Health Check,description=Health check configuration that respects the kubernetes api"`
+	Secrets         *labelstructs.Secrets          `json:"secrets,omitempty" jsonschema:"title=Secrets,description=Environment variables to be set as secrets"`
+	Ports           *labelstructs.Ports            `json:"ports,omitempty" jsonschema:"title=Ports,description=Ports to be exposed in services"`
+	Ingress         *labelstructs.Ingress          `json:"ingress,omitempty" jsonschema:"title=Ingress,description=Ingress configuration"`
+	HealthCheck     *labelstructs.HealthCheck      `json:"health-check,omitempty" jsonschema:"title=Health Check,description=Health check configuration that respects the kubernetes api"`
 	SamePod         *string                        `json:"same-pod,omitempty" jsonschema:"title=Same Pod,description=Service that should be in the same pod"`
 	Description     *string                        `json:"description,omitempty" jsonschema:"title=Description,description=Description of the service that will be injected in the values.yaml file"`
 	Ignore          *bool                          `json:"ignore,omitempty" jsonschema:"title=Ignore,description=Ignore the service in the conversion"`
-	Dependencies    []labelStructs.Dependency      `json:"dependencies,omitempty" jsonschema:"title=Dependencies,description=Services that should be injected in the Chart.yaml file"`
-	ConfigMapFile   *labelStructs.ConfigMapFile    `json:"configmap-files,omitempty" jsonschema:"title=ConfigMap Files,description=Files that should be injected as ConfigMap"`
-	MapEnv          *labelStructs.MapEnv           `json:"map-env,omitempty" jsonschema:"title=Map Env,description=Map environment variables to another value"`
-	CronJob         *labelStructs.CronJob          `json:"cron-job,omitempty" jsonschema:"title=Cron Job,description=Cron Job configuration"`
-	EnvFrom         *labelStructs.EnvFrom          `json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
-	ExchangeVolumes []*labelStructs.ExchangeVolume `json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
-	ValuesFrom      *labelStructs.ValueFrom        `json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
+	Dependencies    []labelstructs.Dependency      `json:"dependencies,omitempty" jsonschema:"title=Dependencies,description=Services that should be injected in the Chart.yaml file"`
+	ConfigMapFile   *labelstructs.ConfigMapFile    `json:"configmap-files,omitempty" jsonschema:"title=ConfigMap Files,description=Files that should be injected as ConfigMap"`
+	MapEnv          *labelstructs.MapEnv           `json:"map-env,omitempty" jsonschema:"title=Map Env,description=Map environment variables to another value"`
+	CronJob         *labelstructs.CronJob          `json:"cron-job,omitempty" jsonschema:"title=Cron Job,description=Cron Job configuration"`
+	EnvFrom         *labelstructs.EnvFrom          `json:"env-from,omitempty" jsonschema:"title=Env From,description=Inject environment variables from another service"`
+	ExchangeVolumes []*labelstructs.ExchangeVolume `json:"exchange-volumes,omitempty" jsonschema:"title=Exchange Volumes,description=Exchange volumes between services"`
+	ValuesFrom      *labelstructs.ValueFrom        `json:"values-from,omitempty" jsonschema:"title=Values From,description=Inject values from another service (secret or configmap environment variables)"`
 }
 
 // OverrideWithConfig overrides the project with the katenary.yaml file. It
@@ -117,7 +117,7 @@ func getLabelContent(o any, service *types.ServiceConfig, labelName string) erro
 	val := strings.TrimSpace(string(c))
 	if labelName == labels.LabelIngress {
 		// special case, values must be set from some defaults
-		ing, err := labelStructs.IngressFrom(val)
+		ing, err := labelstructs.IngressFrom(val)
 		if err != nil {
 			log.Fatal(err)
 			return err

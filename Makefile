@@ -242,3 +242,16 @@ __label_doc:
 		gomarkdoc --repository.default-branch $(shell git branch --show-current) -o doc/docs/packages/$$pack.md $$pack
 		sed -i  '/^## Index/,/^##/ { /## Index/d; /^##/! d }' doc/docs/packages/$$pack.md
 	done
+
+
+# Scan the source code. 
+# - we don't need detection of text/template as it's not a web application, and
+# - we don't need sha1 detection as it is not used for cryptographic purposes.
+# Note: metrics are actually not sent to anyone - it's a thing that is removed from the code in the future.
+sast:
+	opengrep \
+		--config auto \
+		--exclude-rule go.lang.security.audit.xss.import-text-template.import-text-template \
+		--exclude-rule go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1  \
+		--metrics=on  \
+		.

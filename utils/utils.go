@@ -14,6 +14,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// DirectoryPermission is the default values for permissions apply to created directories.
+const DirectoryPermission = 0o755
+
 // TplName returns the name of the kubernetes resource as a template string.
 // It is used in the templates and defined in _helper.tpl file.
 func TplName(serviceName, appname string, suffix ...string) string {
