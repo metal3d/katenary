@@ -146,7 +146,7 @@ func generateConvertCommand() *cobra.Command {
 		Use:   "convert",
 		Short: "Converts a docker-compose file to a Helm Chart",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if givenAppVersion != "" {
+			if len(strings.TrimSpace(givenAppVersion)) > 0 {
 				appVersion = &givenAppVersion
 			}
 			return generator.Convert(generator.ConvertOptions{
