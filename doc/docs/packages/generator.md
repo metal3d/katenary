@@ -465,7 +465,7 @@ type HelmChart struct {
     AppVersion   string                    `yaml:"appVersion"`
     Description  string                    `yaml:"description"`
     Helper       string                    `yaml:"-"`
-    Dependencies []labelStructs.Dependency `yaml:"dependencies,omitempty"`
+    Dependencies []labelstructs.Dependency `yaml:"dependencies,omitempty"`
     // contains filtered or unexported fields
 }
 ```

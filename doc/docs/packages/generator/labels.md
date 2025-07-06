@@ -23,7 +23,7 @@ const KatenaryLabelPrefix = "katenary.v3"
 func GetLabelHelp(asMarkdown bool) string
 ```
 
-Generate the help for the labels.
+GetLabelHelp return the help for the labels.
 
 <a name="GetLabelHelpFor"></a>
 ## func [GetLabelHelpFor](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L97>)
