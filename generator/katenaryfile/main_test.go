@@ -57,6 +57,9 @@ webapp:
 		cli.WithDefaultConfigPath,
 	)
 	project, err := cli.ProjectFromOptions(options)
+	if err != nil {
+		t.Fatalf("Failed to create project from options: %s", err.Error())
+	}
 
 	OverrideWithConfig(project)
 	w := project.Services[0].Labels
@@ -107,6 +110,9 @@ webapp:
 		cli.WithDefaultConfigPath,
 	)
 	project, err := cli.ProjectFromOptions(options)
+	if err != nil {
+		t.Fatalf("Failed to create project from options: %s", err.Error())
+	}
 
 	OverrideWithConfig(project)
 	w := project.Services[0].Labels
