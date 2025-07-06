@@ -6,6 +6,8 @@
 import "katenary/generator/labels"
 ```
 
+Package labels provides functionality to parse and manipulate labels.
+
 ## Constants
 
 <a name="KatenaryLabelPrefix"></a>
