@@ -19,7 +19,7 @@ import (
 const (
 	htmlContent      = "<html><body><h1>Hello, World!</h1></body></html>"
 	developementFile = "templates/web/deployment.yaml"
-	indexHtmlFile    = "index.html"
+	indexHMLFile     = "index.html"
 )
 
 func TestGenerateWithBoundVolume(t *testing.T) {
@@ -106,8 +106,8 @@ services:
 	if len(data) != 1 {
 		t.Errorf("Expected 1 data, got %d", len(data))
 	}
-	if data[indexHtmlFile] != htmlContent {
-		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHtmlFile])
+	if data[indexHMLFile] != htmlContent {
+		t.Errorf("Expected index.html to be "+htmlContent+", got %s", data[indexHMLFile])
 	}
 }
 
@@ -153,7 +153,7 @@ services:
 	}
 	// but this time, we need a subpath
 	subPath := dt.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath
-	if subPath != indexHtmlFile {
+	if subPath != indexHMLFile {
 		t.Errorf("Expected subpath to be index.html, got %s", subPath)
 	}
 }
