@@ -14,10 +14,10 @@ type TLS struct {
 type Ingress struct {
 	Port        *int32            `yaml:"port,omitempty" json:"port,omitempty"`
 	Annotations map[string]string `yaml:"annotations,omitempty" jsonschema:"nullable" json:"annotations,omitempty"`
-	Hostname    string            `yaml:"hostname" json:"hostname,omitempty"`
+	Hostname    string            `yaml:"hostname,omitempty" json:"hostname,omitempty"`
 	Path        *string           `yaml:"path,omitempty" json:"path,omitempty"`
 	Class       *string           `yaml:"class,omitempty" json:"class,omitempty" jsonschema:"default:-"`
-	Enabled     bool              `yaml:"enabled" json:"enabled,omitempty"`
+	Enabled     bool              `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 	TLS         *TLS              `yaml:"tls,omitempty" json:"tls,omitempty"`
 }
 
