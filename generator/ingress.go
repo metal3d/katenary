@@ -2,7 +2,7 @@ package generator
 
 import (
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"strings"
@@ -33,7 +33,7 @@ func NewIngress(service types.ServiceConfig, Chart *HelmChart) *Ingress {
 		return nil
 	}
 
-	mapping, err := labelStructs.IngressFrom(label)
+	mapping, err := labelstructs.IngressFrom(label)
 	if err != nil {
 		log.Fatalf("Failed to parse ingress label: %s\n", err)
 	}

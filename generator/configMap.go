@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"os"
@@ -65,7 +65,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 	}
 
 	// get the secrets from the labels
-	secrets, err := labelStructs.SecretsFrom(service.Labels[labels.LabelSecrets])
+	secrets, err := labelstructs.SecretsFrom(service.Labels[labels.LabelSecrets])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,7 +91,7 @@ func NewConfigMap(service types.ServiceConfig, appName string, forFile bool) *Co
 		// do not bind env variables to the configmap
 		// remove the variables that are already defined in the environment
 		if l, ok := service.Labels[labels.LabelMapEnv]; ok {
-			envmap, err := labelStructs.MapEnvFrom(l)
+			envmap, err := labelstructs.MapEnvFrom(l)
 			if err != nil {
 				log.Fatal("Error parsing map-env", err)
 			}

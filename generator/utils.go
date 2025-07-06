@@ -2,7 +2,7 @@ package generator
 
 import (
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"regexp"
 	"strconv"
@@ -50,7 +50,7 @@ func fixPorts(service *types.ServiceConfig) error {
 	if portsLabel, ok = service.Labels[labels.LabelPorts]; !ok {
 		return nil
 	}
-	ports, err := labelStructs.PortsFrom(portsLabel)
+	ports, err := labelstructs.PortsFrom(portsLabel)
 	if err != nil {
 		// maybe it's a string, comma separated
 		parts := strings.SplitSeq(portsLabel, ",")

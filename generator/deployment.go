@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/utils"
 	"log"
 	"os"
@@ -39,7 +39,7 @@ type Deployment struct {
 	service            *types.ServiceConfig                    `yaml:"-"`
 	defaultTag         string                                  `yaml:"-"`
 	isMainApp          bool                                    `yaml:"-"`
-	exchangesVolumes   map[string]*labelStructs.ExchangeVolume `yaml:"-"`
+	exchangesVolumes   map[string]*labelstructs.ExchangeVolume `yaml:"-"`
 	boundEnvVar        []string                                `yaml:"-"` // environement to remove
 }
 
@@ -94,7 +94,7 @@ func NewDeployment(service types.ServiceConfig, chart *HelmChart) *Deployment {
 		},
 		configMaps:       make(map[string]*ConfigMapMount),
 		volumeMap:        make(map[string]string),
-		exchangesVolumes: map[string]*labelStructs.ExchangeVolume{},
+		exchangesVolumes: map[string]*labelstructs.ExchangeVolume{},
 		boundEnvVar:      []string{},
 	}
 
@@ -160,7 +160,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 func (d *Deployment) AddHealthCheck(service types.ServiceConfig, container *corev1.Container) {
 	// get the label for healthcheck
 	if v, ok := service.Labels[labels.LabelHealthCheck]; ok {
-		probes, err := labelStructs.ProbeFrom(v)
+		probes, err := labelstructs.ProbeFrom(v)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -195,7 +195,7 @@ func (d *Deployment) AddIngress(service types.ServiceConfig, appName string) *In
 func (d *Deployment) AddVolumes(service types.ServiceConfig, appName string) {
 	tobind := map[string]bool{}
 	if v, ok := service.Labels[labels.LabelConfigMapFiles]; ok {
-		binds, err := labelStructs.ConfigMapFileFrom(v)
+		binds, err := labelstructs.ConfigMapFileFrom(v)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -320,7 +320,7 @@ func (d *Deployment) SetEnvFrom(service types.ServiceConfig, appName string, sam
 	}()
 
 	// secrets from label
-	labelSecrets, err := labelStructs.SecretsFrom(service.Labels[labels.LabelSecrets])
+	labelSecrets, err := labelstructs.SecretsFrom(service.Labels[labels.LabelSecrets])
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package labelStructs
+package labelstructs
 
 import "gopkg.in/yaml.v3"
 

@@ -7,7 +7,7 @@ import (
 	"katenary/generator/extrafiles"
 	"katenary/generator/katenaryfile"
 	"katenary/generator/labels"
-	"katenary/generator/labels/labelStructs"
+	"katenary/generator/labels/labelstructs"
 	"katenary/parser"
 	"katenary/utils"
 	"log"
@@ -258,7 +258,7 @@ func addCommentsToValues(values []byte) []byte {
 	return []byte(strings.Join(lines, "\n"))
 }
 
-func addDependencyDescription(values []byte, dependencies []labelStructs.Dependency) []byte {
+func addDependencyDescription(values []byte, dependencies []labelstructs.Dependency) []byte {
 	for _, d := range dependencies {
 		name := d.Name
 		if d.Alias != "" {
