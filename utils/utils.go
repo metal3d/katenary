@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// Default values for permissions apply to created directories.
+// DirectoryPermission is the default values for permissions apply to created directories.
 const DirectoryPermission = 0o755
 
 // TplName returns the name of the kubernetes resource as a template string.
