@@ -182,8 +182,8 @@ services:
 	w, h := 100, 100
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	red := color.RGBA{255, 0, 0, 255}
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, red)
 		}
 	}
@@ -252,8 +252,8 @@ services:
 	w, h := 100, 100
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	red := color.RGBA{255, 0, 0, 255}
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
+	for y := range h {
+		for x := range w {
 			img.Set(x, y, red)
 		}
 	}
