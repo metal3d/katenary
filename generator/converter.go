@@ -521,16 +521,16 @@ func buildCharYamlFile(chart *HelmChart, project *types.Project, chartPath strin
 		os.Exit(1)
 	}
 	// concat chart adding a comment with hash of services on top
-	yamlChart = append([]byte(fmt.Sprintf("# compose hash (sha1): %s\n", *chart.composeHash)), yamlChart...)
+	yamlChart = append(fmt.Appendf(nil, "# compose hash (sha1): %s\n", *chart.composeHash), yamlChart...)
 	// add the list of compose files
 	files := []string{}
 	for _, file := range project.ComposeFiles {
 		base := filepath.Base(file)
 		files = append(files, base)
 	}
-	yamlChart = append([]byte(fmt.Sprintf("# compose files: %s\n", strings.Join(files, ", "))), yamlChart...)
+	yamlChart = append(fmt.Appendf(nil, "# compose files: %s\n", strings.Join(files, ", ")), yamlChart...)
 	// add generated date
-	yamlChart = append([]byte(fmt.Sprintf("# generated at: %s\n", time.Now().Format(time.RFC3339))), yamlChart...)
+	yamlChart = append(fmt.Appendf(nil, "# generated at: %s\n", time.Now().Format(time.RFC3339)), yamlChart...)
 
 	// document Chart.yaml file
 	yamlChart = addChartDoc(yamlChart, project)
