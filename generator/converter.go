@@ -173,7 +173,7 @@ func Convert(config ConvertOptions, dockerComposeFile ...string) error {
 	os.RemoveAll(config.OutputDir)
 
 	// create the chart directory
-	if err := os.MkdirAll(templateDir, 0o755); err != nil {
+	if err := os.MkdirAll(templateDir, 0o600); err != nil {
 		fmt.Println(utils.IconFailure, err)
 		os.Exit(1)
 	}
