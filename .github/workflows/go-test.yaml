@@ -33,7 +33,7 @@ jobs:
   sonar:
     permissions:
       contents: read
-      pull_requests: read
+      pull-requests: read
     runs-on: ubuntu-latest
     needs: tests
     steps:
