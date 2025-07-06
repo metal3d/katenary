@@ -95,7 +95,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		}
 
 		servicename := template.Servicename
-		if err := os.MkdirAll(filepath.Join(templateDir, servicename), 0o600); err != nil {
+		if err := os.MkdirAll(filepath.Join(templateDir, servicename), utils.DirectoryPermission); err != nil {
 			fmt.Println(utils.IconFailure, err)
 			os.Exit(1)
 		}
@@ -103,7 +103,7 @@ func (chart *HelmChart) SaveTemplates(templateDir string) {
 		// if the name is a path, create the directory
 		if strings.Contains(name, string(filepath.Separator)) {
 			name = filepath.Join(templateDir, name)
-			err := os.MkdirAll(filepath.Dir(name), 0o600)
+			err := os.MkdirAll(filepath.Dir(name), utils.DirectoryPermission)
 			if err != nil {
 				fmt.Println(utils.IconFailure, err)
 				os.Exit(1)

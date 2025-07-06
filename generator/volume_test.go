@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/png"
 	"katenary/generator/labels"
+	"katenary/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -68,7 +69,7 @@ services:
 
 	// create a static directory with an index.html file
 	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, 0o755)
+	os.Mkdir(staticDir, utils.DirectoryPermission)
 	indexFile, err := os.Create(staticDir + "/index.html")
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
@@ -128,7 +129,7 @@ services:
 
 	// create a static directory with an index.html file
 	staticDir := tmpDir + "/static"
-	os.Mkdir(staticDir, 0o755)
+	os.Mkdir(staticDir, utils.DirectoryPermission)
 	indexFile, err := os.Create(staticDir + "/index.html")
 	if err != nil {
 		t.Errorf("Failed to create index.html: %s", err)
@@ -174,7 +175,7 @@ services:
 	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), 0o755)
+	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
 
 	// create a png image
 	pngFile := tmpDir + "/images/foo.png"
@@ -244,7 +245,7 @@ services:
 	log.Println(tmpDir)
 	defer teardown(tmpDir)
 
-	os.Mkdir(filepath.Join(tmpDir, "images"), 0o755)
+	os.Mkdir(filepath.Join(tmpDir, "images"), utils.DirectoryPermission)
 
 	// create a png image
 	pngFile := tmpDir + "/images/foo.png"
