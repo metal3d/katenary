@@ -16,7 +16,7 @@ SIGNER=metal3d@gmail.com
 UPX_OPTS = 
 UPX ?= upx $(UPX_OPTS)
 
-BUILD_IMAGE=docker.io/golang:$(GOVERSION)-alpine
+BUILD_IMAGE=docker.io/golang:$(GOVERSION)
 # SHELL=/bin/bash
 
 # List of source files
