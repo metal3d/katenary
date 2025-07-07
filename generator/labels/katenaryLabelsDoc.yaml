@@ -224,7 +224,7 @@
   type: "[]object"
 
 "configmap-files":
-  short: "Add files to the configmap."
+  short: "Inject files as Configmap."
   long: |-
     It makes a file or directory to be converted to one or more ConfigMaps 
     and mounted in the pod. The file or directory is relative to the 
@@ -266,7 +266,7 @@
   type: "object"
 
 "env-from":
-  short: "Add environment variables from antoher service."
+  short: "Add environment variables from another service."
   type: "[]string"
   long: |-
     It adds environment variables from another service to the current service.
