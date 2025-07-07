@@ -36,7 +36,7 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help clean build install tests test doc
+.PHONY: help clean build install tests test doc nsis
 
 all: build
 
@@ -140,6 +140,19 @@ dist/katenary-freebsd-arm64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUT=$@
+
+
+nsis/EnVar.dll:
+	curl https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -o nsis/EnVar_plugin.zip
+	cd nsis
+	unzip -o EnVar_plugin.zip Plugins/x86-unicode/EnVar.dll
+	mv Plugins/x86-unicode/EnVar.dll EnVar.dll
+	rm -rf EnVar_plugin.zip Plugins
+
+nsis: nsis/EnVar.dll dist/katenary.exe
+	@echo -e "\033[1;32mBuilding katenary $(VERSION) for windows with NSIS...\033[0m"
+	cd nsis && makensis -DAPP_VERSION=$(VERSION) katenary.nsi
+	
 
 gpg-sign:
 	rm -f dist/*.asc

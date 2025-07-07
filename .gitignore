@@ -18,3 +18,7 @@ cover*
 
 # will be treated later
 /examples/*
+
+# nsis
+nsis/*.dll
+nsis/*.exe
