@@ -11,6 +11,7 @@ RELEASE=""
 BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(RELEASE)$(VERSION)'" -o $(OUT)  ./cmd/katenary
 GOOS=linux
 GOARCH=amd64
+CGO_ENABLED=0
 SIGNER=metal3d@gmail.com
 UPX_OPTS = 
 UPX ?= upx $(UPX_OPTS)
@@ -89,21 +90,17 @@ endif
 katenary: $(SOURCES) Makefile go.mod go.sum
 ifeq ($(GO),local)
 	@echo "=> Build on host using go"
-else
-	@echo "=> Build in container using" $(CTN)
-endif
-	echo $(BLD_CMD)
-ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
-	@podman run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
+	@echo "=> Build in container using" $(CTN)
+	echo $(GOOS) $(GOARCH)
+	podman run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH)  -e CC=$(CC) \
 		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id  $(BUILD_IMAGE) $(BLD_CMD)
 else
-	@docker run -e CGO_ENABLED=0 -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
+	@echo "=> Build in container using" $(CTN)
+	@docker run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
 		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp  $(BUILD_IMAGE) $(BLD_CMD)
 endif
-	echo "=> Stripping if possible"
-	strip $(OUT) 2>/dev/null || echo "=> No strip available"
 
 
 ## Release build
@@ -116,6 +113,7 @@ dist/katenary-linux-amd64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-amd64...\033[0m"
 	$(MAKE) katenary GOOS=linux GOARCH=amd64 OUT=$@
+	strip $@
 
 dist/katenary-linux-arm64:
 	@echo
@@ -136,12 +134,13 @@ dist/katenary-freebsd-amd64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=amd64 OUT=$@
+	strip $@
 
 dist/katenary-freebsd-arm64:
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUT=$@
-	
+
 gpg-sign:
 	rm -f dist/*.asc
 	$(MAKE) $(ASC_BINARIES)
@@ -153,7 +152,7 @@ dist/%.asc: dist/%
 upx:
 	$(UPX) dist/katenary-linux-amd64
 	$(UPX) dist/katenary-linux-arm64
-	$(UPX) dist/katenary.exe
+	#$(UPX) dist/katenary.exe
 	$(UPX) dist/katenary-darwin-amd64 --force-macos
 
 install: build
