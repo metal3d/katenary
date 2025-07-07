@@ -1,19 +1,28 @@
 # Labels documentation
 
-Katenary proposes labels to set in `compose.yaml` files (or override files) to configure the Helm Chart generation. Because it is sometimes needed to have structured values, it is necessary to use the Yaml syntax. While compose labels are string, we can use `|` to use Yaml multilines as value.
+Katenary proposes labels to set in `compose.yaml` files (or override files) to configure the Helm Chart generation.
+Because it is sometimes needed to have structured values, it is necessary to use the YAML syntax.
+While compose labels are string, we can use _here-doc_ syntax using `|` to use YAML multiline as value.
 
-Katenary will try to Unmarshal these labels.
+```yaml
+label-name: |-
+    # this is actually a multiline string here
+    key1: value1
+    key2: value2
+```
+
+Katenary will try to _Unmarshal_ these labels.
 
 ## Label list and types
 
 <!-- START_LABEL_DOC : do not remove this tag !-->
 | Label name                     | Description                                                      | Type                             |
 | ------------------------------ | ---------------------------------------------------------------- | -------------------------------- |
-| `katenary.v3/configmap-files`  | Add files to the configmap.                                      | `[]string`                       |
+| `katenary.v3/configmap-files`  | Inject files as Configmap.                                       | `[]string`                       |
 | `katenary.v3/cronjob`          | Create a cronjob from the service.                               | `object`                         |
 | `katenary.v3/dependencies`     | Add Helm dependencies to the service.                            | `[]object`                       |
 | `katenary.v3/description`      | Description of the service                                       | `string`                         |
-| `katenary.v3/env-from`         | Add environment variables from antoher service.                  | `[]string`                       |
+| `katenary.v3/env-from`         | Add environment variables from another service.                  | `[]string`                       |
 | `katenary.v3/exchange-volumes` | Add exchange volumes (empty directory on the node) to share data | `[]object`                       |
 | `katenary.v3/health-check`     | Health check to be added to the deployment.                      | `object`                         |
 | `katenary.v3/ignore`           | Ignore the service                                               | `bool`                           |
@@ -33,7 +42,7 @@ Katenary will try to Unmarshal these labels.
 <!-- START_DETAILED_DOC : do not remove this tag !-->
 ### katenary.v3/configmap-files
 
-Add files to the configmap.
+Inject files as Configmap.
 
 **Type**:  `[]string`
 
@@ -157,7 +166,7 @@ labels:
 
 ### katenary.v3/env-from
 
-Add environment variables from antoher service.
+Add environment variables from another service.
 
 **Type**:  `[]string`
 

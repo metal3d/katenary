@@ -1,6 +1,6 @@
 site_name: Katenary documentation
 docs_dir: ./docs
-plugins: 
+plugins:
   - search
   - inline-svg
 theme:
@@ -48,18 +48,17 @@ nav:
   - usage.md
   - labels.md
   - Behind the scene:
-    - coding.md
-    - dependencies.md
+      - coding.md
+      - dependencies.md
   - FAQ: faq.md
   - Go Packages:
-    - packages/cmd/katenary.md
-    - packages/parser.md
-    - packages/utils.md
-    - Generator: 
-      - Index: packages/generator.md
-      - ExtraFiles: packages/generator/extrafiles.md
-      - labels:
-        - packages/generator/labels.md
-        - LabelStructs: packages/generator/labels/labelStructs.md
-      - KatenaryFile: packages/generator/katenaryfile.md
-
+      - packages/cmd/katenary.md
+      - packages/parser.md
+      - packages/utils.md
+      - Generator:
+          - Index: packages/generator.md
+          - ExtraFiles: packages/generator/extrafiles.md
+          - labels:
+              - packages/generator/labels.md
+              - Labelstructs: packages/generator/labels/labelstructs.md
+          - KatenaryFile: packages/generator/katenaryfile.md
