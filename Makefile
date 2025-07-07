@@ -1,19 +1,33 @@
 CUR_SHA=$(shell git log -n1 --pretty='%h')
 CUR_BRANCH=$(shell git branch --show-current)
 VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo $(CUR_BRANCH)-$(CUR_SHA))
+
+# get the container (podman is preferred, but docker is also supported)
+# TODO: prpose nerdctl
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 PREFIX=~/.local
 
 GOVERSION=1.24
 GO=container
 OUT=katenary
+
+MODE=default
 RELEASE=""
-BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(RELEASE)$(VERSION)'" -o $(OUT)  ./cmd/katenary
+# if release mode
+ifeq ($(MODE),release)
+	VERSION:=release-$(VERSION)
+endif
+
+BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary
 GOOS=linux
 GOARCH=amd64
 CGO_ENABLED=0
+
+# GPG signer
 SIGNER=metal3d@gmail.com
-UPX_OPTS = 
+
+# upx compression
+UPX_OPTS =
 UPX ?= upx $(UPX_OPTS)
 
 BUILD_IMAGE=docker.io/golang:$(GOVERSION)
@@ -23,6 +37,8 @@ BUILD_IMAGE=docker.io/golang:$(GOVERSION)
 SOURCES=$(wildcard ./*.go ./*/*.go ./*/*/*.go)
 # List of binaries to build and sign
 BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
+BINARIES += dist/katenary-windows-setup.exe
+# installer
 # List of signatures to build
 ASC_BINARIES=$(patsubst %,%.asc,$(BINARIES))
 
@@ -36,10 +52,9 @@ SHELL := bash
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help clean build install tests test doc nsis
+.PHONY: help dist-clean build install tests test doc nsis
 
 all: build
-
 
 help:
 	@cat <<EOF | fold -s -w 80
@@ -78,7 +93,8 @@ help:
 	EOF
 
 
-## Standard build
+## BUILD
+
 build: pull katenary
 
 pull:
@@ -93,8 +109,7 @@ ifeq ($(GO),local)
 	$(BLD_CMD)
 else ifeq ($(CTN),podman)
 	@echo "=> Build in container using" $(CTN)
-	echo $(GOOS) $(GOARCH)
-	podman run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH)  -e CC=$(CC) \
+	@podman run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
 		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id  $(BUILD_IMAGE) $(BLD_CMD)
 else
 	@echo "=> Build in container using" $(CTN)
@@ -103,8 +118,9 @@ else
 endif
 
 
-## Release build
-dist: prepare $(BINARIES) upx $(ASC_BINARIES) 
+# Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
+# Also generate the windows installer.
+dist: prepare $(BINARIES) upx gpg-sign check-sign
 
 prepare: pull
 	mkdir -p dist
@@ -141,6 +157,9 @@ dist/katenary-freebsd-arm64:
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUT=$@
 
+dist/katenary-windows-setup.exe: nsis/EnVar.dll dist/katenary.exe
+	makensis -DAPP_VERSION=$(VERSION) nsis/katenary.nsi
+	mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
 
 nsis/EnVar.dll:
 	curl https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -o nsis/EnVar_plugin.zip
@@ -149,33 +168,40 @@ nsis/EnVar.dll:
 	mv Plugins/x86-unicode/EnVar.dll EnVar.dll
 	rm -rf EnVar_plugin.zip Plugins
 
-nsis: nsis/EnVar.dll dist/katenary.exe
-	@echo -e "\033[1;32mBuilding katenary $(VERSION) for windows with NSIS...\033[0m"
-	cd nsis && makensis -DAPP_VERSION=$(VERSION) katenary.nsi
-	
-
-gpg-sign:
-	rm -f dist/*.asc
-	$(MAKE) $(ASC_BINARIES)
-
-dist/%.asc: dist/%
-	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
-
-
 upx:
 	$(UPX) dist/katenary-linux-amd64
 	$(UPX) dist/katenary-linux-arm64
 	#$(UPX) dist/katenary.exe
 	$(UPX) dist/katenary-darwin-amd64 --force-macos
 
+## GPG signing
+
+gpg-sign:
+	rm -f dist/*.asc
+	$(MAKE) $(ASC_BINARIES)
+
+check-sign:
+	@echo "=> Checking signatures..."
+	@for f in $(ASC_BINARIES); do \
+		if gpg --verify $$f &>/dev/null; then \
+			echo "Signature for $$f is valid"; \
+		else \
+			echo "Signature for $$f is invalid"; \
+			exit 1; \
+		fi; \
+	done
+
+dist/%.asc: dist/%
+	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
+
+
+## installation and uninstallation
+
 install: build
 	install -Dm755 katenary $(PREFIX)/bin/katenary
 
 uninstall:
 	rm -f $(PREFIX)/bin/katenary
-
-clean:
-	rm -rf katenary dist/* release.id 
 
 
 serve-doc: __label_doc
@@ -187,52 +213,19 @@ serve-doc: __label_doc
 		echo "==> Serving doc with mkdocs..." && \
 		mkdocs serve
 
-tests: test
-test:
-	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
-	go test -coverprofile=cover.out ./...
-	$(MAKE) cover
-
-cover:
-	go tool cover -func=cover.out | grep "total:"
-	go tool cover -html=cover.out -o cover.html
-	if [ "$(BROWSER)" = "xdg-open" ]; then
-		xdg-open cover.html
-	else
-		$(BROWSER) -i --new-window cover.html
-	fi
-
-push-release: build-all
-	@rm -f release.id
-	# read personal access token from .git-credentials
-	TOKEN=$(shell cat .credentials)
-	# create a new release based on current tag and get the release id
-	@curl -sSL -X POST \
-		-H "Accept: application/vnd.github.v3+json" \
-		-H "Authorization: token $$TOKEN" \
-		-d "{\"tag_name\": \"$(VERSION)\", \"target_commitish\": \"\", \"name\": \"$(VERSION)\", \"draft\": true, \"prerelease\": true}" \
-		https://api.github.com/repos/metal3d/katenary/releases | jq -r '.id' > release.id
-	@echo "Release id: $$(cat release.id) created"
-	@echo "Uploading assets..."
-	# push all dist binary as assets to the release
-	@for i in $$(find dist -type f -name "katenary*"); do
-		curl -sSL -H "Authorization: token $$TOKEN" \
-			-H "Accept: application/vnd.github.v3+json" \
-			-H "Content-Type: application/octet-stream" \
-			--data-binary @$$i \
-			https://uploads.github.com/repos/metal3d/katenary/releases/$$(cat release.id)/assets?name=$$(basename $$i)
-	done
-	@rm -f release.id
-
+## Documentation generation
 
 doc:
 	@echo "=> Generating documentation..."
 	# generate the labels doc and code doc
 	$(MAKE) __label_doc
 
+install-gomarkdoc:
+	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
 __label_doc:
 	@command -v gomarkdoc || (echo "==> We need to install gomarkdoc..." && \
-		go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest)
+		$(MAKE) install-gomarkdoc)
 	@echo "=> Generating labels doc..."
 	# short label doc
 	go run ./cmd/katenary help-labels -m | \
@@ -256,6 +249,8 @@ __label_doc:
 	done
 
 
+## TESTS, security analysis, and code quality
+
 # Scan the source code. 
 # - we don't need detection of text/template as it's not a web application, and
 # - we don't need sha1 detection as it is not used for cryptographic purposes.
@@ -267,3 +262,25 @@ sast:
 		--exclude-rule go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1  \
 		--metrics=on  \
 		.
+
+tests: test
+test:
+	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
+	go test -coverprofile=cover.out ./...
+	$(MAKE) cover
+
+cover:
+	go tool cover -func=cover.out | grep "total:"
+	go tool cover -html=cover.out -o cover.html
+	if [ "$(BROWSER)" = "xdg-open" ]; then
+		xdg-open cover.html
+	else
+		$(BROWSER) -i --new-window cover.html
+	fi
+
+
+## Miscellaneous
+
+dist-clean:
+	rm -rf dist
+	rm -f katenary
