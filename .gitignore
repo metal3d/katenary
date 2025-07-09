@@ -22,3 +22,6 @@ cover*
 # nsis
 nsis/*.dll
 nsis/*.exe
+
+doc/share
+__pycache__

@@ -220,6 +220,19 @@ doc:
 	# generate the labels doc and code doc
 	$(MAKE) __label_doc
 
+manpage:
+	@echo "=> Generating manpage from documentation"
+	@cd doc && \
+		[ -d venv ] || python -m venv venv; \
+		source venv/bin/activate && \
+		echo "==> Installing requirements in the virtual env..." && \
+		pip install -qq -r requirements.txt && \
+		pip install -qq -r manpage_requirements.txt && \
+		echo "==> Generating manpage..." && \
+		MANPAGE=true mkdocs build && \
+		rm -rf site &&
+		echo "==> Manpage generated in doc/share/man/man1/katenary.1"
+
 install-gomarkdoc:
 	go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
 
@@ -284,3 +297,45 @@ cover:
 dist-clean:
 	rm -rf dist
 	rm -f katenary
+
+
+#FPM_OPTS=--name katenary \
+#	--description "$(shell cat packaging/description)" \
+#	--version $(VERSION) \
+#	--url https://katenary.org \
+#	--vendor "Katenary Project" \
+#	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
+#	--license "MIT" \
+#	katenary-linux-amd64=/usr/local/bin/katenary
+#packages:
+#	podman build -t packaging:fedora ./packaging/oci
+#	podman run -it --rm -w /opt -v ./dist:/opt:z --userns keep-id:uid=999,gid=999 packaging:fedora \
+#		fpm -s dir -t rpm --rpm-summary="$(shell head -n1 packaging/description)" -f $(FPM_OPTS)
+#	podman run -it --rm -w /opt -v ./dist:/opt:z --userns keep-id:uid=999,gid=999 packaging:fedora \
+#		fpm -s dir -t deb -f $(FPM_OPTS)
+
+# print packaging/description and replace newlines with explicit \n
+DESCRIPTION := $(shell cat packaging/description | sed ':a;N;$$!ba;s/\n/\\n/g')
+
+
+FPM_OCI_OPTS=-w /opt/katenary/dist \
+	-v ./:/opt/katenary:z \
+	--userns keep-id:uid=999,gid=999 packaging:fedora
+FPM_OPTS=--name katenary \
+	--version $(VERSION) \
+	--url https://katenary.org \
+	--vendor "Katenary Project" \
+	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
+	--license "MIT" \
+	--description="$$(printf "$(DESCRIPTION)" | fold -s)" \
+	./katenary-linux-amd64=/usr/local/bin/katenary \
+	../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1 \
+	../LICENSE=/usr/local/share/doc/katenary/LICENSE \
+	../README.md=/usr/local/share/doc/katenary/README.md
+packages: manpage
+	@podman build -t packaging:fedora ./packaging/oci 1>/dev/null
+	@for target in rpm deb pacman tar; do \
+		echo "==> Building $$target package..."; \
+		podman run $(FPM_OCI_OPTS) fpm -s dir -t $$target -f $(FPM_OPTS); \
+	done
+	mv dist/katenary.tar dist/katenary-$(VERSION).tar

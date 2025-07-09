@@ -1,0 +1,15 @@
+FROM registry.fedoraproject.org/fedora:42
+RUN set -eux; \
+  microdnf -y install \
+  rubygems rpmbuild bsdtar
+
+RUN useradd -m -r -d /home/builder -s /bin/bash builder; \
+  chown builder:builder /home/builder
+
+USER builder
+ENV PATH="/home/builder/bin:${PATH}"
+WORKDIR /home/builder
+RUN gem install fpm
+
+
+
