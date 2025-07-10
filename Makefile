@@ -1,58 +1,71 @@
-CUR_SHA=$(shell git log -n1 --pretty='%h')
-CUR_BRANCH=$(shell git branch --show-current)
-VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo $(CUR_BRANCH)-$(CUR_SHA))
-
-# get the container (podman is preferred, but docker is also supported)
-# TODO: prpose nerdctl
-CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
-PREFIX=~/.local
-
-GOVERSION=1.24
-GO=container
-OUT=katenary
-
-MODE=default
-RELEASE=""
-# if release mode
-ifeq ($(MODE),release)
-	VERSION:=release-$(VERSION)
-endif
-
-BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUT)  ./cmd/katenary
-GOOS=linux
-GOARCH=amd64
-CGO_ENABLED=0
-
-# GPG signer
-SIGNER=metal3d@gmail.com
-
-# upx compression
-UPX_OPTS =
-UPX ?= upx $(UPX_OPTS)
-
-BUILD_IMAGE=docker.io/golang:$(GOVERSION)
-# SHELL=/bin/bash
-
-# List of source files
-SOURCES=$(wildcard ./*.go ./*/*.go ./*/*/*.go)
-# List of binaries to build and sign
-BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
-BINARIES += dist/katenary-windows-setup.exe
-# installer
-# List of signatures to build
-ASC_BINARIES=$(patsubst %,%.asc,$(BINARIES))
-
-# defaults
-BROWSER=$(shell command -v epiphany || echo xdg-open)
+# Strict mode
 SHELL := bash
-# strict mode
 .SHELLFLAGS := -eu -o pipefail -c
-# One session per target
 .ONESHELL:
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help dist-clean build install tests test doc nsis
+.PHONY: help dist-clean dist package build install test doc nsis
+
+# Get a version string from git
+CUR_SHA=$(shell git log -n1 --pretty='%h')
+CUR_BRANCH=$(shell git branch --show-current)
+VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo $(CUR_BRANCH)-$(CUR_SHA))# use by golang flags
+PKG_VERSION=$(VERSION)# used for package name
+
+# Go build command and environment variables for target OS and architecture
+GOVERSION=1.24
+GO=container # container, local
+OUTPUT=katenary
+GOOS=linux
+GOARCH=amd64
+CGO_ENABLED=0
+PREFIX=~/.local
+BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUTPUT)  ./cmd/katenary
+
+# Get the container (podman is preferred, but docker is also supported)
+# TODO: prpose nerdctl
+CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
+
+
+# Packaging OCI image, to build rpm, deb, pacman, tar packages
+PKG_OCI_IMAGE=packaging:fedora
+PKG_OCI_OPTS:=--rm -it \
+	-w $$PKG_OCI_WDIR \
+	-v ./:/opt/katenary:z \
+	--userns keep-id:uid=999,gid=999 \
+	$(PKG_OCI_IMAGE)
+
+# Set the version and package version, following build mode (default, release)
+MODE=default
+RELEASE=""
+# If release mode
+ifeq ($(MODE),release)
+	PKG_VERSION=v$(VERSION)
+	VERSION:=release-$(VERSION)
+endif
+
+
+# UPX compression
+UPX_OPTS =
+UPX ?= upx $(UPX_OPTS)
+
+BUILD_IMAGE=docker.io/golang:$(GOVERSION)
+
+# List of source files
+SOURCES=$(shell find -name "*.go" -or -name "*.tpl" -type f | grep -v -P "^./example|^./vendor")
+# List of binaries to build and sign
+BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
+BINARIES += dist/katenary-windows-setup.exe
+
+## GPG
+# List of signatures to build
+ASC_BINARIES=$(patsubst %,%.asc,$(BINARIES))
+# GPG signer
+SIGNER=metal3d@gmail.com
+
+# Browser command to see coverage report after tests
+BROWSER=$(shell command -v epiphany || echo xdg-open)
 
 all: build
 
@@ -95,6 +108,7 @@ help:
 
 ## BUILD
 
+# Simply build the binary for the current OS and architecture
 build: pull katenary
 
 pull:
@@ -120,47 +134,50 @@ endif
 
 # Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
 # Also generate the windows installer.
-dist: prepare $(BINARIES) upx gpg-sign check-sign
+dist: prepare $(BINARIES) upx gpg-sign check-sign packages
 
 prepare: pull
 	mkdir -p dist
 
-dist/katenary-linux-amd64:
+dist/katenary-linux-amd64: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-amd64...\033[0m"
-	$(MAKE) katenary GOOS=linux GOARCH=amd64 OUT=$@
+	$(MAKE) katenary GOOS=linux GOARCH=amd64 OUTPUT=$@
 	strip $@
 
-dist/katenary-linux-arm64:
+dist/katenary-linux-arm64: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-arm...\033[0m"
-	$(MAKE) katenary GOOS=linux GOARCH=arm64 OUT=$@
+	$(MAKE) katenary GOOS=linux GOARCH=arm64 OUTPUT=$@
 
-dist/katenary.exe:
+dist/katenary.exe: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for windows...\033[0m"
-	$(MAKE) katenary GOOS=windows GOARCH=amd64 OUT=$@
+	$(MAKE) katenary GOOS=windows GOARCH=amd64 OUTPUT=$@
 
-dist/katenary-darwin-amd64:
+dist/katenary-darwin-amd64: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for darwin...\033[0m"
-	$(MAKE) katenary GOOS=darwin GOARCH=amd64 OUT=$@
+	$(MAKE) katenary GOOS=darwin GOARCH=amd64 OUTPUT=$@
 
-dist/katenary-freebsd-amd64:
+dist/katenary-freebsd-amd64: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd...\033[0m"
-	$(MAKE) katenary GOOS=freebsd GOARCH=amd64 OUT=$@
+	$(MAKE) katenary GOOS=freebsd GOARCH=amd64 OUTPUT=$@
 	strip $@
 
-dist/katenary-freebsd-arm64:
+dist/katenary-freebsd-arm64: $(SOURCES) Makefile go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
-	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUT=$@
+	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUTPUT=$@
 
-dist/katenary-windows-setup.exe: nsis/EnVar.dll dist/katenary.exe
-	makensis -DAPP_VERSION=$(VERSION) nsis/katenary.nsi
+dist/katenary-windows-setup.exe: nsis/EnVar.dll dist/katenary.exe packager-oci-image $(SOURCES) Makefile go.mod go.sum
+	PKG_OCI_WDIR=/opt/katenary 
+	podman run $(PKG_OCI_OPTS) \
+		makensis -DAPP_VERSION=$(VERSION) nsis/katenary.nsi
 	mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
 
+# Download the EnVar plugin for NSIS, put it in the nsis directory, and clean up
 nsis/EnVar.dll:
 	curl https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -o nsis/EnVar_plugin.zip
 	cd nsis
@@ -168,11 +185,51 @@ nsis/EnVar.dll:
 	mv Plugins/x86-unicode/EnVar.dll EnVar.dll
 	rm -rf EnVar_plugin.zip Plugins
 
-upx:
+upx: dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary-darwin-amd64
 	$(UPX) dist/katenary-linux-amd64
 	$(UPX) dist/katenary-linux-arm64
 	#$(UPX) dist/katenary.exe
 	$(UPX) dist/katenary-darwin-amd64 --force-macos
+
+## Linux / FreeBSD packages
+
+DESCRIPTION := $(shell cat packaging/description | sed ':a;N;$$!ba;s/\n/\\n/g')
+
+
+FPM_OPTS=--name katenary \
+	--version $(PKG_VERSION) \
+	--url https://katenary.org \
+	--vendor "Katenary Project" \
+	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
+	--license "MIT" \
+	--description="$$(printf "$(DESCRIPTION)" | fold -s)"
+
+FPM_COMMON_FILES=../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1 \
+	../LICENSE=/usr/local/share/doc/katenary/LICENSE \
+	../README.md=/usr/local/share/doc/katenary/README.md \
+
+packages: manpage packager-oci-image
+	@PKG_OCI_WDIR=/opt/katenary/dist
+	for arch in amd64 arm64; do \
+		for target in rpm deb pacman tar; do \
+			echo "==> Building $$target package for arch $$arch..."; \
+			podman run $(PKG_OCI_OPTS) fpm -s dir -t $$target -a $$arch -f $(FPM_OPTS) \
+				$(FPM_COMMON_FILES) \
+				./katenary-linux-$$arch=/usr/local/bin/katenary; \
+		done
+		mv dist/katenary.tar dist/katenary-linux-$(PKG_VERSION).$$arch.tar
+		for target in freebsd tar; do \
+			echo "==> Building $$target package for arch $$arch"; \
+			podman run $(PKG_OCI_OPTS) fpm -s dir -t $$target -a $$arch -f $(FPM_OPTS) \
+				$(FPM_COMMON_FILES) \
+				./katenary-freebsd-$$arch=/usr/local/bin/katenary;
+		done
+		mv dist/katenary-$(PKG_VERSION).txz dist/katenary-$(PKG_VERSION).$$arch.txz
+		mv dist/katenary.tar dist/katenary-freebsd-$(PKG_VERSION).$$arch.tar
+	done
+
+packager-oci-image:
+	@podman build -t packaging:fedora ./packaging/oci 1>/dev/null
 
 ## GPG signing
 
@@ -275,8 +332,6 @@ sast:
 		--exclude-rule go.lang.security.audit.crypto.use_of_weak_crypto.use-of-sha1  \
 		--metrics=on  \
 		.
-
-tests: test
 test:
 	@echo -e "\033[1;33mTesting katenary $(VERSION)...\033[0m"
 	go test -coverprofile=cover.out ./...
@@ -297,45 +352,3 @@ cover:
 dist-clean:
 	rm -rf dist
 	rm -f katenary
-
-
-#FPM_OPTS=--name katenary \
-#	--description "$(shell cat packaging/description)" \
-#	--version $(VERSION) \
-#	--url https://katenary.org \
-#	--vendor "Katenary Project" \
-#	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
-#	--license "MIT" \
-#	katenary-linux-amd64=/usr/local/bin/katenary
-#packages:
-#	podman build -t packaging:fedora ./packaging/oci
-#	podman run -it --rm -w /opt -v ./dist:/opt:z --userns keep-id:uid=999,gid=999 packaging:fedora \
-#		fpm -s dir -t rpm --rpm-summary="$(shell head -n1 packaging/description)" -f $(FPM_OPTS)
-#	podman run -it --rm -w /opt -v ./dist:/opt:z --userns keep-id:uid=999,gid=999 packaging:fedora \
-#		fpm -s dir -t deb -f $(FPM_OPTS)
-
-# print packaging/description and replace newlines with explicit \n
-DESCRIPTION := $(shell cat packaging/description | sed ':a;N;$$!ba;s/\n/\\n/g')
-
-
-FPM_OCI_OPTS=-w /opt/katenary/dist \
-	-v ./:/opt/katenary:z \
-	--userns keep-id:uid=999,gid=999 packaging:fedora
-FPM_OPTS=--name katenary \
-	--version $(VERSION) \
-	--url https://katenary.org \
-	--vendor "Katenary Project" \
-	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
-	--license "MIT" \
-	--description="$$(printf "$(DESCRIPTION)" | fold -s)" \
-	./katenary-linux-amd64=/usr/local/bin/katenary \
-	../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1 \
-	../LICENSE=/usr/local/share/doc/katenary/LICENSE \
-	../README.md=/usr/local/share/doc/katenary/README.md
-packages: manpage
-	@podman build -t packaging:fedora ./packaging/oci 1>/dev/null
-	@for target in rpm deb pacman tar; do \
-		echo "==> Building $$target package..."; \
-		podman run $(FPM_OCI_OPTS) fpm -s dir -t $$target -f $(FPM_OPTS); \
-	done
-	mv dist/katenary.tar dist/katenary-$(VERSION).tar
