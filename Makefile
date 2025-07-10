@@ -11,7 +11,6 @@ MAKEFLAGS += --no-builtin-rules
 CUR_SHA=$(shell git log -n1 --pretty='%h')
 CUR_BRANCH=$(shell git branch --show-current)
 VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo $(CUR_BRANCH)-$(CUR_SHA))# use by golang flags
-PKG_VERSION=$(VERSION)# used for package name
 
 # Go build command and environment variables for target OS and architecture
 GOVERSION=1.24
@@ -21,7 +20,6 @@ GOOS=linux
 GOARCH=amd64
 CGO_ENABLED=0
 PREFIX=~/.local
-BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUTPUT)  ./cmd/katenary
 
 # Get the container (podman is preferred, but docker is also supported)
 # TODO: prpose nerdctl
@@ -38,12 +36,15 @@ PKG_OCI_OPTS:=--rm -it \
 
 # Set the version and package version, following build mode (default, release)
 MODE=default
-RELEASE=""
 # If release mode
 ifeq ($(MODE),release)
-	PKG_VERSION=v$(VERSION)
-	VERSION:=release-$(VERSION)
+	PKG_VERSION:=$(VERSION)
+	VERSION:=$(VERSION)
+else
+	PKG_VERSION=$(VERSION)# used for package name
 endif
+
+BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUTPUT)  ./cmd/katenary
 
 
 # UPX compression
@@ -66,6 +67,13 @@ SIGNER=metal3d@gmail.com
 
 # Browser command to see coverage report after tests
 BROWSER=$(shell command -v epiphany || echo xdg-open)
+
+check-version:
+	@echo "=> Checking version..."
+	@echo "Mode: $(MODE)"
+	@echo "Current version: $(VERSION)"
+	@echo "Package version: $(PKG_VERSION)"
+	@echo "Build command: $(BLD_CMD)"
 
 all: build
 
