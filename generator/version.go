@@ -13,15 +13,13 @@ var Version = "master" // changed at compile time
 // katneary using `go install`, the version should be different.
 func GetVersion() string {
 	// try to get the semantic version from the Version variable (theorically set at compile time)
-	reg := regexp.MustCompile(`^(.?\d+.\d+.\d+.*)|^release-.*`)
-	if reg.MatchString(Version) {
+	if reg := regexp.MustCompile(`^v?\d+.\d+.\d+.*|^release-.*`); reg.MatchString(Version) {
 		return Version
 	}
 
 	// OK... let's try to get the version from the build info
 	// get the version from the build info (when installed with go install)
-	v, ok := debug.ReadBuildInfo()
-	if ok {
+	if v, ok := debug.ReadBuildInfo(); ok {
 		return v.Main.Version + "-" + v.GoVersion
 	}
 
