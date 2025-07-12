@@ -1,13 +1,13 @@
 FROM registry.fedoraproject.org/fedora:42
 RUN set -eux; \
   microdnf -y install \
-  rubygems rpmbuild bsdtar mingw-nsis-base.x86_64 mingw32-nsis.noarch; \
+  rubygems rpmbuild rpmsign bsdtar mingw-nsis-base.x86_64 mingw32-nsis.noarch gpg2; \
   microdnf clean all;
 
 # create user with 999 UID/GID
 RUN set -eux; \
-  groupadd -g 999 builder && \
-  useradd -m -r -u 999 -g 999 -d /home/builder -s /bin/bash builder && \
+  groupadd -g 1001 builder; \
+  useradd -m -u 1001 -g 1001 -d /home/builder -s /bin/bash builder; \
   chown builder:builder /home/builder
 
 USER builder
