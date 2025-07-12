@@ -92,8 +92,13 @@ Section "Install"
   File "..\dist\katenary.exe"
   File "..\LICENSE"
   File "..\README.md"
-  WriteUninstaller "$INSTDIR\uninstall-katenary.exe"
 
+  WriteUninstaller "$INSTDIR\uninstall-katenary.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Katenary" "DisplayName" "Katenary"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Katenary" "UninstallString" "$INSTDIR\uninstall-katenary.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Katenary" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Katenary" "DisplayIcon" "$INSTDIR\katenary.exe"
+  
   EnVar::SetHKCU
   Pop $0
 
@@ -114,4 +119,6 @@ Section "Uninstall"
   Delete "$INSTDIR\LICENSE"
   Delete "$INSTDIR\README.md"
   RMDir "$INSTDIR"
+
+  DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\Katenary"
 SectionEnd

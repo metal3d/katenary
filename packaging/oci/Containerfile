@@ -1,0 +1,20 @@
+FROM registry.fedoraproject.org/fedora:42
+RUN set -eux; \
+  microdnf -y install \
+  rubygems rpmbuild rpmsign bsdtar mingw-nsis-base.x86_64 mingw32-nsis.noarch gpg2; \
+  microdnf clean all;
+
+# create user with 999 UID/GID
+RUN set -eux; \
+  groupadd -g 1001 builder; \
+  useradd -m -u 1001 -g 1001 -d /home/builder -s /bin/bash builder; \
+  chown builder:builder /home/builder
+
+USER builder
+ENV PATH="/home/builder/bin:${PATH}"
+WORKDIR /home/builder
+RUN set -eux; \
+  gem install fpm
+
+
+

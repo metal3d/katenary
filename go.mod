@@ -1,4 +1,4 @@
-module katenary // github.com/metal3d/katenary
+module katenary // github.com/katenay/katenary
 
 go 1.24.0
 

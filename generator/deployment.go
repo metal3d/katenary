@@ -136,6 +136,7 @@ func (d *Deployment) AddContainer(service types.ServiceConfig) {
 		Resources: corev1.ResourceRequirements{
 			Requests: corev1.ResourceList{},
 		},
+		Command: service.Command,
 	}
 	if _, ok := d.chart.Values[service.Name]; !ok {
 		d.chart.Values[service.Name] = NewValue(service, d.isMainApp)

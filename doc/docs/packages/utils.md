@@ -149,7 +149,7 @@ TplName returns the name of the kubernetes resource as a template string. It is 
 func TplValue(serviceName, variable string, pipes ...string) string
 ```
 
-TplValue returns a container by name and its index in the array.
+TplValue returns a string that can be used in a template to access a value from the values file.
 
 <a name="Warn"></a>
 ## func [Warn](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L25>)

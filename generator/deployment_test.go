@@ -495,3 +495,39 @@ services:
 		t.Errorf("Expected valueFrom to be set")
 	}
 }
+
+func TestCheckCommand(t *testing.T) {
+	composeFile := `
+services:
+    web-app:
+        image: nginx:1.29
+        command:
+            - sh
+            - -c
+            - |-
+                echo "Hello, World!"
+                echo "Done"
+`
+
+	// composeFile = fmt.Sprintf(composeFile, labels.Prefix())
+	tmpDir := setup(composeFile)
+	defer teardown(tmpDir)
+
+	currentDir, _ := os.Getwd()
+	os.Chdir(tmpDir)
+	defer os.Chdir(currentDir)
+
+	output := internalCompileTest(t, "-s", "templates/web_app/deployment.yaml")
+	dt := v1.Deployment{}
+	if err := yaml.Unmarshal([]byte(output), &dt); err != nil {
+		t.Errorf(unmarshalError, err)
+	}
+	// find the command in the container
+	command := dt.Spec.Template.Spec.Containers[0].Command
+	if len(command) != 3 {
+		t.Errorf("Expected command to have 3 elements, got %d", len(command))
+	}
+	if command[0] != "sh" || command[1] != "-c" {
+		t.Errorf("Expected command to be 'sh -c', got %s", strings.Join(command, " "))
+	}
+}

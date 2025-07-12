@@ -1,0 +1,4 @@
+Katenary transforms docker/podman compose files to Helm Charts.
+It harnesses the labels from your "compose" file to craft complete Helm Charts effortlessly, saving you time and energy.
+- Simple automated CLI: Katenary handles the grunt work, generating everything needed for seamless service binding and Helm Chart creation.
+- Effortless Efficiency: You only need to add labels when it's necessary to precise things. Then call katenary convert and let the magic happen.
