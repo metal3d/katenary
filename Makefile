@@ -3,9 +3,9 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 .DELETE_ON_ERROR:
+.PHONY: help dist-clean dist package build install test doc nsis
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
-.PHONY: help dist-clean dist package build install test doc nsis
 
 # Get a version string from git
 CUR_SHA=$(shell git log -n1 --pretty='%h')
@@ -14,37 +14,48 @@ VERSION=$(shell git describe --exact-match --tags $(CUR_SHA) 2>/dev/null || echo
 
 # Go build command and environment variables for target OS and architecture
 GOVERSION=1.24
-GO=container # container, local
+GO=container# container, local
 OUTPUT=katenary
 GOOS=linux
 GOARCH=amd64
 CGO_ENABLED=0
 PREFIX=~/.local
 
-# Get the container (podman is preferred, but docker is also supported)
+
+warn-docker:
+	@echo -e "\033[1;31mWarning: Docker is not recommended, use Podman instead.\033[0m"
+	sleep 5
+
+# Get the container (Podman is preferred, but docker can be used too. It may failed with Docker.)
 # TODO: prpose nerdctl
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
+ifeq ($(CTN),podman)
+	CTN_USERMAP=--userns=keep-id
+else
+	$(MAKE) warn-docker
+	CTN_USERMAP=--user=$(shell id -u):$(shell id -g) -e HOME=/tmp
+endif
 
 
 # Packaging OCI image, to build rpm, deb, pacman, tar packages
+# We changes the keep-id uid/gid for Podman, so that the user inside the container is the same as the user outside.
+# For Docker, as it doesn't support userns, we use common options, but it may fail...
 PKG_OCI_IMAGE=packaging:fedora
-PKG_OCI_OPTS:=--rm -it \
-	-w $$PKG_OCI_WDIR \
-	-v ./:/opt/katenary:z \
-	--userns keep-id:uid=999,gid=999 \
-	$(PKG_OCI_IMAGE)
-
-# Set the version and package version, following build mode (default, release)
-MODE=default
-# If release mode
-ifeq ($(MODE),release)
-	PKG_VERSION:=$(VERSION)
-	VERSION:=$(VERSION)
+ifeq ($(CTN),podman)
+	# podman
+	PKG_OCI_OPTS:=--rm -it \
+		-v ./:/opt/katenary:z \
+		--userns keep-id:uid=1001,gid=1001 \
+		$(PKG_OCI_IMAGE)
 else
-	PKG_VERSION=$(VERSION)# used for package name
+	# docker
+	PKG_OCI_OPTS:=--rm -it \
+		-v ./:/opt/katenary:z \
+		-e HOME=/tmp \
+		$(CTN_USERMAP) \
+		$(PKG_OCI_IMAGE)
 endif
-
-BLD_CMD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUTPUT)  ./cmd/katenary
+GO_BUILD=go build -ldflags="-X 'katenary/generator.Version=$(VERSION)'" -o $(OUTPUT)  ./cmd/katenary
 
 
 # UPX compression
@@ -56,8 +67,14 @@ BUILD_IMAGE=docker.io/golang:$(GOVERSION)
 # List of source files
 SOURCES=$(shell find -name "*.go" -or -name "*.tpl" -type f | grep -v -P "^./example|^./vendor")
 # List of binaries to build and sign
-BINARIES=dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary.exe dist/katenary-darwin-amd64 dist/katenary-freebsd-amd64 dist/katenary-freebsd-arm64
-BINARIES += dist/katenary-windows-setup.exe
+BINARIES=\
+	dist/katenary-linux-amd64\
+	dist/katenary-linux-arm64\
+	dist/katenary-darwin-amd64\
+	dist/katenary-freebsd-amd64\
+	dist/katenary-freebsd-arm64\
+	dist/katenary.exe\
+	dist/katenary-windows-setup.exe
 
 ## GPG
 # List of signatures to build
@@ -67,13 +84,6 @@ SIGNER=metal3d@gmail.com
 
 # Browser command to see coverage report after tests
 BROWSER=$(shell command -v epiphany || echo xdg-open)
-
-check-version:
-	@echo "=> Checking version..."
-	@echo "Mode: $(MODE)"
-	@echo "Current version: $(VERSION)"
-	@echo "Package version: $(PKG_VERSION)"
-	@echo "Build command: $(BLD_CMD)"
 
 all: build
 
@@ -125,63 +135,66 @@ ifneq ($(GO),local)
 	@$(CTN) pull $(BUILD_IMAGE)
 endif
 
-katenary: $(SOURCES) Makefile go.mod go.sum
+katenary: $(SOURCES) go.mod go.sum
 ifeq ($(GO),local)
 	@echo "=> Build on host using go"
-	$(BLD_CMD)
-else ifeq ($(CTN),podman)
-	@echo "=> Build in container using" $(CTN)
-	@podman run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --userns keep-id  $(BUILD_IMAGE) $(BLD_CMD)
+	$(GO_BUILD)
 else
 	@echo "=> Build in container using" $(CTN)
-	@docker run -e CGO_ENABLED=$(CGO_ENABLED) -e GOOS=$(GOOS) -e GOARCH=$(GOARCH) \
-		--rm -v $(PWD):/go/src/katenary:z -w /go/src/katenary --user $(shell id -u):$(shell id -g) -e HOME=/tmp  $(BUILD_IMAGE) $(BLD_CMD)
+	@$(CTN) run \
+		-e CGO_ENABLED=$(CGO_ENABLED) \
+		-e GOOS=$(GOOS) \
+		-e GOARCH=$(GOARCH) \
+		--rm -v $(PWD):/go/src/katenary:z \
+		-w /go/src/katenary \
+		-v ./.cache:/go/pkg/mod:z \
+		$(CTN_USERMAP) \
+		$(BUILD_IMAGE) $(GO_BUILD)
 endif
 
 
 # Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
 # Also generate the windows installer.
-dist: prepare $(BINARIES) upx gpg-sign check-sign packages
+dist: prepare $(BINARIES) upx packages
+dist-full: dist-clean dist gpg-sign check-sign rpm-sign check-dist-all
 
-prepare: pull
+prepare: pull packager-oci-image
 	mkdir -p dist
 
-dist/katenary-linux-amd64: $(SOURCES) Makefile go.mod go.sum
+dist/katenary-linux-amd64: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-amd64...\033[0m"
 	$(MAKE) katenary GOOS=linux GOARCH=amd64 OUTPUT=$@
 	strip $@
 
-dist/katenary-linux-arm64: $(SOURCES) Makefile go.mod go.sum
+dist/katenary-linux-arm64: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for linux-arm...\033[0m"
 	$(MAKE) katenary GOOS=linux GOARCH=arm64 OUTPUT=$@
 
-dist/katenary.exe: $(SOURCES) Makefile go.mod go.sum
+dist/katenary.exe: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for windows...\033[0m"
 	$(MAKE) katenary GOOS=windows GOARCH=amd64 OUTPUT=$@
 
-dist/katenary-darwin-amd64: $(SOURCES) Makefile go.mod go.sum
+dist/katenary-darwin-amd64: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for darwin...\033[0m"
 	$(MAKE) katenary GOOS=darwin GOARCH=amd64 OUTPUT=$@
 
-dist/katenary-freebsd-amd64: $(SOURCES) Makefile go.mod go.sum
+dist/katenary-freebsd-amd64: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=amd64 OUTPUT=$@
 	strip $@
 
-dist/katenary-freebsd-arm64: $(SOURCES) Makefile go.mod go.sum
+dist/katenary-freebsd-arm64: $(SOURCES) go.mod go.sum
 	@echo
 	@echo -e "\033[1;32mBuilding katenary $(VERSION) for freebsd-arm64...\033[0m"
 	$(MAKE) katenary GOOS=freebsd GOARCH=arm64 OUTPUT=$@
 
-dist/katenary-windows-setup.exe: nsis/EnVar.dll dist/katenary.exe packager-oci-image $(SOURCES) Makefile go.mod go.sum
-	PKG_OCI_WDIR=/opt/katenary 
-	podman run $(PKG_OCI_OPTS) \
+dist/katenary-windows-setup.exe: nsis/EnVar.dll dist/katenary.exe
+	@$(CTN) run -w /opt/katenary $(PKG_OCI_OPTS) \
 		makensis -DAPP_VERSION=$(VERSION) nsis/katenary.nsi
 	mv nsis/katenary-windows-setup.exe dist/katenary-windows-setup.exe
 
@@ -196,48 +209,101 @@ nsis/EnVar.dll:
 upx: dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary-darwin-amd64
 	$(UPX) dist/katenary-linux-amd64
 	$(UPX) dist/katenary-linux-arm64
-	#$(UPX) dist/katenary.exe
 	$(UPX) dist/katenary-darwin-amd64 --force-macos
 
 ## Linux / FreeBSD packages
 
 DESCRIPTION := $(shell cat packaging/description | sed ':a;N;$$!ba;s/\n/\\n/g')
 
-
 FPM_OPTS=--name katenary \
-	--version $(PKG_VERSION) \
 	--url https://katenary.org \
 	--vendor "Katenary Project" \
 	--maintainer "Patrice Ferlet <metal3d@gmail.com>" \
 	--license "MIT" \
 	--description="$$(printf "$(DESCRIPTION)" | fold -s)"
 
-FPM_COMMON_FILES=../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1 \
-	../LICENSE=/usr/local/share/doc/katenary/LICENSE \
-	../README.md=/usr/local/share/doc/katenary/README.md \
+# base files (doc...)
+FPM_BASES=../LICENSE=/usr/local/share/doc/katenary/LICENSE \
+	../README.md=/usr/local/share/doc/katenary/README.md
+
+FPM_COMMON_FILES=$(FPM_BASES) ../doc/share/man/man1/katenary.1=/usr/local/share/man/man1/katenary.1
+
+# ArchLinux has got inconsistent /usr/local/man directory
+FPM_COMMON_FILES_ARCHLINUX=$(FPM_BASES) ../doc/share/man/man1/katenary.1=/usr/local/man/man1/katenary.1 \
+
+# Pacman refuses dashes in version, and should start with a number
+PACMAN_VERSION=$(shell echo $(VERSION) | sed 's/-/./g; s/^v//')
+
+define RPM_MACROS
+%_signature gpg
+%_gpg_path /home/builder/.gnupg
+%_gpg_name $(SIGNER)
+%_gpgbin /usr/bin/gpg2
+%__gpg_sign_cmd %{__gpg} gpg --force-v3-sigs --batch --verbose --no-armor --no-secmem-warning -u "%{_gpg_name}" -sbo %{__signature_filename} --digest-algo sha256 %{__plaintext_filename}'
+endef
+
+rpm: dist/katenary-linux-$(GOARCH)
+	@echo "==> Building RPM packages for $(GOARCH)..."
+	$(CTN) run -w /opt/katenary/dist $(PKG_OCI_OPTS) \
+		fpm -s dir -t rpm -a $(GOARCH) -f $(FPM_OPTS) --version=$(VERSION) \
+			$(FPM_COMMON_FILES) \
+			./katenary-linux-$(GOARCH)=/usr/local/bin/katenary
+rpm-sign:
+	[ -f .rpmmacros ]  || echo "$(RPM_MACROS)" > .rpmmacros
+	[ -f .secret.gpg ] || gpg --export-secret-keys -a $(SIGNER) > .secret.gpg
+	$(CTN) run -w /opt/katenary/dist \
+		-v ./.secret.gpg:/home/builder/signer.gpg \
+		-v packager-gpg:/home/builder/.gnupg \
+		$(PKG_OCI_OPTS) \
+		gpg --import /home/builder/signer.gpg
+	$(CTN) run -w /opt/katenary/dist \
+		-v .rpmmacros:/home/builder/.rpmmacros:z \
+		-v packager-gpg:/home/builder/.gnupg \
+		$(PKG_OCI_OPTS) \
+		bash -c 'for rpm in $$(find . -iname "*.rpm"); do echo signing: $$rpm; rpm --addsign $$rpm; done'
+
+deb:
+	@echo "==> Building DEB packages for $(GOARCH)..."
+	$(CTN) run -w /opt/katenary/dist $(PKG_OCI_OPTS) \
+		fpm -s dir -t deb -a $(GOARCH) -f $(FPM_OPTS) --version=$(VERSION) \
+			$(FPM_COMMON_FILES) \
+			./katenary-linux-$(GOARCH)=/usr/local/bin/katenary
+
+pacman:
+	@echo "==> Building Pacman packages for $(GOARCH)..."
+	$(CTN) run -w /opt/katenary/dist $(PKG_OCI_OPTS) \
+		fpm -s dir -t pacman -a $(GOARCH) -f $(FPM_OPTS) --version=$(PACMAN_VERSION) \
+			$(FPM_COMMON_FILES_ARCHLINUX) \
+			./katenary-linux-$(GOARCH)=/usr/local/bin/katenary
+
+freebsd:
+	@echo "==> Building FreeBSD packages for $(GOARCH)..."
+	$(CTN) run -w /opt/katenary/dist $(PKG_OCI_OPTS) \
+		fpm -s dir -t freebsd -a $(GOARCH) -f $(FPM_OPTS) --version=$(VERSION)\
+			$(FPM_COMMON_FILES) \
+			./katenary-freebsd-$(GOARCH)=/usr/local/bin/katenary
+	mv dist/katenary-$(VERSION).txz dist/katenary-freebsd-$(VERSION).$(GOARCH).txz
+
+tar:
+	@echo "==> Building TAR packages for $(GOOS) $(GOARCH)..."
+	$(CTN) run -w /opt/katenary/dist $(PKG_OCI_OPTS) \
+		fpm -s dir -t tar -a $(GOARCH) -f $(FPM_OPTS) \
+			$(FPM_COMMON_FILES) \
+			./katenary-$(GOOS)-$(GOARCH)=/usr/local/bin/katenary
+	mv dist/katenary.tar dist/katenary-$(GOOS)-$(VERSION).$(GOARCH).tar
 
 packages: manpage packager-oci-image
-	@PKG_OCI_WDIR=/opt/katenary/dist
 	for arch in amd64 arm64; do \
-		for target in rpm deb pacman tar; do \
-			echo "==> Building $$target package for arch $$arch..."; \
-			podman run $(PKG_OCI_OPTS) fpm -s dir -t $$target -a $$arch -f $(FPM_OPTS) \
-				$(FPM_COMMON_FILES) \
-				./katenary-linux-$$arch=/usr/local/bin/katenary; \
-		done
-		mv dist/katenary.tar dist/katenary-linux-$(PKG_VERSION).$$arch.tar
-		for target in freebsd tar; do \
-			echo "==> Building $$target package for arch $$arch"; \
-			podman run $(PKG_OCI_OPTS) fpm -s dir -t $$target -a $$arch -f $(FPM_OPTS) \
-				$(FPM_COMMON_FILES) \
-				./katenary-freebsd-$$arch=/usr/local/bin/katenary;
-		done
-		mv dist/katenary-$(PKG_VERSION).txz dist/katenary-$(PKG_VERSION).$$arch.txz
-		mv dist/katenary.tar dist/katenary-freebsd-$(PKG_VERSION).$$arch.tar
+		$(MAKE) rpm GOARCH=$$arch; \
+		$(MAKE) deb GOARCH=$$arch; \
+		$(MAKE) pacman GOARCH=$$arch; \
+		$(MAKE) freebsd GOARCH=$$arch; \
+		$(MAKE) tar GOARCH=$$arch GOOS=linux; \
+		$(MAKE) tar GOARCH=$$arch GOOS=freebsd; \
 	done
 
 packager-oci-image:
-	@podman build -t packaging:fedora ./packaging/oci 1>/dev/null
+	@$(CTN) build -t packaging:fedora ./packaging/oci 1>/dev/null
 
 ## GPG signing
 
@@ -260,6 +326,52 @@ dist/%.asc: dist/%
 	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
 
 
+check-dist-rocky:
+	@echo "=> Checking Rocky Linux package..."
+	p=$(wildcard dist/*x86_64.rpm);
+	$(CTN) run --rm -it -v ./dist:/opt:z quay.io/rockylinux/rockylinux:latest bash -c "
+		rpm -ivh /opt/$$(basename $$p);
+		katenary version;
+	"
+
+check-dist-fedora:
+	@echo "=> Checking Fedora package..."
+	p=$(wildcard dist/*x86_64.rpm);
+	$(CTN) run --rm -it -v ./dist:/opt:z quay.io/fedora/fedora:latest bash -c "
+		rpm -ivh /opt/$$(basename $$p);
+		katenary version;
+	"
+
+check-dist-archlinux:
+	echo "=> Checking ArchLinux package..."
+	p=$(wildcard dist/*x86_64.pkg.tar.zst);
+	$(CTN) run --rm -it -v ./dist:/opt:z quay.io/archlinux/archlinux bash -c "
+		pacman -U /opt/$$(basename $$p) --noconfirm;
+		katenary version;
+	"
+
+check-dist-debian:
+	@echo "=> Checking Debian package..."
+	p=$(wildcard dist/*amd64.deb);
+	$(CTN) run --rm -it -v ./dist:/opt:z debian:latest bash -c "
+		dpkg -i /opt/$$(basename $$p);
+		katenary version;
+	"
+check-dist-ubuntu:
+	@echo "=> Checking Ubuntu package..."
+	p=$(wildcard dist/*amd64.deb);
+	$(CTN) run --rm -it -v ./dist:/opt:z ubuntu:latest bash -c "
+		dpkg -i /opt/$$(basename $$p);
+		katenary version;
+	"
+
+check-dist-all:
+	$(MAKE) check-dist-fedora
+	$(MAKE) check-dist-rocky
+	$(MAKE) check-dist-debian
+	$(MAKE) check-dist-ubuntu
+	$(MAKE) check-dist-archlinux
+
 ## installation and uninstallation
 
 install: build
@@ -268,8 +380,7 @@ install: build
 uninstall:
 	rm -f $(PREFIX)/bin/katenary
 
-
-serve-doc: __label_doc
+serve-doc: doc
 	@cd doc && \
 		[ -d venv ] || python -m venv venv; \
 		source venv/bin/activate && \
