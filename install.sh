@@ -2,7 +2,7 @@
 
 # Install the latest version of the Katenary detecting the right OS and architecture.
 # Can be launched with the following command:
-# sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
+# sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
 
 set -e
 
@@ -43,7 +43,7 @@ if ! echo "$PATH" | grep -q "$INSTALL_PATH"; then
 fi
 
 # Where to download the binary
-BASE="https://github.com/metal3d/katenary/releases/latest/download/"
+BASE="https://github.com/Katenary/katenary/releases/latest/download/"
 
 # for compatibility with older ARM versions
 if [ $ARCH = "x86_64" ]; then
