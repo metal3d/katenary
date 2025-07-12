@@ -17,7 +17,7 @@ const KatenaryLabelPrefix = "katenary.v3"
 ```
 
 <a name="GetLabelHelp"></a>
-## func [GetLabelHelp](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L88>)
+## func [GetLabelHelp](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L88>)
 
 ```go
 func GetLabelHelp(asMarkdown bool) string
@@ -26,7 +26,7 @@ func GetLabelHelp(asMarkdown bool) string
 GetLabelHelp return the help for the labels.
 
 <a name="GetLabelHelpFor"></a>
-## func [GetLabelHelpFor](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L97>)
+## func [GetLabelHelpFor](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L97>)
 
 ```go
 func GetLabelHelpFor(labelname string, asMarkdown bool) string
@@ -35,7 +35,7 @@ func GetLabelHelpFor(labelname string, asMarkdown bool) string
 GetLabelHelpFor returns the help for a specific label.
 
 <a name="GetLabelNames"></a>
-## func [GetLabelNames](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L72>)
+## func [GetLabelNames](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L72>)
 
 ```go
 func GetLabelNames() []string
@@ -44,7 +44,7 @@ func GetLabelNames() []string
 GetLabelNames returns a sorted list of all katenary label names.
 
 <a name="Prefix"></a>
-## func [Prefix](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L235>)
+## func [Prefix](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L235>)
 
 ```go
 func Prefix() string
@@ -53,7 +53,7 @@ func Prefix() string
 
 
 <a name="Help"></a>
-## type [Help](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L64-L69>)
+## type [Help](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L64-L69>)
 
 Help is the documentation of a label.
 
@@ -67,7 +67,7 @@ type Help struct {
 ```
 
 <a name="Label"></a>
-## type [Label](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L57>)
+## type [Label](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L57>)
 
 Label is a katenary label to find in compose files.
 
@@ -99,7 +99,7 @@ const (
 ```
 
 <a name="LabelName"></a>
-### func [LabelName](<https://github.com/metal3d/katenary/blob/develop/generator/labels/katenaryLabels.go#L59>)
+### func [LabelName](<https://github.com/katenary/katenary/blob/develop/generator/labels/katenaryLabels.go#L59>)
 
 ```go
 func LabelName(name string) Label

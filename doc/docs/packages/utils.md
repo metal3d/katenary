@@ -17,7 +17,7 @@ const DirectoryPermission = 0o755
 ```
 
 <a name="AsResourceName"></a>
-## func [AsResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L196>)
+## func [AsResourceName](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L196>)
 
 ```go
 func AsResourceName(name string) string
@@ -26,7 +26,7 @@ func AsResourceName(name string) string
 AsResourceName returns a resource name with underscores to respect the kubernetes naming convention. It's the opposite of FixedResourceName.
 
 <a name="Confirm"></a>
-## func [Confirm](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L164>)
+## func [Confirm](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L164>)
 
 ```go
 func Confirm(question string, icon ...Icon) bool
@@ -35,7 +35,7 @@ func Confirm(question string, icon ...Icon) bool
 Confirm asks a question and returns true if the answer is y.
 
 <a name="CountStartingSpaces"></a>
-## func [CountStartingSpaces](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L41>)
+## func [CountStartingSpaces](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L41>)
 
 ```go
 func CountStartingSpaces(line string) int
@@ -44,7 +44,7 @@ func CountStartingSpaces(line string) int
 CountStartingSpaces counts the number of spaces at the beginning of a string.
 
 <a name="EncodeBasicYaml"></a>
-## func [EncodeBasicYaml](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L178>)
+## func [EncodeBasicYaml](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L178>)
 
 ```go
 func EncodeBasicYaml(data any) ([]byte, error)
@@ -53,7 +53,7 @@ func EncodeBasicYaml(data any) ([]byte, error)
 EncodeBasicYaml encodes a basic yaml from an interface.
 
 <a name="FixedResourceName"></a>
-## func [FixedResourceName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L190>)
+## func [FixedResourceName](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L190>)
 
 ```go
 func FixedResourceName(name string) string
@@ -62,7 +62,7 @@ func FixedResourceName(name string) string
 FixedResourceName returns a resource name without underscores to respect the kubernetes naming convention.
 
 <a name="GetContainerByName"></a>
-## func [GetContainerByName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L87>)
+## func [GetContainerByName](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L87>)
 
 ```go
 func GetContainerByName(name string, containers []corev1.Container) (*corev1.Container, int)
@@ -71,7 +71,7 @@ func GetContainerByName(name string, containers []corev1.Container) (*corev1.Con
 GetContainerByName returns a container by name and its index in the array. It returns nil, \-1 if not found.
 
 <a name="GetKind"></a>
-## func [GetKind](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L54>)
+## func [GetKind](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L54>)
 
 ```go
 func GetKind(path string) (kind string)
@@ -80,7 +80,7 @@ func GetKind(path string) (kind string)
 GetKind returns the kind of the resource from the file path.
 
 <a name="GetServiceNameByPort"></a>
-## func [GetServiceNameByPort](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L77>)
+## func [GetServiceNameByPort](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L77>)
 
 ```go
 func GetServiceNameByPort(port int) string
@@ -89,7 +89,7 @@ func GetServiceNameByPort(port int) string
 GetServiceNameByPort returns the service name for a port. It the service name is not found, it returns an empty string.
 
 <a name="GetValuesFromLabel"></a>
-## func [GetValuesFromLabel](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L129>)
+## func [GetValuesFromLabel](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L129>)
 
 ```go
 func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[string]*EnvConfig
@@ -98,7 +98,7 @@ func GetValuesFromLabel(service types.ServiceConfig, LabelValues string) map[str
 GetValuesFromLabel returns a map of values from a label.
 
 <a name="HashComposefiles"></a>
-## func [HashComposefiles](<https://github.com/metal3d/katenary/blob/develop/utils/hash.go#L12>)
+## func [HashComposefiles](<https://github.com/katenary/katenary/blob/develop/utils/hash.go#L12>)
 
 ```go
 func HashComposefiles(files []string) (string, error)
@@ -107,7 +107,7 @@ func HashComposefiles(files []string) (string, error)
 HashComposefiles returns a hash of the compose files.
 
 <a name="Int32Ptr"></a>
-## func [Int32Ptr](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L35>)
+## func [Int32Ptr](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L35>)
 
 ```go
 func Int32Ptr(i int32) *int32
@@ -116,7 +116,7 @@ func Int32Ptr(i int32) *int32
 Int32Ptr returns a pointer to an int32.
 
 <a name="PathToName"></a>
-## func [PathToName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L106>)
+## func [PathToName](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L106>)
 
 ```go
 func PathToName(path string) string
@@ -125,7 +125,7 @@ func PathToName(path string) string
 PathToName converts a path to a kubernetes complient name.
 
 <a name="StrPtr"></a>
-## func [StrPtr](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L38>)
+## func [StrPtr](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L38>)
 
 ```go
 func StrPtr(s string) *string
@@ -134,7 +134,7 @@ func StrPtr(s string) *string
 StrPtr returns a pointer to a string.
 
 <a name="TplName"></a>
-## func [TplName](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L22>)
+## func [TplName](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L22>)
 
 ```go
 func TplName(serviceName, appname string, suffix ...string) string
@@ -143,7 +143,7 @@ func TplName(serviceName, appname string, suffix ...string) string
 TplName returns the name of the kubernetes resource as a template string. It is used in the templates and defined in \_helper.tpl file.
 
 <a name="TplValue"></a>
-## func [TplValue](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L97>)
+## func [TplValue](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L97>)
 
 ```go
 func TplValue(serviceName, variable string, pipes ...string) string
@@ -152,7 +152,7 @@ func TplValue(serviceName, variable string, pipes ...string) string
 TplValue returns a string that can be used in a template to access a value from the values file.
 
 <a name="Warn"></a>
-## func [Warn](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L25>)
+## func [Warn](<https://github.com/katenary/katenary/blob/develop/utils/icons.go#L25>)
 
 ```go
 func Warn(msg ...any)
@@ -161,7 +161,7 @@ func Warn(msg ...any)
 Warn prints a warning message
 
 <a name="WordWrap"></a>
-## func [WordWrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L159>)
+## func [WordWrap](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L159>)
 
 ```go
 func WordWrap(text string, lineWidth int) string
@@ -170,7 +170,7 @@ func WordWrap(text string, lineWidth int) string
 WordWrap wraps a string to a given line width. Warning: it may break the string. You need to check the result.
 
 <a name="Wrap"></a>
-## func [Wrap](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L71>)
+## func [Wrap](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L71>)
 
 ```go
 func Wrap(src, above, below string) string
@@ -179,7 +179,7 @@ func Wrap(src, above, below string) string
 Wrap wraps a string with a string above and below. It will respect the indentation of the src string.
 
 <a name="EnvConfig"></a>
-## type [EnvConfig](<https://github.com/metal3d/katenary/blob/develop/utils/utils.go#L123-L126>)
+## type [EnvConfig](<https://github.com/katenary/katenary/blob/develop/utils/utils.go#L123-L126>)
 
 EnvConfig is a struct to hold the description of an environment variable.
 
@@ -191,7 +191,7 @@ type EnvConfig struct {
 ```
 
 <a name="Icon"></a>
-## type [Icon](<https://github.com/metal3d/katenary/blob/develop/utils/icons.go#L6>)
+## type [Icon](<https://github.com/katenary/katenary/blob/develop/utils/icons.go#L6>)
 
 Icon is a unicode icon
 

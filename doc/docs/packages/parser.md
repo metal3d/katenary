@@ -8,7 +8,7 @@ import "katenary/parser"
 
 Package parser is a wrapper around compose\-go to parse compose files.
 
-## func [Parse](<https://github.com/metal3d/katenary/blob/develop/parser/main.go#L29>)
+## func [Parse](<https://github.com/katenary/katenary/blob/develop/parser/main.go#L29>)
 
 ```go
 func Parse(profiles []string, envFiles []string, dockerComposeFile ...string) (*types.Project, error)

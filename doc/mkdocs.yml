@@ -52,7 +52,7 @@ extra:
   generator: false
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/metal3d/katenary
+      link: https://github.com/katenary/katenary
 nav:
   - "Home": index.md
   - usage.md
