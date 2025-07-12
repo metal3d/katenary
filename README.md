@@ -5,8 +5,8 @@
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 
 [![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/en/latest/?badge=latest)
-[![Go Report Card](https://goreportcard.com/badge/github.com/metal3d/katenary)](https://goreportcard.com/report/github.com/metal3d/katenary)
-[![GitHub release](https://img.shields.io/github/v/release/metal3d/katenary)](https://github.com/metal3d/katenary/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Katenary/katenary)](https://goreportcard.com/report/github.com/Katenary/katenary)
+[![GitHub release](https://img.shields.io/github/v/release/Katenary/katenary)](https://github.com/Katenary/katenary/releases)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
@@ -41,16 +41,16 @@ The main developer is [Patrice FERLET](https://github.com/metal3d).
 
 ## Install
 
-You can download the binaries from the [Release](https://github.com/metal3d/katenary/releases) section. Copy the binary
+You can download the binaries from the [Release](https://github.com/Katenary/katenary/releases) section. Copy the binary
 and rename it to `katenary`. Place the binary inside your `PATH`. You should now be able to call the `katenary` command.
 
-You can of course get the binary with `go install -u github.com/metal3d/katenary/cmd/katenary/...` but the `main` branch
+You can of course get the binary with `go install -u github.com/Katenary/katenary/cmd/katenary/...` but the `main` branch
 is continuously updated. It's preferable to use releases.
 
 You can use this commands on Linux:
 
 ```bash
-sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
+sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
 ```
 
 ## Or, build yourself
@@ -137,69 +137,69 @@ Flags:
 Use "katenary [command] --help" for more information about a command.
 ```
 
-  Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
-  check *the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
-  you if you want to delete it before recreating.
+Katenary will try to find a `docker-compose.yaml` or `docker-compose.yml` file inside the current directory. It will
+check \*the existence of the `chart` directory to create a new Helm Chart inside a named subdirectory. Katenary will ask
+you if you want to delete it before recreating.
 
 It creates a subdirectory inside `chart` that is named with the `appname` option (default is `MyApp`)
 
-  > To respect the ability to install the same application in the same namespace, Katenary will create variable names
-  > like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
-  > Katenary to build a correct helm chart.
+> To respect the ability to install the same application in the same namespace, Katenary will create variable names
+> like `{{ .Release.Name }}-servicename`. So, you will need to use some labels inside your docker-compose file to help
+> Katenary to build a correct helm chart.
 
-  Example of a possible `docker-compose.yaml` file:
+Example of a possible `docker-compose.yaml` file:
 
 ```yaml
 services:
-  webapp:
-    image: php:7-apache
-    environment:
-      # note that "database" is a "compose" service name
-      # so we need to adapt it with the map-env label
-      DB_HOST: database
-      # a pitty to repeat this values, isn't it?
-      # so, let's change them with "values-from" label
-      DB_USER: foo
-      DB_PASSWORD: bar
-    expose:
-      - 80
-    depends_on:
-      # this will create a init container waiting for 3306 port
-      # because it's the "exposed" port
-      - database
-    labels:
-      # expose the port 80 as an ingress
-      katenary.v3/ingress: |-
-        hostname: myapp.example.com
-        port: 80
-      # make adaptations, DB_HOST environment is actually the service name
-      katenary.v3/map-env: |-
-        DB_HOST: '{{ .Release.Name }}-database'
-      # get the values from the "database" service
-      # this will use the database secrets and environment,
-      # see the "database" service to see the values
-      katenary.v3/values-from: |-
-        DB_USER: database.MARIADB_USER
-        DB_PASSWORD: database.MARIADB_PASSWORD
+    webapp:
+        image: php:7-apache
+        environment:
+            # note that "database" is a "compose" service name
+            # so we need to adapt it with the map-env label
+            DB_HOST: database
+            # a pitty to repeat this values, isn't it?
+            # so, let's change them with "values-from" label
+            DB_USER: foo
+            DB_PASSWORD: bar
+        expose:
+            - 80
+        depends_on:
+            # this will create a init container waiting for 3306 port
+            # because it's the "exposed" port
+            - database
+        labels:
+            # expose the port 80 as an ingress
+            katenary.v3/ingress: |-
+                hostname: myapp.example.com
+                port: 80
+            # make adaptations, DB_HOST environment is actually the service name
+            katenary.v3/map-env: |-
+                DB_HOST: '{{ .Release.Name }}-database'
+            # get the values from the "database" service
+            # this will use the database secrets and environment,
+            # see the "database" service to see the values
+            katenary.v3/values-from: |-
+                DB_USER: database.MARIADB_USER
+                DB_PASSWORD: database.MARIADB_PASSWORD
 
-  database:
-    image: mariadb:10
-    env_file:
-      # this valuse will be added in a configMap
-      - my_env.env
-    environment:
-      MARIADB_USER: foo
-      MARIADB_ROOT_PASSWORD: foobar
-      MARIADB_PASSWORD: bar
-    labels:
-      # no need to declare this port in docker-compose
-      # but katenary will need it
-      katenary.v3/ports: |-
-        - 3306
-      # these variables are secrets
-      katenary.v3/secrets: |-
-        - MARIADB_ROOT_PASSWORD
-        - MARIADB_PASSWORD
+    database:
+        image: mariadb:10
+        env_file:
+            # this valuse will be added in a configMap
+            - my_env.env
+        environment:
+            MARIADB_USER: foo
+            MARIADB_ROOT_PASSWORD: foobar
+            MARIADB_PASSWORD: bar
+        labels:
+            # no need to declare this port in docker-compose
+            # but katenary will need it
+            katenary.v3/ports: |-
+                - 3306
+            # these variables are secrets
+            katenary.v3/secrets: |-
+                - MARIADB_ROOT_PASSWORD
+                - MARIADB_PASSWORD
 ```
 
 ## Labels
@@ -237,25 +237,25 @@ For example, instead of using this:
 
 ```yaml
 services:
-  web:
-    image: nginx:latest
-    katenary.v3/ingress: |-
-      hostname: myapp.example.com
-      port: 80
+    web:
+        image: nginx:latest
+        katenary.v3/ingress: |-
+            hostname: myapp.example.com
+            port: 80
 ```
 
 You can remove the labels, and use a kanetary.yaml file:
 
 ```yaml
 web:
-  ingress:
-    hostname: myapp.example.com
-    port: 80
+    ingress:
+        hostname: myapp.example.com
+        port: 80
 ```
 
 To validate the `katenary.yaml` file, you can use the JSON schema using the "master" raw content:
 
-`https://raw.githubusercontent.com/metal3d/katenary/refs/heads/master/katenary.json`
+`https://raw.githubusercontent.com/Katenary/katenary/refs/heads/master/katenary.json`
 
 It's easy to configure in [LazyVim](https://www.lazyvim.org/), using `nvim-lspconfig`,
 create a Lua file in your `plugins` directory, or apply the settings as the example below:
@@ -272,7 +272,7 @@ return {
           settings = {
             yaml = {
               schemas = {
-                ["https://raw.githubusercontent.com/metal3d/katenary/master/katenary.json"] = "katenary.yaml",
+                ["https://raw.githubusercontent.com/Katenary/katenary/master/katenary.json"] = "katenary.yaml",
               },
             },
           },
@@ -287,9 +287,9 @@ Use this address to validate the `katenary.yaml` file in VSCode:
 
 ```json
 {
-  "yaml.schemas": {
-    "https://raw.githubusercontent.com/metal3d/katenary/master/katenary.json": "katenary.yaml"
-  }
+    "yaml.schemas": {
+        "https://raw.githubusercontent.com/Katenary/katenary/master/katenary.json": "katenary.yaml"
+    }
 }
 ```
 

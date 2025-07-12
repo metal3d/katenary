@@ -42,13 +42,13 @@ share it with the community.
 The main developer is [Patrice FERLET](https://github.com/metal3d).
 
 The project source
-code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/metal3d/katenary).
+code is hosted on the [:fontawesome-brands-github: Katenary GitHub Repository](https://github.com/Katenary/katenary).
 
 ## Install Katenary
 
 Katenary is developed using the :fontawesome-brands-golang:{ .gopher } [Go](https://go.dev) language.
 The binary is statically linked, so you can simply download it from the [release
-page](https://github.com/metal3d/katenary/releases) of the project in GitHub.
+page](https://github.com/Katenary/katenary/releases) of the project in GitHub.
 
 You need to select the right binary for your operating system and architecture, and copy the binary in a directory
 that is in your `PATH`.
@@ -57,17 +57,17 @@ If you are a Linux user, you can use the "one line installation command" which w
 `$HOME/.local/bin` directory if it exists.
 
 ```bash
-sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install.sh)
+sh <(curl -sSL https://raw.githubusercontent.com/Katenary/katenary/master/install.sh)
 ```
 
 !!! Info "Upgrading is integrated to the `katenary` command"
-    Katenary propose a `upgrade` sub-command to update the current binary to the latest stable release.
+Katenary propose a `upgrade` sub-command to update the current binary to the latest stable release.
 
     Of course, you need to install Katenary once :smile:
 
 !!! Note "You prefer to compile it, no need to install Go"
-    You can also build and install it yourself, the provided Makefile has got a `build` command that uses `podman` or
-    `docker` to build the binary.
+You can also build and install it yourself, the provided Makefile has got a `build` command that uses `podman` or
+`docker` to build the binary.
 
     So, you don't need to install Go compiler :+1:.
 
@@ -77,7 +77,7 @@ sh <(curl -sSL https://raw.githubusercontent.com/metal3d/katenary/master/install
 To compile it, you can use the following commands:
 
 ```bash
-git clone https://github.com/metal3d/katenary.git
+git clone https://github.com/Katenary/katenary.git
 cd katenary
 make build
 make install
@@ -127,7 +127,7 @@ thing! :heart:
 
 !!! Edit "Special thanks"
 
-    **Katenary is built with:** <br /> 
+    **Katenary is built with:** <br />
 
     <a href="https://go.dev" target="_blank">:fontawesome-brands-golang:{ .go-logo }</a>
 

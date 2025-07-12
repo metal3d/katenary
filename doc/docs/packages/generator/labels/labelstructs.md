@@ -8,7 +8,7 @@ import "katenary/generator/labels/labelstructs"
 
 Package labelstructs is a package that contains the structs used to represent the labels in the yaml files.
 
-## type [ConfigMapFile](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/configMap.go#L5>)
+## type [ConfigMapFile](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/configMap.go#L5>)
 
 
 
@@ -17,7 +17,7 @@ type ConfigMapFile []string
 ```
 
 <a name="ConfigMapFileFrom"></a>
-### func [ConfigMapFileFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/configMap.go#L7>)
+### func [ConfigMapFileFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/configMap.go#L7>)
 
 ```go
 func ConfigMapFileFrom(data string) (ConfigMapFile, error)
@@ -26,7 +26,7 @@ func ConfigMapFileFrom(data string) (ConfigMapFile, error)
 
 
 <a name="CronJob"></a>
-## type [CronJob](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/cronJob.go#L5-L10>)
+## type [CronJob](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/cronJob.go#L5-L10>)
 
 
 
@@ -40,7 +40,7 @@ type CronJob struct {
 ```
 
 <a name="CronJobFrom"></a>
-### func [CronJobFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/cronJob.go#L12>)
+### func [CronJobFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/cronJob.go#L12>)
 
 ```go
 func CronJobFrom(data string) (*CronJob, error)
@@ -49,7 +49,7 @@ func CronJobFrom(data string) (*CronJob, error)
 
 
 <a name="Dependency"></a>
-## type [Dependency](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/dependencies.go#L6-L12>)
+## type [Dependency](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/dependencies.go#L6-L12>)
 
 Dependency is a dependency of a chart to other charts.
 
@@ -64,7 +64,7 @@ type Dependency struct {
 ```
 
 <a name="DependenciesFrom"></a>
-### func [DependenciesFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/dependencies.go#L15>)
+### func [DependenciesFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/dependencies.go#L15>)
 
 ```go
 func DependenciesFrom(data string) ([]Dependency, error)
@@ -73,7 +73,7 @@ func DependenciesFrom(data string) ([]Dependency, error)
 DependenciesFrom returns a slice of dependencies from the given string.
 
 <a name="EnvFrom"></a>
-## type [EnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/envFrom.go#L5>)
+## type [EnvFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/envFrom.go#L5>)
 
 
 
@@ -82,7 +82,7 @@ type EnvFrom []string
 ```
 
 <a name="EnvFromFrom"></a>
-### func [EnvFromFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/envFrom.go#L8>)
+### func [EnvFromFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/envFrom.go#L8>)
 
 ```go
 func EnvFromFrom(data string) (EnvFrom, error)
@@ -91,7 +91,7 @@ func EnvFromFrom(data string) (EnvFrom, error)
 EnvFromFrom returns a EnvFrom from the given string.
 
 <a name="ExchangeVolume"></a>
-## type [ExchangeVolume](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/exchangeVolume.go#L5-L10>)
+## type [ExchangeVolume](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/exchangeVolume.go#L5-L10>)
 
 
 
@@ -105,7 +105,7 @@ type ExchangeVolume struct {
 ```
 
 <a name="NewExchangeVolumes"></a>
-### func [NewExchangeVolumes](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/exchangeVolume.go#L12>)
+### func [NewExchangeVolumes](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/exchangeVolume.go#L12>)
 
 ```go
 func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
@@ -114,7 +114,7 @@ func NewExchangeVolumes(data string) ([]*ExchangeVolume, error)
 
 
 <a name="HealthCheck"></a>
-## type [HealthCheck](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/probes.go#L11-L14>)
+## type [HealthCheck](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/probes.go#L11-L14>)
 
 
 
@@ -126,7 +126,7 @@ type HealthCheck struct {
 ```
 
 <a name="ProbeFrom"></a>
-### func [ProbeFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/probes.go#L16>)
+### func [ProbeFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/probes.go#L16>)
 
 ```go
 func ProbeFrom(data string) (*HealthCheck, error)
@@ -135,7 +135,7 @@ func ProbeFrom(data string) (*HealthCheck, error)
 
 
 <a name="Ingress"></a>
-## type [Ingress](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L14-L22>)
+## type [Ingress](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L14-L22>)
 
 
 
@@ -152,7 +152,7 @@ type Ingress struct {
 ```
 
 <a name="IngressFrom"></a>
-### func [IngressFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L25>)
+### func [IngressFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L25>)
 
 ```go
 func IngressFrom(data string) (*Ingress, error)
@@ -161,7 +161,7 @@ func IngressFrom(data string) (*Ingress, error)
 IngressFrom creates a new Ingress from a compose service.
 
 <a name="MapEnv"></a>
-## type [MapEnv](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/mapenv.go#L5>)
+## type [MapEnv](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/mapenv.go#L5>)
 
 
 
@@ -170,7 +170,7 @@ type MapEnv map[string]string
 ```
 
 <a name="MapEnvFrom"></a>
-### func [MapEnvFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/mapenv.go#L8>)
+### func [MapEnvFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/mapenv.go#L8>)
 
 ```go
 func MapEnvFrom(data string) (MapEnv, error)
@@ -179,7 +179,7 @@ func MapEnvFrom(data string) (MapEnv, error)
 MapEnvFrom returns a MapEnv from the given string.
 
 <a name="Ports"></a>
-## type [Ports](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/ports.go#L5>)
+## type [Ports](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/ports.go#L5>)
 
 
 
@@ -188,7 +188,7 @@ type Ports []uint32
 ```
 
 <a name="PortsFrom"></a>
-### func [PortsFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/ports.go#L8>)
+### func [PortsFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/ports.go#L8>)
 
 ```go
 func PortsFrom(data string) (Ports, error)
@@ -197,7 +197,7 @@ func PortsFrom(data string) (Ports, error)
 PortsFrom returns a Ports from the given string.
 
 <a name="Secrets"></a>
-## type [Secrets](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/secrets.go#L5>)
+## type [Secrets](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/secrets.go#L5>)
 
 
 
@@ -206,7 +206,7 @@ type Secrets []string
 ```
 
 <a name="SecretsFrom"></a>
-### func [SecretsFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/secrets.go#L7>)
+### func [SecretsFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/secrets.go#L7>)
 
 ```go
 func SecretsFrom(data string) (Secrets, error)
@@ -215,7 +215,7 @@ func SecretsFrom(data string) (Secrets, error)
 
 
 <a name="TLS"></a>
-## type [TLS](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L10-L12>)
+## type [TLS](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/ingress.go#L10-L12>)
 
 
 
@@ -226,7 +226,7 @@ type TLS struct {
 ```
 
 <a name="ValueFrom"></a>
-## type [ValueFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/valueFrom.go#L5>)
+## type [ValueFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/valueFrom.go#L5>)
 
 
 
@@ -235,7 +235,7 @@ type ValueFrom map[string]string
 ```
 
 <a name="GetValueFrom"></a>
-### func [GetValueFrom](<https://github.com/metal3d/katenary/blob/develop/generator/labels/labelstructs/valueFrom.go#L7>)
+### func [GetValueFrom](<https://github.com/katenary/katenary/blob/develop/generator/labels/labelstructs/valueFrom.go#L7>)
 
 ```go
 func GetValueFrom(data string) (*ValueFrom, error)

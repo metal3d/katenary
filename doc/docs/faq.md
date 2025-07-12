@@ -19,9 +19,10 @@ and flexibility.
 
 Kompose is able to generate Helm charts, but [it could be not the case in future releases](https://github.com/kubernetes/kompose/issues/1716) for several reasons[^2].
 
-[^2]: The author of Kompose explains that they have no bandwidth to maintain the Helm chart generation. It's a complex
-task, and we can confirm. Katenary takes a lot of time to be developed and maintained. This issue mentions Katenary as
-an alternative to Helm chart generation :smile:
+[^2]:
+    The author of Kompose explains that they have no bandwidth to maintain the Helm chart generation. It's a complex
+    task, and we can confirm. Katenary takes a lot of time to be developed and maintained. This issue mentions Katenary as
+    an alternative to Helm chart generation :smile:
 
 The project is focused on Kubernetes manifests and proposes to use "Kustomize" to adapt the manifests. Helm seems to be
 not the priority.
@@ -86,9 +87,9 @@ tested some concepts.
 You can help us in many ways.
 
 - The first things we really need, more than money, more than anything else, is to have feedback. If you use Katenary,
-if you have some issues, if you have some ideas, please open an issue on the [GitHub repository](https://github.com/metal3d/katenary).
+  if you have some issues, if you have some ideas, please open an issue on the [GitHub repository](https://github.com/Katenary/katenary).
 - The second thing is to help us to fix issues. If you're a Go developer, or if you want to fix the documentation,
-your help is greatly appreciated.
+  your help is greatly appreciated.
 - And then, of course, we need money, or sponsors.
 
 ### If you're a company
@@ -105,6 +106,7 @@ All main contributors[^3] will be listed on the website and in the documentation
 
 > If you want to be anonymous, please tell us.
 
-[^3]: Main contributors are the people who have made a significant contribution to the project. It could be code,
-documentation, or any other help. There is no defined rules, at this time, to evaluate the contribution.
-It's a subjective decision.
+[^3]:
+    Main contributors are the people who have made a significant contribution to the project. It could be code,
+    documentation, or any other help. There is no defined rules, at this time, to evaluate the contribution.
+    It's a subjective decision.

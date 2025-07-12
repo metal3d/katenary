@@ -12,7 +12,7 @@ A katenary file, named "katenary.yml" or "katenary.yaml", is a file where you ca
 
 Formely, the file describe the same structure as in labels, and so that can be validated and completed by LSP. It also ease the use of katenary.
 
-## func [GenerateSchema](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L137>)
+## func [GenerateSchema](<https://github.com/katenary/katenary/blob/develop/generator/katenaryfile/main.go#L137>)
 
 ```go
 func GenerateSchema() string
@@ -21,7 +21,7 @@ func GenerateSchema() string
 GenerateSchema generates the schema for the katenary.yaml file.
 
 <a name="OverrideWithConfig"></a>
-## func [OverrideWithConfig](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L49>)
+## func [OverrideWithConfig](<https://github.com/katenary/katenary/blob/develop/generator/katenaryfile/main.go#L49>)
 
 ```go
 func OverrideWithConfig(project *types.Project)
@@ -30,7 +30,7 @@ func OverrideWithConfig(project *types.Project)
 OverrideWithConfig overrides the project with the katenary.yaml file. It will set the labels of the services with the values from the katenary.yaml file. It work in memory, so it will not modify the original project.
 
 <a name="Service"></a>
-## type [Service](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L27-L44>)
+## type [Service](<https://github.com/katenary/katenary/blob/develop/generator/katenaryfile/main.go#L27-L44>)
 
 Service is a struct that contains the service configuration for katenary
 
@@ -56,7 +56,7 @@ type Service struct {
 ```
 
 <a name="StringOrMap"></a>
-## type [StringOrMap](<https://github.com/metal3d/katenary/blob/develop/generator/katenaryfile/main.go#L24>)
+## type [StringOrMap](<https://github.com/katenary/katenary/blob/develop/generator/katenaryfile/main.go#L24>)
 
 StringOrMap is a struct that can be either a string or a map of strings. It's a helper struct to unmarshal the katenary.yaml file and produce the schema
 
