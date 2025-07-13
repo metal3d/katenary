@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"fmt"
 	"katenary/utils"
 	"regexp"
 	"strings"
@@ -59,6 +60,7 @@ func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string) {
 
 	if targetPort := utils.GetServiceNameByPort(int(port.Target)); targetPort == "" {
 		finalport = intstr.FromInt(int(port.Target))
+		name = fmt.Sprintf("port-%d", port.Target)
 	} else {
 		finalport = intstr.FromString(targetPort)
 		name = targetPort
