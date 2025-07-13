@@ -731,7 +731,7 @@ func (s *Secret) Yaml() ([]byte, error)
 Yaml returns the yaml representation of the secret.
 
 <a name="Service"></a>
-## type [Service](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L17-L20>)
+## type [Service](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L18-L21>)
 
 Service is a kubernetes Service.
 
@@ -743,7 +743,7 @@ type Service struct {
 ```
 
 <a name="NewService"></a>
-### func [NewService](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L23>)
+### func [NewService](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L24>)
 
 ```go
 func NewService(service types.ServiceConfig, appName string) *Service
@@ -752,7 +752,7 @@ func NewService(service types.ServiceConfig, appName string) *Service
 NewService creates a new Service from a compose service.
 
 <a name="Service.AddPort"></a>
-### func \(\*Service\) [AddPort](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L52>)
+### func \(\*Service\) [AddPort](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L53>)
 
 ```go
 func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string)
@@ -761,7 +761,7 @@ func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string)
 AddPort adds a port to the service.
 
 <a name="Service.Filename"></a>
-### func \(\*Service\) [Filename](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L76>)
+### func \(\*Service\) [Filename](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L78>)
 
 ```go
 func (s *Service) Filename() string
@@ -770,7 +770,7 @@ func (s *Service) Filename() string
 Filename returns the filename of the service.
 
 <a name="Service.Yaml"></a>
-### func \(\*Service\) [Yaml](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L81>)
+### func \(\*Service\) [Yaml](<https://github.com/katenary/katenary/blob/develop/generator/service.go#L83>)
 
 ```go
 func (s *Service) Yaml() ([]byte, error)

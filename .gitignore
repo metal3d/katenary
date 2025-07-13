@@ -28,3 +28,5 @@ __pycache__
 
 .rpmmacros
 *.gpg
+
+katenary

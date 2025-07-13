@@ -145,7 +145,7 @@ For more complete label usage, see [the labels page](labels.md).
 
 ### Work with Depends On?
 
-Kubernetes does not provide service or pod starting detection from others pods. But katenary will create init containers
+Kubernetes does not provide service or pod starting detection from others pods. But Katenary will create `initContainer`
 to make you able to wait for a service to respond. But you'll probably need to adapt a bit the compose file.
 
 See this compose file:
