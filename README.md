@@ -4,7 +4,7 @@
 
 <div style="text-align:center; margin: auto 0 4em 0" align="center">
 
-[![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/katenary/badge/?version=latest)](https://katenary.readthedocs.io/latest/?badge=latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/Katenary/katenary)](https://goreportcard.com/report/github.com/Katenary/katenary)
 [![GitHub release](https://img.shields.io/github/v/release/Katenary/katenary)](https://github.com/Katenary/katenary/releases)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=metal3d_katenary&metric=coverage)](https://sonarcloud.io/summary/new_code?id=metal3d_katenary)
