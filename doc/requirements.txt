@@ -5,3 +5,5 @@ pymdown-extensions==10.*
 mkdocs-material==9.*
 mkdocs-material-extensions==1.*
 mkdocs-plugin-inline-svg-mod
+beautifulsoup4==4.*
+mkdocs-manpage[preprocess]
