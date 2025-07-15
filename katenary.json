@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$defs": {
-    "ConfigMapFile": {
+    "ConfigMapFiles": {
       "items": {
         "type": "string"
       },
@@ -318,7 +318,7 @@
           "description": "Services that should be injected in the Chart.yaml file"
         },
         "configmap-files": {
-          "$ref": "#/$defs/ConfigMapFile",
+          "$ref": "#/$defs/ConfigMapFiles",
           "title": "ConfigMap Files",
           "description": "Files that should be injected as ConfigMap"
         },
