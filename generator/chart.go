@@ -348,10 +348,10 @@ func (chart *HelmChart) setSharedConf(service types.ServiceConfig, deployments m
 
 // setEnvironmentValuesFrom sets the environment values from another service.
 func (chart *HelmChart) setEnvironmentValuesFrom(service types.ServiceConfig, deployments map[string]*Deployment) {
-	if _, ok := service.Labels[labels.LabelValueFrom]; !ok {
+	if _, ok := service.Labels[labels.LabelValuesFrom]; !ok {
 		return
 	}
-	mapping, err := labelstructs.GetValueFrom(service.Labels[labels.LabelValueFrom])
+	mapping, err := labelstructs.GetValueFrom(service.Labels[labels.LabelValuesFrom])
 	if err != nil {
 		log.Fatal("error unmarshaling values-from label:", err)
 	}

@@ -226,7 +226,7 @@ func fixResourceNames(project *types.Project) error {
 					project.Services[j] = s
 				}
 				// also, the value-from label should be updated
-				if valuefrom, ok := s.Labels[labels.LabelValueFrom]; ok {
+				if valuefrom, ok := s.Labels[labels.LabelValuesFrom]; ok {
 					vf, err := labelstructs.GetValueFrom(valuefrom)
 					if err != nil {
 						return err
@@ -240,7 +240,7 @@ func fixResourceNames(project *types.Project) error {
 					if err != nil {
 						return err
 					}
-					s.Labels[labels.LabelValueFrom] = string(output)
+					s.Labels[labels.LabelValuesFrom] = string(output)
 				}
 			}
 			service.Name = fixed

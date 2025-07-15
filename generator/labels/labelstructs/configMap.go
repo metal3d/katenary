@@ -2,10 +2,10 @@ package labelstructs
 
 import "gopkg.in/yaml.v3"
 
-type ConfigMapFile []string
+type ConfigMapFiles []string
 
-func ConfigMapFileFrom(data string) (ConfigMapFile, error) {
-	var mapping ConfigMapFile
+func ConfigMapFileFrom(data string) (ConfigMapFiles, error) {
+	var mapping ConfigMapFiles
 	if err := yaml.Unmarshal([]byte(data), &mapping); err != nil {
 		return nil, err
 	}
