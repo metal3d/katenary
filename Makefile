@@ -3,7 +3,7 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 .DELETE_ON_ERROR:
-.PHONY: all help build pull katenary dist dist-full prepare upx packages packager-oci-image gpg-sign check-sign rpm rpm-sign deb pacman freebsd tar manpage doc install uninstall serve-doc __label_doc install-gomarkdoc clean-all clean-dist clean-package-signer clean-go-cache test cover sast
+.PHONY: all binaries build check-dist-all check-dist-archlinux check-dist-debian check-dist-fedora check-dist-rocky check-dist-ubuntu check-sign clean-all clean-dist clean-go-cache clean-package-signer cover deb dist dist-full doc freebsd gpg-sign help install install-gomarkdoc katenary manpage packager-oci-image packages pacman prepare pull rpm rpm-sign sast serve-doc show-cover tar test uninstall upx warn-docker
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
@@ -21,13 +21,12 @@ GOARCH=amd64
 CGO_ENABLED=0
 PREFIX=~/.local
 
-
 warn-docker:
 	@echo -e "\033[1;31mWarning: Docker is not recommended, use Podman instead.\033[0m"
 	sleep 5
 
 # Get the container (Podman is preferred, but docker can be used too. It may failed with Docker.)
-# TODO: prpose nerdctl
+# TODO: propose nerdctl
 CTN:=$(shell which podman 2>&1 1>/dev/null && echo "podman" || echo "docker")
 ifeq ($(CTN),podman)
 	CTN_USERMAP=--userns=keep-id
@@ -120,7 +119,7 @@ help:
 	This will build the binary for darwin amd64.
 	
 	Or you can build all versions:
-	$$ make build-all
+	$$ make binaries
 	EOF
 
 
@@ -155,7 +154,8 @@ endif
 
 # Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
 # Also generate the windows installer.
-dist: prepare $(BINARIES) upx packages
+binaries: prepare $(BINARIES)
+dist: binaries upx packages
 dist-full: clean-dist dist gpg-sign check-sign rpm-sign check-dist-all
 
 prepare: pull packager-oci-image
@@ -206,12 +206,16 @@ nsis/EnVar.dll:
 	mv Plugins/x86-unicode/EnVar.dll EnVar.dll
 	rm -rf EnVar_plugin.zip Plugins
 
-upx: dist/katenary-linux-amd64 dist/katenary-linux-arm64 dist/katenary-darwin-amd64
-	$(UPX) dist/katenary-linux-amd64
-	$(UPX) dist/katenary-linux-arm64
-	$(UPX) dist/katenary-darwin-amd64 --force-macos
+# UPX compression
+upx: upx-linux upx-darwin
 
-## Linux / FreeBSD packages
+upx-linux: dist/katenary-linux-amd64 dist/katenary-linux-arm64 
+	$(UPX) $^
+
+upx-darwin: dist/katenary-darwin-amd64
+	$(UPX) --force-macos $^
+
+## Linux / FreeBSD packages with fpm
 
 DESCRIPTION := $(shell cat packaging/description | sed ':a;N;$$!ba;s/\n/\\n/g')
 
@@ -321,6 +325,20 @@ check-sign:
 			exit 1; \
 		fi; \
 	done
+	@echo "=> checking in blank environment..."
+	keyid=$(shell gpg -k --with-colons $(SIGNER)| grep '^pub' | cut -d: -f5);
+	$(CTN) run --rm -it -e GPGKEY=$${keyid} -v ./dist:/opt/dist:z \
+		packaging:fedora \
+		bash -c '
+		gpg --recv-key $$GPGKEY || exit 1;
+		echo "Trusting $(SIGNER) key...";
+		echo "trusted-key 483493B2DD0845DA8F21A26DF3702E3FAD8F76DC" >> ~/.gnupg/gpg.conf;
+		gpg --update-trustdb;
+		rm -f ~/.gnupg/gpg.conf;
+		for f in /opt/dist/*.asc; do echo "==> $${f}"; gpg --verify --auto-key-retrieve $${f}; done;
+		echo "=> Listing imported keys...";
+		gpg -k
+		'
 
 dist/%.asc: dist/%
 	gpg --armor --detach-sign  --default-key $(SIGNER) $< &>/dev/null || exit 1
@@ -457,14 +475,16 @@ test:
 	$(MAKE) cover
 
 cover:
-	go tool cover -func=cover.out | grep "total:"
+	@go tool cover -func=cover.out | grep "total:"
 	go tool cover -html=cover.out -o cover.html
+
+show-cover:
+	@[ -f cover.html ] || (echo "cover.html is not present, run make test before"; exit 1)
 	if [ "$(BROWSER)" = "xdg-open" ]; then
 		xdg-open cover.html
 	else
 		$(BROWSER) -i --new-window cover.html
 	fi
-
 
 ## Miscellaneous
 
