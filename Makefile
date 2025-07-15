@@ -3,7 +3,7 @@ SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c
 .ONESHELL:
 .DELETE_ON_ERROR:
-.PHONY: help dist-clean dist package build install test doc nsis
+.PHONY: all help build pull katenary dist dist-full prepare upx packages packager-oci-image gpg-sign check-sign rpm rpm-sign deb pacman freebsd tar manpage doc install uninstall serve-doc __label_doc install-gomarkdoc clean-all clean-dist clean-package-signer clean-go-cache test cover sast
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
@@ -147,7 +147,7 @@ else
 		-e GOARCH=$(GOARCH) \
 		--rm -v $(PWD):/go/src/katenary:z \
 		-w /go/src/katenary \
-		-v ./.cache:/go/pkg/mod:z \
+		-v go-cache:/go/pkg/mod:z \
 		$(CTN_USERMAP) \
 		$(BUILD_IMAGE) $(GO_BUILD)
 endif
@@ -156,7 +156,7 @@ endif
 # Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
 # Also generate the windows installer.
 dist: prepare $(BINARIES) upx packages
-dist-full: dist-clean dist gpg-sign check-sign rpm-sign check-dist-all
+dist-full: clean-dist dist gpg-sign check-sign rpm-sign check-dist-all
 
 prepare: pull packager-oci-image
 	mkdir -p dist
@@ -468,6 +468,15 @@ cover:
 
 ## Miscellaneous
 
-dist-clean:
+clean-all: clean-dist clean-package-signer clean-go-cache
+
+clean-dist:
 	rm -rf dist
 	rm -f katenary
+
+clean-package-signer:
+	rm -f .secret.gpg .rpmmacros
+
+clean-go-cache:
+	$(CTN) volume rm -f go-cache
+
