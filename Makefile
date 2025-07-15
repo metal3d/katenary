@@ -335,7 +335,7 @@ check-sign:
 		echo "trusted-key 483493B2DD0845DA8F21A26DF3702E3FAD8F76DC" >> ~/.gnupg/gpg.conf;
 		gpg --update-trustdb;
 		rm -f ~/.gnupg/gpg.conf;
-		for f in /opt/dist/*.asc; do echo "==> $${f}"; gpg --verify --auto-key-retrieve $${f}; done;
+		for f in /opt/dist/*.asc; do echo "==> $${f}"; gpg --verify $${f}; done;
 		echo "=> Listing imported keys...";
 		gpg -k
 		'
