@@ -111,6 +111,7 @@ katenary completion fish | source
 ## Usage
 
 ```text
+
 Katenary is a tool to convert compose files to Helm Charts.
 
 Each [command] and subcommand has got an "help" and "--help" flag to show more information.
@@ -210,22 +211,22 @@ These labels could be found by `katenary help-labels`, and can be placed as labe
 To get more information about a label, use `katenary help-label <name_without_prefix>
 e.g. katenary help-label dependencies
 
-katenary.v3/configmap-files:	list of strings		Add files to the configmap.
-katenary.v3/cronjob:		object			Create a cronjob from the service.
-katenary.v3/dependencies:	list of objects		Add Helm dependencies to the service.
-katenary.v3/description:	string			Description of the service
-katenary.v3/env-from:		list of strings		Add environment variables from antoher service.
-katenary.v3/exchange-volumes:	list of objects		Add exchange volumes (empty directory on the node) to share data
-katenary.v3/health-check:	object			Health check to be added to the deployment.
-katenary.v3/ignore:		bool			Ignore the service
-katenary.v3/ingress:		object			Ingress rules to be added to the service.
-katenary.v3/main-app:		bool			Mark the service as the main app.
-katenary.v3/map-env:		object			Map env vars from the service to the deployment.
-katenary.v3/ports:		list of uint32		Ports to be added to the service.
-katenary.v3/same-pod:		string			Move the same-pod deployment to the target deployment.
-katenary.v3/secrets:		list of string		Env vars to be set as secrets.
-katenary.v3/values:		list of string or map	Environment variables to be added to the values.yaml
-katenary.v3/values-from:	map[string]string	Add values from another service.
+katenary.v3/configmap-files:	[]string			Inject files as Configmap.
+katenary.v3/cronjob:		object				Create a cronjob from the service.
+katenary.v3/dependencies:	[]object			Add Helm dependencies to the service.
+katenary.v3/description:	string				Description of the service
+katenary.v3/env-from:		[]string			Add environment variables from another service.
+katenary.v3/exchange-volumes:	[]object			Add exchange volumes (empty directory on the node) to share data
+katenary.v3/health-check:	object				Health check to be added to the deployment.
+katenary.v3/ignore:		bool				Ignore the service
+katenary.v3/ingress:		object				Ingress rules to be added to the service.
+katenary.v3/main-app:		bool				Mark the service as the main app.
+katenary.v3/map-env:		map[string]string		Map env vars from the service to the deployment.
+katenary.v3/ports:		[]uint32			Ports to be added to the service.
+katenary.v3/same-pod:		string				Move the same-pod deployment to the target deployment.
+katenary.v3/secrets:		[]string			Env vars to be set as secrets.
+katenary.v3/values:		[]string or map[string]string	Environment variables to be added to the values.yaml
+katenary.v3/values-from:	map[string]string		Add values from another service.
 ```
 
 ## Katenary.yaml file and schema validation
@@ -244,7 +245,7 @@ services:
             port: 80
 ```
 
-You can remove the labels, and use a kanetary.yaml file:
+You can remove the labels, and use a `katenary.yaml` file:
 
 ```yaml
 web:
