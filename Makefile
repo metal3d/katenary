@@ -421,7 +421,6 @@ manpage:
 		source venv/bin/activate && \
 		echo "==> Installing requirements in the virtual env..." && \
 		pip install -qq -r requirements.txt && \
-		pip install -qq -r manpage_requirements.txt && \
 		echo "==> Generating manpage..." && \
 		MANPAGE=true mkdocs build && \
 		rm -rf site &&
