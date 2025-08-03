@@ -635,12 +635,16 @@ func (d *Deployment) appendFileToConfigMap(service types.ServiceConfig, appName 
 	// in generate.go
 	dirname := filepath.Dir(volume.Source)
 	pathname := utils.PathToName(dirname)
+	pathname = strings.TrimSpace(pathname)
+	if len(pathname) != 0 {
+		pathname += "-" + pathname
+	}
 	var cm *ConfigMap
 	if v, ok := d.configMaps[pathname]; !ok {
 		cm = NewConfigMap(*d.service, appName, true)
 		cm.usage = FileMapUsageFiles
 		cm.path = dirname
-		cm.Name = utils.TplName(service.Name, appName) + "-" + pathname
+		cm.Name = utils.TplName(service.Name, appName) + pathname
 		d.configMaps[pathname] = &ConfigMapMount{
 			configMap: cm,
 			mountPath: []mountPathConfig{{
