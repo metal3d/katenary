@@ -63,12 +63,12 @@ nav:
   - FAQ: faq.md
   - Go Packages:
       - packages/cmd/katenary.md
-      - packages/parser.md
-      - packages/utils.md
+      - packages/internal/parser.md
+      - packages/internal/utils.md
       - Generator:
-          - Index: packages/generator.md
-          - ExtraFiles: packages/generator/extrafiles.md
+          - Index: packages/internal/generator.md
+          - ExtraFiles: packages/internal/generator/extrafiles.md
           - labels:
-              - packages/generator/labels.md
-              - Labelstructs: packages/generator/labels/labelstructs.md
-          - KatenaryFile: packages/generator/katenaryfile.md
+              - packages/internal/generator/labels.md
+              - Labelstructs: packages/internal/generator/labels/labelstructs.md
+          - KatenaryFile: packages/internal/generator/katenaryfile.md
