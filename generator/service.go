@@ -51,11 +51,7 @@ func NewService(service types.ServiceConfig, appName string) *Service {
 
 // AddPort adds a port to the service.
 func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string) {
-	name := s.service.Name
-	if len(serviceName) > 0 {
-		name = serviceName[0]
-	}
-
+	var name string
 	var finalport intstr.IntOrString
 
 	if targetPort := utils.GetServiceNameByPort(int(port.Target)); targetPort == "" {
