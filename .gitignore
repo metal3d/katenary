@@ -13,8 +13,6 @@ cover*
 .config/
 */venv
 
-# local binary
-./katenary
 
 # will be treated later
 /examples/*
@@ -29,4 +27,6 @@ __pycache__
 .rpmmacros
 *.gpg
 
+# local binaries
 katenary
+!cmd/katenary

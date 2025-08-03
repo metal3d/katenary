@@ -51,11 +51,7 @@ func NewService(service types.ServiceConfig, appName string) *Service {
 
 // AddPort adds a port to the service.
 func (s *Service) AddPort(port types.ServicePortConfig, serviceName ...string) {
-	name := s.service.Name
-	if len(serviceName) > 0 {
-		name = serviceName[0]
-	}
-
+	var name string
 	var finalport intstr.IntOrString
 
 	if targetPort := utils.GetServiceNameByPort(int(port.Target)); targetPort == "" {
@@ -88,7 +84,7 @@ func (s *Service) Yaml() ([]byte, error) {
 	}
 
 	lines := []string{}
-	for _, line := range strings.Split(string(y), "\n") {
+	for line := range strings.SplitSeq(string(y), "\n") {
 		if regexp.MustCompile(`^\s*loadBalancer:\s*`).MatchString(line) {
 			continue
 		}
