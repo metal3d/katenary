@@ -13,8 +13,7 @@ func TestBuildCommand(t *testing.T) {
 	rootCmd := buildRootCmd()
 	if rootCmd == nil {
 		t.Errorf("Expected rootCmd to be defined")
-	}
-	if rootCmd.Use != "katenary" {
+	} else if rootCmd.Use != "katenary" {
 		t.Errorf("Expected rootCmd.Use to be katenary, got %s", rootCmd.Use)
 	}
 	numCommands := 6
@@ -53,18 +52,27 @@ func TestSchemaCommand(t *testing.T) {
 	}
 	schema := generateSchemaCommand()
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
+	}
 	os.Stdout = w
-	schema.Run(cmd, nil)
-	w.Close()
-	os.Stdout = old
 	var buf bytes.Buffer
+
+	done := make(chan struct{})
+	go func() {
+		schema.Run(cmd, nil)
+		w.Close()
+		close(done)
+	}()
 	io.Copy(&buf, r)
-	output := buf.String()
+	<-done
+
+	os.Stdout = old
 
 	// try to parse json
-	schemaContent := make(map[string]interface{})
-	if err := json.Unmarshal([]byte(output), &schemaContent); err != nil {
-		t.Errorf("Expected valid json, got %s", output)
+	schemaContent := make(map[string]any)
+	if err := json.Unmarshal(buf.Bytes(), &schemaContent); err != nil {
+		t.Errorf("Expected valid json")
 	}
 }
