@@ -30,3 +30,4 @@ __pycache__
 # local binaries
 katenary
 !cmd/katenary
+!oci/katenary
