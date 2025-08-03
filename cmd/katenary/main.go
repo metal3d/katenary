@@ -6,13 +6,14 @@ package main
 
 import (
 	"fmt"
-	"katenary/generator"
-	"katenary/generator/katenaryfile"
-	"katenary/generator/labels"
-	"katenary/utils"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/katenary/katenary/internal/generator"
+	"github.com/katenary/katenary/internal/generator/katenaryfile"
+	"github.com/katenary/katenary/internal/generator/labels"
+	"github.com/katenary/katenary/internal/utils"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/spf13/cobra"
