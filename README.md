@@ -186,7 +186,7 @@ services:
     database:
         image: mariadb:10
         env_file:
-            # this valuse will be added in a configMap
+            # this values will be added in a configMap
             - my_env.env
         environment:
             MARIADB_USER: foo
