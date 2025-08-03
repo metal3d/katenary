@@ -84,7 +84,7 @@ func (s *Service) Yaml() ([]byte, error) {
 	}
 
 	lines := []string{}
-	for _, line := range strings.Split(string(y), "\n") {
+	for line := range strings.SplitSeq(string(y), "\n") {
 		if regexp.MustCompile(`^\s*loadBalancer:\s*`).MatchString(line) {
 			continue
 		}
