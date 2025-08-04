@@ -1,4 +1,5 @@
 ## BUILD
+GO_BUILD=go build -ldflags="-X 'github.com/katenary/katenary/internal/generator.Version=$(VERSION)'" -trimpath -o $(OUTPUT) ./cmd/katenary
 
 # Simply build the binary for the current OS and architecture
 build: pull katenary
@@ -14,10 +15,9 @@ ifeq ($(GO),local)
 	@echo "=> Build on host using go"
 	$(GO_BUILD)
 else
-	@echo "=> Build in container using" $(CTN)
-	@$(GO_OCI) $(GO_BUILD)
+	echo "=> Build in container using" $(CTN)
+	$(GO_OCI) $(GO_BUILD)
 endif
-
 
 # Make dist, build executables for all platforms, sign them, and compress them with upx if possible.
 # Also generate the windows installer.
